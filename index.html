@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Japanese Tracker</title>
+<style>
+  :root {
+    --paper:#F3EEE3; --surface:#FBF8F1; --sunken:#EEE7D8;
+    --ink:#211E1A; --ink-soft:#6A6255; --line:#E0D8C7; --line-soft:#ECE5D6;
+    --seal:#BE3C28; --seal-deep:#A02F1E; --seal-wash:#F4E1DB;
+    --indigo:#33525C; --good:#4B7A4E;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#171614; --surface:#211F1B; --sunken:#100F0D;
+      --ink:#ECE5D7; --ink-soft:#A79D8B; --line:#35322B; --line-soft:#2B2924;
+      --seal:#E0674D; --seal-deep:#C64A31; --seal-wash:#3A2621;
+      --indigo:#7FA8B2; --good:#8CB98F;
+    }
+  }
+  :root[data-theme="light"]{--paper:#F3EEE3;--surface:#FBF8F1;--sunken:#EEE7D8;--ink:#211E1A;--ink-soft:#6A6255;--line:#E0D8C7;--line-soft:#ECE5D6;--seal:#BE3C28;--seal-deep:#A02F1E;--seal-wash:#F4E1DB;--indigo:#33525C;--good:#4B7A4E;}
+  :root[data-theme="dark"]{--paper:#171614;--surface:#211F1B;--sunken:#100F0D;--ink:#ECE5D7;--ink-soft:#A79D8B;--line:#35322B;--line-soft:#2B2924;--seal:#E0674D;--seal-deep:#C64A31;--seal-wash:#3A2621;--indigo:#7FA8B2;--good:#8CB98F;}
+
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .serif { font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:40px 32px 72px; }
+
+  /* Masthead */
+  .top { display:flex; align-items:center; gap:20px; padding-bottom:22px; border-bottom:2px solid var(--ink); }
+  .seal-mark {
+    flex:0 0 auto; width:64px; height:64px; border:2.5px solid var(--seal); border-radius:8px;
+    color:var(--seal); display:grid; place-items:center; font-size:1.8rem; line-height:1;
+    font-family:"Yu Mincho","Hiragino Mincho ProN",serif; transform:rotate(-2deg);
+  }
+  .top h1 { margin:0 0 3px; font-size:1.7rem; font-weight:600; letter-spacing:-0.01em; }
+  .top .sub { margin:0; color:var(--ink-soft); font-size:0.9rem; }
+  .streak-badge { margin-left:auto; text-align:center; }
+  .streak-badge .flame { font-size:1.9rem; font-weight:700; color:var(--seal); font-variant-numeric:tabular-nums; line-height:1; }
+  .streak-badge .lbl { font-size:0.64rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-soft); }
+
+  h2.eyebrow { display:flex; align-items:baseline; gap:11px; margin:38px 0 16px; font-size:1.25rem; font-weight:600; }
+  h2.eyebrow .g { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); font-size:1.3rem; }
+  h2.eyebrow .hint { margin-left:auto; font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); font-weight:400; }
+
+  /* Today card */
+  .today {
+    background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--seal);
+    border-radius:3px; padding:20px 22px;
+  }
+  .today .date { font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--seal); font-weight:700; }
+  .acts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:14px 0 4px; }
+  .act {
+    display:flex; align-items:center; gap:11px; padding:12px 14px; border:1px solid var(--line);
+    border-radius:4px; background:var(--paper); cursor:pointer; text-align:left; font:inherit; color:var(--ink);
+    transition:all .13s ease;
+  }
+  .act:hover { border-color:var(--seal); }
+  .act:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .act .box {
+    flex:0 0 auto; width:22px; height:22px; border:1.6px solid var(--ink-soft); border-radius:5px;
+    display:grid; place-items:center; color:#fff; font-size:0.8rem; transition:all .13s ease;
+  }
+  .act[aria-pressed="true"] { border-color:var(--seal); background:var(--seal-wash); }
+  .act[aria-pressed="true"] .box { background:var(--seal); border-color:var(--seal); }
+  .act .txt { line-height:1.25; }
+  .act .txt b { font-weight:600; display:block; font-size:0.94rem; }
+  .act .txt span { font-size:0.76rem; color:var(--ink-soft); }
+  .keeper { margin:14px 0 0; font-size:0.84rem; color:var(--ink-soft); }
+  .keeper b { color:var(--seal); }
+
+  /* Stats */
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .stat { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:15px 16px; }
+  .stat .n { font-size:1.7rem; font-weight:700; color:var(--indigo); font-variant-numeric:tabular-nums; line-height:1.1; }
+  .stat .l { font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); margin-top:3px; }
+
+  /* Heatmap */
+  .heat { display:flex; gap:3px; overflow-x:auto; padding:4px 0 8px; }
+  .hcol { display:flex; flex-direction:column; gap:3px; }
+  .hcell { width:13px; height:13px; border-radius:2px; background:var(--sunken); }
+  .hcell.t1 { background:color-mix(in srgb, var(--seal) 28%, var(--sunken)); }
+  .hcell.t2 { background:color-mix(in srgb, var(--seal) 55%, var(--sunken)); }
+  .hcell.t3 { background:color-mix(in srgb, var(--seal) 80%, var(--sunken)); }
+  .hcell.t4 { background:var(--seal); }
+  .hcell.today { outline:1.6px solid var(--indigo); outline-offset:1px; }
+  .legend { display:flex; align-items:center; gap:7px; font-size:0.72rem; color:var(--ink-soft); margin-top:2px; }
+  .legend .hcell { width:11px; height:11px; }
+
+  /* Milestones */
+  .phase-h { display:flex; align-items:baseline; gap:10px; margin:22px 0 8px; }
+  .phase-h .name { font-weight:600; font-size:1rem; }
+  .phase-h .lv { font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--indigo); border:1px solid var(--indigo); border-radius:20px; padding:1px 8px; }
+  .phase-h .when { margin-left:auto; font-size:0.76rem; color:var(--ink-soft); }
+  .checks { display:flex; flex-direction:column; gap:0; }
+  .chk {
+    display:flex; align-items:center; gap:12px; padding:10px 2px; border-bottom:1px solid var(--line-soft);
+    cursor:pointer; font:inherit; color:var(--ink); text-align:left; background:none; border-left:none; border-right:none; border-top:none; width:100%;
+  }
+  .chk:last-child { border-bottom:none; }
+  .chk:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .chk .box { flex:0 0 auto; width:20px; height:20px; border:1.6px solid var(--ink-soft); border-radius:5px; display:grid; place-items:center; color:#fff; font-size:0.75rem; }
+  .chk[aria-pressed="true"] .box { background:var(--good); border-color:var(--good); }
+  .chk[aria-pressed="true"] .label { color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--ink-soft); }
+  .chk .label { font-size:0.92rem; }
+  .bar { height:6px; background:var(--sunken); border-radius:20px; overflow:hidden; margin:4px 0 0; }
+  .bar > i { display:block; height:100%; background:var(--good); border-radius:20px; transition:width .3s ease; }
+
+  /* Resources */
+  .res-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .res { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:15px 17px; }
+  .res h3 { margin:0 0 9px; font-size:0.7rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--seal); font-weight:700; }
+  .res a { display:flex; align-items:baseline; justify-content:space-between; gap:8px; text-decoration:none; color:var(--ink); font-size:0.9rem; padding:6px 0; border-bottom:1px dashed var(--line-soft); }
+  .res a:last-child { border-bottom:none; }
+  .res a:hover .rn { color:var(--seal); text-decoration:underline; }
+  .res a .rn b { font-weight:600; }
+  .res a .rn span { color:var(--ink-soft); font-size:0.8rem; }
+  .res a .arw { color:var(--ink-soft); flex:0 0 auto; font-size:0.85rem; }
+
+  footer { margin-top:44px; padding-top:16px; border-top:2px solid var(--ink); display:flex; justify-content:space-between; align-items:center; font-size:0.76rem; color:var(--ink-soft); }
+  .reset { font:inherit; font-size:0.76rem; background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:3px; padding:5px 12px; cursor:pointer; }
+  .reset:hover { border-color:var(--seal); color:var(--seal); }
+  .stamp { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); border:1.5px solid var(--seal); border-radius:4px; padding:3px 9px; transform:rotate(-2deg); }
+  .save-note { font-size:0.76rem; color:var(--ink-soft); margin-top:8px; }
+
+  @media (max-width:600px){
+    .wrap{padding:28px 18px 56px;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .res-grid{grid-template-columns:1fr;}
+    .top{gap:14px;} .top h1{font-size:1.4rem;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="seal-mark" aria-hidden="true">継</div>
+    <div>
+      <h1 class="serif">My Japanese Tracker</h1>
+      <p class="sub">One hour a day. The only rule that can't break: the flashcards.</p>
+    </div>
+    <div class="streak-badge">
+      <div class="flame" id="streakBig">0</div>
+      <div class="lbl">Day streak</div>
+    </div>
+  </header>
+
+  <h2 class="eyebrow"><span class="g" aria-hidden="true">今</span>Today<span class="hint" id="todayDate"></span></h2>
+  <div class="today">
+    <div class="date">Log what you did — tap each one you finished</div>
+    <div class="acts" id="acts"></div>
+    <p class="keeper"><b>Lazy day?</b> Just tap Flashcards. That alone keeps your streak alive — that's a win, not a failure.</p>
+  </div>
+
+  <h2 class="eyebrow"><span class="g" aria-hidden="true">記</span>Your progress</h2>
+  <div class="stats">
+    <div class="stat"><div class="n" id="sCur">0</div><div class="l">Current streak</div></div>
+    <div class="stat"><div class="n" id="sBest">0</div><div class="l">Best streak</div></div>
+    <div class="stat"><div class="n" id="sDays">0</div><div class="l">Days studied</div></div>
+    <div class="stat"><div class="n" id="sHrs">0</div><div class="l">Hours logged</div></div>
+  </div>
+
+  <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
+  <div class="heat" id="heat"></div>
+  <div class="legend">Less
+    <span class="hcell"></span><span class="hcell t1"></span><span class="hcell t2"></span><span class="hcell t3"></span><span class="hcell t4"></span>
+    More</div>
+
+  <h2 class="eyebrow"><span class="g" aria-hidden="true">道</span>Milestones<span class="hint" id="mPct">0% done</span></h2>
+  <div class="bar" style="margin-bottom:6px"><i id="mBar" style="width:0%"></i></div>
+  <div id="milestones"></div>
+
+  <h2 class="eyebrow"><span class="g" aria-hidden="true">具</span>Free study links</h2>
+  <div class="res-grid" id="resources"></div>
+
+  <footer>
+    <span>Progress saves automatically in this browser.</span>
+    <span class="stamp" aria-hidden="true">頑張れ</span>
+  </footer>
+  <div style="text-align:right;margin-top:14px"><button class="reset" id="resetBtn">Reset all progress</button></div>
+  <p class="save-note">Tip: bookmark this page. Your streak, logs, and milestones live in this browser, so return here on the same device to keep them.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "jp-tracker-v1";
+  var ACTS = [
+    {id:"vocab",    name:"Flashcards", mins:15, sub:"SRS · the keystone"},
+    {id:"grammar",  name:"Grammar",    mins:20, sub:"Tae Kim"},
+    {id:"kanji",    name:"Kanji",      mins:15, sub:"inside vocab"},
+    {id:"listening",name:"Listening",  mins:10, sub:"immersion"}
+  ];
+  var MINS = {vocab:15, grammar:20, kanji:15, listening:10};
+
+  var PHASES = [
+    {name:"Wake your kana up", lv:"Start", when:"Week 1–2", items:[
+      {id:"m_hira", t:"Refreshed hiragana (read all 46 fast)"},
+      {id:"m_kata", t:"Refreshed katakana"},
+      {id:"m_kana", t:"Read kana aloud with no chart — dropped romaji"}
+    ]},
+    {name:"Beginner", lv:"≈ N5", when:"Months 1–3", items:[
+      {id:"m_taekim1", t:"Worked through Tae Kim basics"},
+      {id:"m_v1000", t:"~1,000 words in SRS"},
+      {id:"m_k100", t:"~100 kanji learned via vocab"}
+    ]},
+    {name:"Upper beginner", lv:"≈ N4", when:"Months 4–8", items:[
+      {id:"m_taekim2", t:"Finished Tae Kim"},
+      {id:"m_read", t:"Started graded readers (Tadoku Lv 0)"},
+      {id:"m_v2000", t:"~2,000 words · ~300 kanji"}
+    ]},
+    {name:"Intermediate", lv:"≈ N3", when:"Months 9–18", items:[
+      {id:"m_immerse", t:"Daily immersion habit with lookup"},
+      {id:"m_indep", t:"Reading short native texts on my own"}
+    ]}
+  ];
+
+  var RESOURCES = [
+    {cat:"Kana", links:[
+      {n:"Tofugu — Learn Hiragana", d:"free guide", u:"https://www.tofugu.com/japanese/learn-hiragana/"},
+      {n:"Tofugu — Learn Katakana", d:"free guide", u:"https://www.tofugu.com/japanese/learn-katakana/"},
+      {n:"Kana Pro", d:"drilling", u:"https://kana.pro/"},
+      {n:"Real Kana", d:"drilling", u:"https://realkana.com/"}
+    ]},
+    {cat:"Grammar", links:[
+      {n:"Tae Kim's Guide", d:"full free course", u:"https://guidetojapanese.org/learn/grammar"},
+      {n:"Imabi", d:"deep reference", u:"https://www.imabi.net/"}
+    ]},
+    {cat:"Vocab & Kanji (SRS)", links:[
+      {n:"Anki", d:"flashcard app", u:"https://apps.ankiweb.net/"},
+      {n:"Kaishi 1.5k deck", d:"beginner deck", u:"https://github.com/donkuri/Kaishi"},
+      {n:"jpdb.io", d:"vocab + SRS", u:"https://jpdb.io/"},
+      {n:"WaniKani", d:"3 levels free", u:"https://www.wanikani.com/"}
+    ]},
+    {cat:"Listening", links:[
+      {n:"Comprehensible Japanese", d:"YouTube", u:"https://www.youtube.com/@cijapanese"},
+      {n:"Nihongo con Teppei", d:"podcast", u:"https://nihongoconteppei.com/"}
+    ]},
+    {cat:"Reading", links:[
+      {n:"Tadoku graded readers", d:"free PDFs", u:"https://tadoku.org/japanese/en/free-books-en/"},
+      {n:"NHK Easy News", d:"simple news", u:"https://www3.nhk.or.jp/news/easy/"}
+    ]},
+    {cat:"Lookup", links:[
+      {n:"Jisho.org", d:"JP–EN dictionary", u:"https://jisho.org/"},
+      {n:"Yomitan", d:"hover translate", u:"https://yomitan.wiki/"}
+    ]}
+  ];
+
+  var mem = {};
+  function load(){ try { var s=localStorage.getItem(KEY); if(s) return JSON.parse(s); } catch(e){} return null; }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){ mem = state; } }
+  var state = load() || { logs:{}, milestones:{} };
+
+  function dkey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function today(){ return dkey(new Date()); }
+  function dayMins(log){ if(!log) return 0; var m=0; for(var k in MINS){ if(log[k]) m+=MINS[k]; } return m; }
+  function dayActive(log){ return !!(log && log.vocab); }
+
+  function computeStreak(){
+    var d = new Date(); var count = 0;
+    if(!dayActive(state.logs[dkey(d)])){ d.setDate(d.getDate()-1); }
+    while(dayActive(state.logs[dkey(d)])){ count++; d.setDate(d.getDate()-1); }
+    return count;
+  }
+  function bestStreak(){
+    var keys = Object.keys(state.logs).filter(function(k){return dayActive(state.logs[k]);}).sort();
+    var best=0, run=0, prev=null;
+    keys.forEach(function(k){
+      var d=new Date(k+"T00:00:00");
+      if(prev){ var diff=Math.round((d-prev)/86400000); run = diff===1 ? run+1 : 1; }
+      else run=1;
+      if(run>best) best=run; prev=d;
+    });
+    return best;
+  }
+
+  function renderToday(){
+    var box=document.getElementById("acts"); box.innerHTML="";
+    var log=state.logs[today()]||{};
+    ACTS.forEach(function(a){
+      var on=!!log[a.id];
+      var b=document.createElement("button");
+      b.className="act"; b.setAttribute("aria-pressed", on?"true":"false");
+      b.innerHTML='<span class="box" aria-hidden="true">'+(on?"✓":"")+'</span>'+
+        '<span class="txt"><b>'+a.name+'</b><span>'+a.mins+' min · '+a.sub+'</span></span>';
+      b.onclick=function(){
+        var l=state.logs[today()]||{}; l[a.id]=!l[a.id];
+        state.logs[today()]=l; save(); renderAll();
+      };
+      box.appendChild(b);
+    });
+    var dt=new Date();
+    document.getElementById("todayDate").textContent=dt.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
+  }
+
+  function renderStats(){
+    var cur=computeStreak(), best=Math.max(bestStreak(),cur);
+    var days=0, mins=0;
+    for(var k in state.logs){ if(dayActive(state.logs[k])) days++; mins+=dayMins(state.logs[k]); }
+    document.getElementById("streakBig").textContent=cur;
+    document.getElementById("sCur").textContent=cur;
+    document.getElementById("sBest").textContent=best;
+    document.getElementById("sDays").textContent=days;
+    document.getElementById("sHrs").textContent=(mins/60).toFixed(1);
+  }
+
+  function tier(m){ if(m<=0)return""; if(m<15)return"t1"; if(m<35)return"t2"; if(m<55)return"t3"; return"t4"; }
+  function renderHeat(){
+    var wrap=document.getElementById("heat"); wrap.innerHTML="";
+    var end=new Date(); var dow=end.getDay();
+    var start=new Date(end); start.setDate(end.getDate()-dow-11*7);
+    var tk=today();
+    for(var w=0; w<12; w++){
+      var col=document.createElement("div"); col.className="hcol";
+      for(var dd=0; dd<7; dd++){
+        var cur=new Date(start); cur.setDate(start.getDate()+w*7+dd);
+        var cell=document.createElement("div"); cell.className="hcell";
+        if(cur>end){ cell.style.visibility="hidden"; }
+        else {
+          var key=dkey(cur); var t=tier(dayMins(state.logs[key]));
+          if(t) cell.className+=" "+t;
+          if(key===tk) cell.className+=" today";
+          cell.title=cur.toLocaleDateString()+" — "+dayMins(state.logs[key])+" min";
+        }
+        col.appendChild(cell);
+      }
+      wrap.appendChild(col);
+    }
+  }
+
+  function renderMilestones(){
+    var host=document.getElementById("milestones"); host.innerHTML="";
+    var total=0, done=0;
+    PHASES.forEach(function(p){
+      var h=document.createElement("div"); h.className="phase-h";
+      h.innerHTML='<span class="name">'+p.name+'</span><span class="lv">'+p.lv+'</span><span class="when">'+p.when+'</span>';
+      host.appendChild(h);
+      var list=document.createElement("div"); list.className="checks";
+      p.items.forEach(function(it){
+        total++; var on=!!state.milestones[it.id]; if(on)done++;
+        var b=document.createElement("button");
+        b.className="chk"; b.setAttribute("aria-pressed", on?"true":"false");
+        b.innerHTML='<span class="box" aria-hidden="true">'+(on?"✓":"")+'</span><span class="label">'+it.t+'</span>';
+        b.onclick=function(){ state.milestones[it.id]=!state.milestones[it.id]; save(); renderMilestones(); };
+        list.appendChild(b);
+      });
+      host.appendChild(list);
+    });
+    var pct=total?Math.round(done/total*100):0;
+    document.getElementById("mBar").style.width=pct+"%";
+    document.getElementById("mPct").textContent=pct+"% done";
+  }
+
+  function renderResources(){
+    var host=document.getElementById("resources"); host.innerHTML="";
+    RESOURCES.forEach(function(g){
+      var c=document.createElement("div"); c.className="res";
+      var html='<h3>'+g.cat+'</h3>';
+      g.links.forEach(function(l){
+        html+='<a href="'+l.u+'" target="_blank" rel="noopener noreferrer">'+
+          '<span class="rn"><b>'+l.n+'</b> <span>'+l.d+'</span></span><span class="arw" aria-hidden="true">↗</span></a>';
+      });
+      c.innerHTML=html; host.appendChild(c);
+    });
+  }
+
+  function renderAll(){ renderToday(); renderStats(); renderHeat(); }
+
+  document.getElementById("resetBtn").onclick=function(){
+    if(confirm("Reset everything? Your streak, logs, and milestones will be cleared.")){
+      state={logs:{},milestones:{}}; save(); renderAll(); renderMilestones();
+    }
+  };
+
+  renderAll(); renderMilestones(); renderResources();
+})();
+</script>
+</body>
+</html>
