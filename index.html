@@ -166,6 +166,9 @@
     .res-grid{grid-template-columns:1fr;}
     .top{gap:14px;} .top h1{font-size:1.4rem;}
     .qz-show{font-size:2.4rem;}
+    .qz-keys{grid-template-columns:repeat(auto-fill,minmax(42px,1fr));}
+    .qz-key{padding:11px 0; font-size:1.2rem;}
+    .qz-answer{font-size:1.2rem;}
   }
 </style>
 </head>
@@ -556,12 +559,15 @@
     var pad = q.dir==="romaji" ? '<div class="qz-pad" id="qzPad"></div>' : '';
     var ansCls = q.dir==="romaji" ? "qz-answer jp" : "qz-answer";
     var ph = q.dir==="jp" ? "type rōmaji, then Enter" : "tap kana below (or type)";
+    // On the "answer in Japanese" questions, suppress the phone's own soft keyboard
+    // so it can't cover the tap-to-type kana keypad. Hardware/IME typing still works.
+    var im = q.dir==="romaji" ? ' inputmode="none"' : '';
     host.innerHTML =
       '<div class="qz-topbar"><span>Question '+(quiz.idx+1)+' / '+quiz.qs.length+'</span><span>Score '+quiz.score+'</span></div>'+
       '<div class="qz-progress-bar"><i style="width:'+(quiz.idx/quiz.qs.length*100)+'%"></i></div>'+
       '<div class="qz-dir">'+dirLabel+'</div>'+
       '<div class="'+showCls+'">'+q.show+scriptTag+'</div>'+ meaning +
-      '<input class="'+ansCls+'" id="qzAns" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+ph+'">'+
+      '<input class="'+ansCls+'" id="qzAns"'+im+' autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+ph+'">'+
       pad +
       '<div class="qz-feedback" id="qzFb"></div>'+
       '<div class="qz-actions"><button class="btn btn-seal" id="qzCheck">Check</button></div>';
