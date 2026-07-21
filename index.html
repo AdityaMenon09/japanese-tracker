@@ -89,6 +89,9 @@
   .qz-answer:focus-visible { outline:2px solid var(--indigo); outline-offset:1px; }
   .qz-answer.jp { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; }
 
+  .qz-input-toggle { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .qz-input-toggle .qz-it-lbl { font-size:0.66rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); font-weight:600; margin-right:2px; }
+
   .qz-pad { margin-top:14px; }
   .qz-pad-head { display:flex; gap:8px; align-items:center; margin-bottom:9px; }
   .qz-pad-head .swap { font:inherit; font-size:0.76rem; padding:5px 11px; border:1px solid var(--line); border-radius:20px; background:var(--paper); color:var(--ink-soft); cursor:pointer; }
@@ -112,6 +115,17 @@
   .qz-result .of { font-size:1.1rem; color:var(--ink-soft); }
   .qz-result .msg { margin:10px 0 20px; color:var(--ink-soft); }
   .qz-result .actions { display:flex; gap:10px; justify-content:center; }
+
+  /* Writing pad */
+  .wr-prompt { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin:4px 0 14px; }
+  .wr-prompt .lbl { font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--indigo); font-weight:700; }
+  .wr-prompt .tgt { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:1.9rem; line-height:1; }
+  .wr-prompt .rom { color:var(--ink-soft); font-size:0.92rem; }
+  .wr-stage { position:relative; width:100%; height:320px; background:#000; border:1px solid var(--line); border-radius:8px; overflow:hidden; touch-action:none; }
+  .wr-guide { position:absolute; inset:0; display:grid; place-items:center; color:rgba(255,255,255,0.15); font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; line-height:1; pointer-events:none; user-select:none; -webkit-user-select:none; }
+  .wr-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; }
+  .wr-tools { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+  .wr-hint { font-size:0.78rem; color:var(--ink-soft); margin-top:10px; }
 
   .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
   .stat { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:15px 16px; }
@@ -169,6 +183,7 @@
     .qz-keys{grid-template-columns:repeat(auto-fill,minmax(42px,1fr));}
     .qz-key{padding:11px 0; font-size:1.2rem;}
     .qz-answer{font-size:1.2rem;}
+    .wr-stage{height:280px;}
   }
 </style>
 </head>
@@ -370,12 +385,21 @@
     {k:"バナナ",r:["banana"],m:"banana",s:"k"}
   ];
 
+  // ---- device detection ----
+  // Touch-primary device (phone/tablet) = true; computer with a mouse = false.
+  // A touchscreen laptop still reports hover, so it counts as a computer.
+  var isTouchDevice = (window.matchMedia && matchMedia("(hover: none) and (pointer: coarse)").matches)
+    || (!window.matchMedia && (navigator.maxTouchPoints > 0 || "ontouchstart" in window));
+
   // ---- storage ----
   function load(){ try { var s=localStorage.getItem(KEY); if(s) return JSON.parse(s); } catch(e){} return null; }
   var state = load() || {};
   if(!state.logs) state.logs = {};
   if(!state.milestones) state.milestones = {};
   if(!state.quiz) state.quiz = {};
+  // Default answer input: on a phone use its own keyboard (blank box); on a
+  // computer show the clickable on-screen kana keys. The user can switch either way.
+  if(state.quiz.input == null) state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
 
   function dkey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
@@ -471,8 +495,10 @@
   }
 
   // ---- Quiz ----
-  var cfg = { type:"kana", script:"hira", set:"basic" };
+  var cfg = { type:"kana", script:"hira", set:"basic", writePrompt:"kana" };
   var quiz = null;
+  var writer = null;
+  function sel(a,b){ return a===b ? " selected" : ""; }
   function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
   function sample(arr,n){ return shuffle(arr.slice()).slice(0,n); }
   function norm(s){ return (s||"").trim().toLowerCase().replace(/\s+/g,"").replace(/['’`_-]/g,"").replace(/ā/g,"a").replace(/ī/g,"i").replace(/ū/g,"u").replace(/ē/g,"e").replace(/ō/g,"o"); }
@@ -506,31 +532,61 @@
   }
 
   function renderBest(){
+    if(cfg.type==="write"){ document.getElementById("qzBest").textContent = ""; return; }
     var b = cfg.type==="kana" ? state.quiz.kanaBest : state.quiz.wordsBest;
     document.getElementById("qzBest").textContent = (b!=null) ? ("Best "+b+" / 20") : "";
+  }
+
+  function typeField(){
+    return '<div class="qz-field"><label>Mode</label><select id="qzType">'+
+        '<option value="kana"'+sel(cfg.type,"kana")+'>Kana quiz</option>'+
+        '<option value="words"'+sel(cfg.type,"words")+'>Words quiz</option>'+
+        '<option value="write"'+sel(cfg.type,"write")+'>Writing practice</option>'+
+      '</select></div>';
+  }
+  function kanaFields(){
+    return '<div class="qz-field"><label>Script</label><select id="qzScript">'+
+        '<option value="hira"'+sel(cfg.script,"hira")+'>Hiragana</option>'+
+        '<option value="kata"'+sel(cfg.script,"kata")+'>Katakana</option>'+
+        '<option value="both"'+sel(cfg.script,"both")+'>Both (mixed)</option>'+
+      '</select></div>'+
+      '<div class="qz-field"><label>Level</label><select id="qzSet">'+
+        '<option value="basic"'+sel(cfg.set,"basic")+'>Basic (46)</option>'+
+        '<option value="daku"'+sel(cfg.set,"daku")+'>+ dakuten</option>'+
+        '<option value="combo"'+sel(cfg.set,"combo")+'>+ combos</option>'+
+      '</select></div>';
   }
 
   function renderConfig(){
     renderBest();
     var host=document.getElementById("quiz");
-    var kanaOpts = cfg.type==="kana" ?
-      '<div class="qz-field"><label>Script</label><select id="qzScript">'+
-        '<option value="hira"'+(cfg.script==="hira"?" selected":"")+'>Hiragana</option>'+
-        '<option value="kata"'+(cfg.script==="kata"?" selected":"")+'>Katakana</option>'+
-        '<option value="both"'+(cfg.script==="both"?" selected":"")+'>Both</option>'+
-      '</select></div>'+
-      '<div class="qz-field"><label>Level</label><select id="qzSet">'+
-        '<option value="basic"'+(cfg.set==="basic"?" selected":"")+'>Basic (46)</option>'+
-        '<option value="daku"'+(cfg.set==="daku"?" selected":"")+'>+ dakuten</option>'+
-        '<option value="combo"'+(cfg.set==="combo"?" selected":"")+'>+ combos</option>'+
-      '</select></div>' : "";
+
+    if(cfg.type==="write"){
+      var practice = '<div class="qz-field"><label>Practice</label><select id="wrPrompt">'+
+          '<option value="kana"'+sel(cfg.writePrompt,"kana")+'>Kana</option>'+
+          '<option value="words"'+sel(cfg.writePrompt,"words")+'>Words of the day</option>'+
+          '<option value="free"'+sel(cfg.writePrompt,"free")+'>Free draw</option>'+
+        '</select></div>';
+      var kOpts = cfg.writePrompt==="kana" ? kanaFields() : "";
+      host.innerHTML =
+        '<p class="qz-intro">A hands-on recall test: you’re shown the sound (rōmaji) and you write the Japanese from memory on a black pad — finger on a phone, mouse on a computer. Stuck? Tap <b>Reveal answer</b> to check or trace it. Pick <b>Both (mixed)</b> to shuffle hiragana and katakana together.</p>'+
+        '<div class="qz-controls">'+ typeField() + practice + kOpts +
+          '<button class="btn btn-seal" id="wrStart">Start writing</button>'+
+        '</div>';
+      document.getElementById("qzType").onchange=function(){ cfg.type=this.value; renderConfig(); };
+      document.getElementById("wrPrompt").onchange=function(){ cfg.writePrompt=this.value; renderConfig(); };
+      if(cfg.writePrompt==="kana"){
+        document.getElementById("qzScript").onchange=function(){ cfg.script=this.value; };
+        document.getElementById("qzSet").onchange=function(){ cfg.set=this.value; };
+      }
+      document.getElementById("wrStart").onclick=startWrite;
+      return;
+    }
+
+    var kanaOpts = cfg.type==="kana" ? kanaFields() : "";
     host.innerHTML =
-      '<p class="qz-intro">20 questions: 10 show Japanese (type the rōmaji) and 10 show rōmaji (answer in Japanese). For the Japanese ones, tap the kana keypad — no Japanese keyboard needed.</p>'+
-      '<div class="qz-controls">'+
-        '<div class="qz-field"><label>Quiz</label><select id="qzType">'+
-          '<option value="kana"'+(cfg.type==="kana"?" selected":"")+'>Kana alphabet</option>'+
-          '<option value="words"'+(cfg.type==="words"?" selected":"")+'>Words of the day</option>'+
-        '</select></div>'+ kanaOpts +
+      '<p class="qz-intro">20 questions: 10 show Japanese (type the rōmaji) and 10 show rōmaji (answer in Japanese). For the Japanese answers, use your device’s own keyboard or tap the on-screen kana keys — it picks a default for your device ('+(isTouchDevice?"phone: your keyboard":"computer: on-screen keys")+') and you can switch per question.</p>'+
+      '<div class="qz-controls">'+ typeField() + kanaOpts +
         '<button class="btn btn-seal" id="qzStart">Start quiz</button>'+
       '</div>';
     document.getElementById("qzType").onchange=function(){ cfg.type=this.value; renderConfig(); };
@@ -556,26 +612,57 @@
     var scriptTag = "";
     if(q.dir==="romaji"){ scriptTag = ' <span style="font-size:0.8rem;color:var(--ink-soft)">('+(q.script==="k"?"katakana":"hiragana")+')</span>'; }
     var meaning = q.meaning ? '<div class="qz-meaning">meaning: <b>'+q.meaning+'</b></div>' : '';
-    var pad = q.dir==="romaji" ? '<div class="qz-pad" id="qzPad"></div>' : '';
+    // "Answer in Japanese" questions have two input styles the user can switch between:
+    //   keypad   — tap on-screen kana keys (no Japanese keyboard needed; good on a PC)
+    //   keyboard — a blank box typed with the device's own keyboard (good on a phone)
+    var useKeypad = q.dir==="romaji" && state.quiz.input==="keypad";
+    var toggle = q.dir==="romaji" ? inputToggleHtml() : '';
+    var pad = useKeypad ? '<div class="qz-pad" id="qzPad"></div>' : '';
     var ansCls = q.dir==="romaji" ? "qz-answer jp" : "qz-answer";
-    var ph = q.dir==="jp" ? "type rōmaji, then Enter" : "tap kana below (or type)";
-    // On the "answer in Japanese" questions, suppress the phone's own soft keyboard
-    // so it can't cover the tap-to-type kana keypad. Hardware/IME typing still works.
-    var im = q.dir==="romaji" ? ' inputmode="none"' : '';
+    var ph = q.dir==="jp" ? "type rōmaji, then Enter"
+      : (useKeypad ? "tap kana below (or type)" : "type Japanese with your keyboard");
+    // In keypad mode, suppress the device's soft keyboard so it can't cover the keys.
+    // In keyboard mode, leave it on so the phone's own keyboard appears.
+    var im = useKeypad ? ' inputmode="none"' : '';
     host.innerHTML =
       '<div class="qz-topbar"><span>Question '+(quiz.idx+1)+' / '+quiz.qs.length+'</span><span>Score '+quiz.score+'</span></div>'+
       '<div class="qz-progress-bar"><i style="width:'+(quiz.idx/quiz.qs.length*100)+'%"></i></div>'+
       '<div class="qz-dir">'+dirLabel+'</div>'+
       '<div class="'+showCls+'">'+q.show+scriptTag+'</div>'+ meaning +
       '<input class="'+ansCls+'" id="qzAns"'+im+' autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+ph+'">'+
-      pad +
+      toggle + pad +
       '<div class="qz-feedback" id="qzFb"></div>'+
       '<div class="qz-actions"><button class="btn btn-seal" id="qzCheck">Check</button></div>';
     var ans=document.getElementById("qzAns");
-    if(q.dir==="romaji") renderPad();
+    if(useKeypad) renderPad();
+    if(q.dir==="romaji") wireInputToggle();
     ans.focus();
     ans.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); onAction(); } });
     document.getElementById("qzCheck").onclick=onAction;
+  }
+
+  function inputToggleHtml(){
+    var kp = state.quiz.input==="keypad";
+    return '<div class="qz-input-toggle">'+
+        '<span class="qz-it-lbl">Input</span>'+
+        '<button type="button" class="swap'+(kp?" on":"")+'" data-in="keypad">あ On-screen keys</button>'+
+        '<button type="button" class="swap'+(!kp?" on":"")+'" data-in="keyboard">⌨ My keyboard</button>'+
+      '</div>';
+  }
+  function wireInputToggle(){
+    var host=document.getElementById("quiz");
+    host.querySelectorAll(".qz-input-toggle .swap").forEach(function(b){
+      b.onclick=function(){
+        if(quiz.answered) return;
+        var mode=b.getAttribute("data-in");
+        if(mode===state.quiz.input) return;
+        var cur=document.getElementById("qzAns");
+        var keep=cur?cur.value:"";
+        state.quiz.input=mode; save();
+        renderQuestion();
+        var a=document.getElementById("qzAns"); if(a){ a.value=keep; a.focus(); }
+      };
+    });
   }
 
   function renderPad(){
@@ -664,6 +751,100 @@
       '</div>';
     document.getElementById("qzAgain").onclick=startQuiz;
     document.getElementById("qzBack").onclick=renderConfig;
+  }
+
+  // ---- Writing practice ----
+  function pickWriteTarget(){
+    if(cfg.writePrompt==="kana"){
+      var pool=kanaPool(); var p=pool[Math.floor(Math.random()*pool.length)];
+      return { target:p.kana, romaji:p.romaji, script:p.script, meaning:"" };
+    } else if(cfg.writePrompt==="words"){
+      var w=WORDS[Math.floor(Math.random()*WORDS.length)];
+      return { target:w.k, romaji:w.r[0], script:w.s, meaning:w.m };
+    }
+    return { target:"", romaji:"", script:"", meaning:"" };
+  }
+
+  function startWrite(){
+    // Answer stays hidden by default so it's a real recall test.
+    writer = { guideOn:false, cur:pickWriteTarget() };
+    renderWrite();
+  }
+
+  function renderWrite(){
+    var host=document.getElementById("quiz");
+    var c=writer.cur, hasTarget=!!c.target;
+    var modeLbl = cfg.writePrompt==="kana" ? "Kana" : cfg.writePrompt==="words" ? "Words" : "Free";
+    var stag = c.script==="k" ? "katakana" : "hiragana";
+    var promptHtml = hasTarget
+      ? '<div class="wr-prompt"><span class="lbl">Write in Japanese</span><span class="tgt" style="font-family:inherit;font-weight:700">'+c.romaji+'</span><span class="rom">('+stag+')'+(c.meaning?" · "+c.meaning:"")+'</span></div>'
+      : '<div class="wr-prompt"><span class="lbl">Free draw</span><span class="rom">write anything you’re practicing — kana, kanji, whatever</span></div>';
+    var guideHtml = hasTarget ? '<div class="wr-guide" id="wrGuide"'+(writer.guideOn?"":' style="display:none"')+'>'+c.target+'</div>' : '';
+    host.innerHTML =
+      '<div class="qz-topbar"><span>Writing practice</span><span>'+modeLbl+'</span></div>'+
+      promptHtml +
+      '<div class="wr-stage">'+ guideHtml + '<canvas class="wr-canvas" id="wrCanvas"></canvas></div>'+
+      '<div class="wr-tools">'+
+        '<button class="btn btn-seal" id="wrClear">Clear</button>'+
+        (hasTarget ? '<button class="btn btn-ghost" id="wrGuideBtn">'+(writer.guideOn?"Hide answer":"Reveal answer")+'</button>' : '')+
+        (cfg.writePrompt!=="free" ? '<button class="btn btn-ghost" id="wrNext">Next</button>' : '')+
+        '<button class="btn btn-ghost" id="wrBack">Change settings</button>'+
+      '</div>'+
+      '<p class="wr-hint">'+(hasTarget?"You’re given the sound — write the Japanese from memory, then tap Reveal to check.":"Draw freely.")+' Finger on a phone, mouse on a computer. White ink, black pad.</p>';
+    setupCanvas();
+    if(hasTarget) sizeGuide();
+    document.getElementById("wrClear").onclick=clearCanvas;
+    if(hasTarget){
+      document.getElementById("wrGuideBtn").onclick=function(){
+        writer.guideOn=!writer.guideOn;
+        document.getElementById("wrGuide").style.display=writer.guideOn?"":"none";
+        this.textContent=writer.guideOn?"Hide answer":"Reveal answer";
+      };
+    }
+    var nx=document.getElementById("wrNext");
+    if(nx) nx.onclick=function(){ writer.guideOn=false; writer.cur=pickWriteTarget(); renderWrite(); };
+    document.getElementById("wrBack").onclick=renderConfig;
+  }
+
+  function sizeGuide(){
+    var g=document.getElementById("wrGuide"); if(!g) return;
+    var stage=g.parentNode, w=stage.clientWidth, h=stage.clientHeight;
+    var len=(writer.cur.target||" ").length || 1;
+    g.style.fontSize=Math.max(24, Math.min(h*0.72, (w*0.88)/len))+"px";
+  }
+
+  var wrCtx=null, wrCanvas=null;
+  function setupCanvas(){
+    wrCanvas=document.getElementById("wrCanvas");
+    var stage=wrCanvas.parentNode;
+    var dpr=window.devicePixelRatio||1;
+    var w=stage.clientWidth, h=stage.clientHeight;
+    wrCanvas.width=Math.round(w*dpr); wrCanvas.height=Math.round(h*dpr);
+    var ctx=wrCanvas.getContext("2d");
+    ctx.scale(dpr,dpr);
+    ctx.lineWidth=6; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.strokeStyle="#fff";
+    wrCtx=ctx;
+    var drawing=false, lastX=0, lastY=0;
+    function pos(e){ var r=wrCanvas.getBoundingClientRect(); return { x:e.clientX-r.left, y:e.clientY-r.top }; }
+    wrCanvas.addEventListener("pointerdown", function(e){
+      e.preventDefault(); drawing=true;
+      try { wrCanvas.setPointerCapture(e.pointerId); } catch(_){}
+      var p=pos(e); lastX=p.x; lastY=p.y;
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+0.1,p.y+0.1); ctx.stroke();
+    });
+    wrCanvas.addEventListener("pointermove", function(e){
+      if(!drawing) return; e.preventDefault();
+      var p=pos(e);
+      ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.stroke();
+      lastX=p.x; lastY=p.y;
+    });
+    function end(){ drawing=false; }
+    wrCanvas.addEventListener("pointerup", end);
+    wrCanvas.addEventListener("pointercancel", end);
+  }
+  function clearCanvas(){
+    if(!wrCanvas||!wrCtx) return;
+    wrCtx.clearRect(0,0,wrCanvas.width,wrCanvas.height);
   }
 
   function renderAll(){ renderToday(); renderStats(); renderHeat(); }
