@@ -11,6 +11,10 @@ A simple, self-contained web app to track daily Japanese study, built around one
 - **Progress stats** — current streak, best streak, days studied, and total hours logged.
 - **12-week heatmap** — a contribution-style grid that fills in as you study.
 - **Milestones** — the full roadmap from kana refresh through the N5 → N4 → N3 levels, as a checklist.
+- **Quizzes** — two randomized quiz types with a best-score tracker:
+  - *Kana alphabet* — single characters, choose hiragana / katakana / both and the level (basic, +dakuten, +combos).
+  - *Words of the day* — simple everyday words shown with their meaning.
+  - Each round is 20 questions: 10 show Japanese (you type the rōmaji) and 10 show rōmaji (you answer in Japanese). A tap-to-type kana keypad means no Japanese keyboard is needed.
 - **Free study links** — every free resource used in the plan, grouped by category.
 
 Progress is stored in the browser using `localStorage`. It stays on the device and browser you use, so bookmark the page and return to the same one.
