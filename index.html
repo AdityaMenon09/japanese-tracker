@@ -43,6 +43,9 @@
   .streak-badge { margin-left:auto; text-align:center; }
   .streak-badge .flame { font-size:1.9rem; font-weight:700; color:var(--seal); font-variant-numeric:tabular-nums; line-height:1; }
   .streak-badge .lbl { font-size:0.64rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-soft); }
+  .top-reset { align-self:flex-start; font:inherit; font-size:0.72rem; background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:4px; padding:4px 10px; cursor:pointer; margin-left:16px; white-space:nowrap; }
+  .top-reset:hover { border-color:var(--seal); color:var(--seal); }
+  .top-reset:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
 
   h2.eyebrow { display:flex; align-items:baseline; gap:11px; margin:34px 0 14px; font-size:1.2rem; font-weight:600; }
   h2.eyebrow .g { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); font-size:1.25rem; }
@@ -239,6 +242,7 @@
       <div class="flame" id="streakBig">0</div>
       <div class="lbl">Day streak</div>
     </div>
+    <button class="top-reset" id="resetTop" title="Reset all saved progress">↺ Reset</button>
   </header>
 
   <div class="dash-top">
@@ -1155,13 +1159,15 @@
 
   function renderAll(){ renderToday(); renderStats(); renderHeat(); }
 
-  document.getElementById("resetBtn").onclick=function(){
+  function doReset(){
     if(confirm("Reset everything? Your streak, logs, milestones, flashcard schedule, and quiz scores will be cleared.")){
       state={logs:{},milestones:{},quiz:{},srs:{}};
       state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
       save(); renderAll(); renderMilestones(); renderConfig(); renderFcConfig();
     }
-  };
+  }
+  document.getElementById("resetBtn").onclick=doReset;
+  document.getElementById("resetTop").onclick=doReset;
 
   renderAll(); renderMilestones(); renderResources(); renderConfig(); renderFcConfig();
 })();
