@@ -30,7 +30,7 @@
   }
   .serif { font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; }
   .jp { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; }
-  .wrap { max-width:1080px; margin:0 auto; padding:36px 30px 72px; }
+  .wrap { max-width:1480px; margin:0 auto; padding:36px 40px 72px; }
 
   .top { display:flex; align-items:center; gap:20px; padding-bottom:22px; border-bottom:2px solid var(--ink); }
   .seal-mark {
@@ -49,9 +49,11 @@
   h2.eyebrow .hint { margin-left:auto; font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); font-weight:400; }
 
   /* Dashboard grids */
-  .dash-top { display:grid; grid-template-columns:1.7fr 1fr; gap:18px; align-items:start; }
+  .dash-top { display:grid; grid-template-columns:1.6fr 1fr; gap:18px; align-items:start; }
   .dash-top section { min-width:0; }
-  .grid-two { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+  .study-row { display:grid; grid-template-columns:1fr 1fr; gap:18px 22px; align-items:start; }
+  .study-row section { min-width:0; }
+  .grid-two { display:grid; grid-template-columns:1fr 1fr; gap:18px 22px; align-items:start; }
   .grid-two section { min-width:0; }
   .grid-two h2.eyebrow { margin-top:0; }
 
@@ -72,7 +74,7 @@
 
   /* At a glance panel */
   .panel { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:16px 16px 18px; }
-  .glance { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .glance { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
   .gstat { background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:11px 13px; }
   .gstat .n { font-size:1.5rem; font-weight:700; color:var(--indigo); font-variant-numeric:tabular-nums; line-height:1.05; }
   .gstat.seal .n { color:var(--seal); }
@@ -157,7 +159,7 @@
   .fc-rate .r-good  { color:var(--good); }
   .fc-rate .r-easy  { color:var(--indigo); }
   .fc-rate .rkey { font-size:0.6rem; color:var(--ink-soft); opacity:.7; }
-  .fc-actions { display:flex; justify-content:flex-end; margin-top:14px; }
+  .fc-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
   .fc-countline { font-size:0.8rem; color:var(--ink-soft); margin:2px 0 0; }
   .fc-countline b { color:var(--ink); font-weight:600; }
 
@@ -204,6 +206,10 @@
   .stamp { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); border:1.5px solid var(--seal); border-radius:4px; padding:3px 9px; transform:rotate(-2deg); }
   .save-note { font-size:0.76rem; color:var(--ink-soft); margin-top:8px; }
 
+  @media (max-width:1024px){
+    .study-row { grid-template-columns:1fr; }
+    .study-row section + section { margin-top:6px; }
+  }
   @media (max-width:860px){
     .dash-top { grid-template-columns:1fr; }
     .grid-two { grid-template-columns:1fr; }
@@ -259,11 +265,16 @@
     </section>
   </div>
 
-  <h2 class="eyebrow"><span class="g" aria-hidden="true">札</span>Flashcards<span class="hint" id="fcHint"></span></h2>
-  <div class="quiz" id="flash"></div>
-
-  <h2 class="eyebrow"><span class="g" aria-hidden="true">試</span>Quiz<span class="hint" id="qzBest"></span></h2>
-  <div class="quiz" id="quiz"></div>
+  <div class="study-row">
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">札</span>Flashcards<span class="hint" id="fcHint"></span></h2>
+      <div class="quiz" id="flash"></div>
+    </section>
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">試</span>Quiz<span class="hint" id="qzBest"></span></h2>
+      <div class="quiz" id="quiz"></div>
+    </section>
+  </div>
 
   <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
   <div class="heat" id="heat"></div>
@@ -718,7 +729,7 @@
         '<button class="btn btn-seal fc-reveal" id="fcReveal">Show answer</button>'+
         '<div class="fc-rate" id="fcRate">'+rateHtml+'</div>'+
       '</div>'+
-      '<div class="fc-actions"><button class="btn btn-ghost" id="fcQuit">End session</button></div>';
+      '<div class="fc-actions"><button class="btn btn-ghost" id="fcSkip">Skip →</button><button class="btn btn-ghost" id="fcQuit">End session</button></div>';
     s.flipped=false;
     var card=document.getElementById("fcCard");
     var reveal=document.getElementById("fcReveal");
@@ -726,6 +737,8 @@
     function flip(){ if(s.flipped) return; s.flipped=true; card.classList.add("flipped"); reveal.style.display="none"; rateRow.style.display="flex"; }
     card.onclick=flip; reveal.onclick=flip;
     rateRow.querySelectorAll("button").forEach(function(b){ b.onclick=function(){ rateFc(b.getAttribute("data-r")); }; });
+    // Skip: move to the next card without rating (the current card returns later this session).
+    document.getElementById("fcSkip").onclick=function(){ s.queue.push(c); s.pos++; renderFcCard(); };
     document.getElementById("fcQuit").onclick=function(){ finishFc(true); };
   }
 
