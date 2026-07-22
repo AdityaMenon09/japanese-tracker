@@ -29,7 +29,8 @@
     line-height:1.6; -webkit-font-smoothing:antialiased;
   }
   .serif { font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; }
-  .wrap { max-width:820px; margin:0 auto; padding:40px 32px 72px; }
+  .jp { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; }
+  .wrap { max-width:1080px; margin:0 auto; padding:36px 30px 72px; }
 
   .top { display:flex; align-items:center; gap:20px; padding-bottom:22px; border-bottom:2px solid var(--ink); }
   .seal-mark {
@@ -43,9 +44,16 @@
   .streak-badge .flame { font-size:1.9rem; font-weight:700; color:var(--seal); font-variant-numeric:tabular-nums; line-height:1; }
   .streak-badge .lbl { font-size:0.64rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-soft); }
 
-  h2.eyebrow { display:flex; align-items:baseline; gap:11px; margin:38px 0 16px; font-size:1.25rem; font-weight:600; }
-  h2.eyebrow .g { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); font-size:1.3rem; }
+  h2.eyebrow { display:flex; align-items:baseline; gap:11px; margin:34px 0 14px; font-size:1.2rem; font-weight:600; }
+  h2.eyebrow .g { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); font-size:1.25rem; }
   h2.eyebrow .hint { margin-left:auto; font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); font-weight:400; }
+
+  /* Dashboard grids */
+  .dash-top { display:grid; grid-template-columns:1.7fr 1fr; gap:18px; align-items:start; }
+  .dash-top section { min-width:0; }
+  .grid-two { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+  .grid-two section { min-width:0; }
+  .grid-two h2.eyebrow { margin-top:0; }
 
   .today { background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--seal); border-radius:3px; padding:20px 22px; }
   .today .date { font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--seal); font-weight:700; }
@@ -62,7 +70,15 @@
   .keeper { margin:14px 0 0; font-size:0.84rem; color:var(--ink-soft); }
   .keeper b { color:var(--seal); }
 
-  /* Quiz */
+  /* At a glance panel */
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:16px 16px 18px; }
+  .glance { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .gstat { background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:11px 13px; }
+  .gstat .n { font-size:1.5rem; font-weight:700; color:var(--indigo); font-variant-numeric:tabular-nums; line-height:1.05; }
+  .gstat.seal .n { color:var(--seal); }
+  .gstat .l { font-size:0.63rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-top:3px; }
+
+  /* Quiz + Flashcards shared card */
   .quiz { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:22px 24px; }
   .qz-controls { display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-end; }
   .qz-field { display:flex; flex-direction:column; gap:5px; }
@@ -94,8 +110,8 @@
 
   .qz-pad { margin-top:14px; }
   .qz-pad-head { display:flex; gap:8px; align-items:center; margin-bottom:9px; }
-  .qz-pad-head .swap { font:inherit; font-size:0.76rem; padding:5px 11px; border:1px solid var(--line); border-radius:20px; background:var(--paper); color:var(--ink-soft); cursor:pointer; }
-  .qz-pad-head .swap.on { border-color:var(--seal); color:var(--seal); background:var(--seal-wash); }
+  .swap { font:inherit; font-size:0.76rem; padding:5px 11px; border:1px solid var(--line); border-radius:20px; background:var(--paper); color:var(--ink-soft); cursor:pointer; }
+  .swap.on { border-color:var(--seal); color:var(--seal); background:var(--seal-wash); }
   .qz-pad-hint { font-size:0.72rem; color:var(--ink-soft); }
   .qz-keys { display:grid; grid-template-columns:repeat(auto-fill,minmax(38px,1fr)); gap:5px; }
   .qz-key { font:inherit; font-size:1.05rem; font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; padding:7px 0; border:1px solid var(--line); border-radius:4px; background:var(--paper); color:var(--ink); cursor:pointer; }
@@ -114,23 +130,36 @@
   .qz-result .big { font-size:3rem; font-weight:700; color:var(--seal); font-variant-numeric:tabular-nums; line-height:1.1; }
   .qz-result .of { font-size:1.1rem; color:var(--ink-soft); }
   .qz-result .msg { margin:10px 0 20px; color:var(--ink-soft); }
-  .qz-result .actions { display:flex; gap:10px; justify-content:center; }
+  .qz-result .actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-  /* Writing pad */
-  .wr-prompt { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin:4px 0 14px; }
-  .wr-prompt .lbl { font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--indigo); font-weight:700; }
-  .wr-prompt .tgt { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:1.9rem; line-height:1; }
-  .wr-prompt .rom { color:var(--ink-soft); font-size:0.92rem; }
-  .wr-stage { position:relative; width:100%; height:320px; background:#000; border:1px solid var(--line); border-radius:8px; overflow:hidden; touch-action:none; }
-  .wr-guide { position:absolute; inset:0; display:grid; place-items:center; color:rgba(255,255,255,0.15); font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; line-height:1; pointer-events:none; user-select:none; -webkit-user-select:none; }
-  .wr-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; }
-  .wr-tools { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
-  .wr-hint { font-size:0.78rem; color:var(--ink-soft); margin-top:10px; }
-
-  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
-  .stat { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:15px 16px; }
-  .stat .n { font-size:1.7rem; font-weight:700; color:var(--indigo); font-variant-numeric:tabular-nums; line-height:1.1; }
-  .stat .l { font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); margin-top:3px; }
+  /* Flashcards */
+  .fc-scene { perspective:1200px; margin:4px 0 2px; }
+  .fc-card { position:relative; width:100%; min-height:236px; transform-style:preserve-3d; transition:transform .45s cubic-bezier(.2,.7,.2,1); cursor:pointer; }
+  .fc-card.flipped { transform:rotateY(180deg); }
+  .fc-face { position:absolute; inset:0; -webkit-backface-visibility:hidden; backface-visibility:hidden; display:grid; place-items:center; text-align:center; padding:26px; border:1px solid var(--line); border-radius:12px; background:var(--paper); }
+  .fc-back { transform:rotateY(180deg); background:var(--sunken); }
+  .fc-facelbl { position:absolute; top:11px; left:15px; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-soft); }
+  .fc-big { font-size:3.4rem; line-height:1.12; word-break:break-word; }
+  .fc-big.jp { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; }
+  .fc-big.small { font-size:2.2rem; font-weight:600; }
+  .fc-sub { margin-top:12px; font-size:0.86rem; color:var(--ink-soft); letter-spacing:0.03em; }
+  .fc-tap { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:0.66rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); }
+  .fc-under { margin-top:16px; }
+  .fc-reveal { width:100%; }
+  .fc-rate { display:none; gap:8px; }
+  .fc-rate button { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:11px 4px; border-radius:8px; border:1px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer; font:inherit; transition:all .12s ease; }
+  .fc-rate button:hover { border-color:currentColor; }
+  .fc-rate button:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .fc-rate .rlbl { font-weight:600; font-size:0.9rem; }
+  .fc-rate .rivl { font-size:0.66rem; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .fc-rate .r-again { color:var(--bad); }
+  .fc-rate .r-hard  { color:var(--ink-soft); }
+  .fc-rate .r-good  { color:var(--good); }
+  .fc-rate .r-easy  { color:var(--indigo); }
+  .fc-rate .rkey { font-size:0.6rem; color:var(--ink-soft); opacity:.7; }
+  .fc-actions { display:flex; justify-content:flex-end; margin-top:14px; }
+  .fc-countline { font-size:0.8rem; color:var(--ink-soft); margin:2px 0 0; }
+  .fc-countline b { color:var(--ink); font-weight:600; }
 
   .heat { display:flex; gap:3px; overflow-x:auto; padding:4px 0 8px; }
   .hcol { display:flex; flex-direction:column; gap:3px; }
@@ -144,6 +173,7 @@
   .legend .hcell { width:11px; height:11px; }
 
   .phase-h { display:flex; align-items:baseline; gap:10px; margin:22px 0 8px; }
+  .phase-h:first-child { margin-top:4px; }
   .phase-h .name { font-weight:600; font-size:1rem; }
   .phase-h .lv { font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--indigo); border:1px solid var(--indigo); border-radius:20px; padding:1px 8px; }
   .phase-h .when { margin-left:auto; font-size:0.76rem; color:var(--ink-soft); }
@@ -158,9 +188,9 @@
   .bar { height:6px; background:var(--sunken); border-radius:20px; overflow:hidden; margin:4px 0 0; }
   .bar > i { display:block; height:100%; background:var(--good); border-radius:20px; transition:width .3s ease; }
 
-  .res-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .res { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:15px 17px; }
+  .card-wrap { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:16px 18px; }
   .res h3 { margin:0 0 9px; font-size:0.7rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--seal); font-weight:700; }
+  .res + .res { margin-top:16px; }
   .res a { display:flex; align-items:baseline; justify-content:space-between; gap:8px; text-decoration:none; color:var(--ink); font-size:0.9rem; padding:6px 0; border-bottom:1px dashed var(--line-soft); }
   .res a:last-child { border-bottom:none; }
   .res a:hover .rn { color:var(--seal); text-decoration:underline; }
@@ -174,16 +204,20 @@
   .stamp { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); border:1.5px solid var(--seal); border-radius:4px; padding:3px 9px; transform:rotate(-2deg); }
   .save-note { font-size:0.76rem; color:var(--ink-soft); margin-top:8px; }
 
+  @media (max-width:860px){
+    .dash-top { grid-template-columns:1fr; }
+    .grid-two { grid-template-columns:1fr; }
+    .grid-two section + section { margin-top:6px; }
+  }
   @media (max-width:600px){
-    .wrap{padding:28px 18px 56px;}
-    .stats{grid-template-columns:repeat(2,1fr);}
-    .res-grid{grid-template-columns:1fr;}
+    .wrap{padding:26px 16px 56px;}
     .top{gap:14px;} .top h1{font-size:1.4rem;}
     .qz-show{font-size:2.4rem;}
     .qz-keys{grid-template-columns:repeat(auto-fill,minmax(42px,1fr));}
     .qz-key{padding:11px 0; font-size:1.2rem;}
     .qz-answer{font-size:1.2rem;}
-    .wr-stage{height:280px;}
+    .fc-big{font-size:2.9rem;}
+    .fc-rate .rkey{display:none;}
   }
 </style>
 </head>
@@ -201,23 +235,35 @@
     </div>
   </header>
 
-  <h2 class="eyebrow"><span class="g" aria-hidden="true">今</span>Today<span class="hint" id="todayDate"></span></h2>
-  <div class="today">
-    <div class="date">Log what you did — tap each one you finished</div>
-    <div class="acts" id="acts"></div>
-    <p class="keeper"><b>Lazy day?</b> Just tap Flashcards. That alone keeps your streak alive — that's a win, not a failure.</p>
+  <div class="dash-top">
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">今</span>Today<span class="hint" id="todayDate"></span></h2>
+      <div class="today">
+        <div class="date">Log what you did — tap each one you finished</div>
+        <div class="acts" id="acts"></div>
+        <p class="keeper"><b>Lazy day?</b> Just do your flashcards below. That alone keeps your streak alive.</p>
+      </div>
+    </section>
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">記</span>At a glance</h2>
+      <div class="panel">
+        <div class="glance">
+          <div class="gstat seal"><div class="n" id="sCur">0</div><div class="l">Current streak</div></div>
+          <div class="gstat"><div class="n" id="sBest">0</div><div class="l">Best streak</div></div>
+          <div class="gstat"><div class="n" id="sDays">0</div><div class="l">Days studied</div></div>
+          <div class="gstat"><div class="n" id="sHrs">0</div><div class="l">Hours logged</div></div>
+          <div class="gstat"><div class="n" id="sSeen">0</div><div class="l">Cards learned</div></div>
+          <div class="gstat seal"><div class="n" id="sDue">0</div><div class="l">Due to review</div></div>
+        </div>
+      </div>
+    </section>
   </div>
+
+  <h2 class="eyebrow"><span class="g" aria-hidden="true">札</span>Flashcards<span class="hint" id="fcHint"></span></h2>
+  <div class="quiz" id="flash"></div>
 
   <h2 class="eyebrow"><span class="g" aria-hidden="true">試</span>Quiz<span class="hint" id="qzBest"></span></h2>
   <div class="quiz" id="quiz"></div>
-
-  <h2 class="eyebrow"><span class="g" aria-hidden="true">記</span>Your progress</h2>
-  <div class="stats">
-    <div class="stat"><div class="n" id="sCur">0</div><div class="l">Current streak</div></div>
-    <div class="stat"><div class="n" id="sBest">0</div><div class="l">Best streak</div></div>
-    <div class="stat"><div class="n" id="sDays">0</div><div class="l">Days studied</div></div>
-    <div class="stat"><div class="n" id="sHrs">0</div><div class="l">Hours logged</div></div>
-  </div>
 
   <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
   <div class="heat" id="heat"></div>
@@ -225,19 +271,24 @@
     <span class="hcell"></span><span class="hcell t1"></span><span class="hcell t2"></span><span class="hcell t3"></span><span class="hcell t4"></span>
     More</div>
 
-  <h2 class="eyebrow"><span class="g" aria-hidden="true">道</span>Milestones<span class="hint" id="mPct">0% done</span></h2>
-  <div class="bar" style="margin-bottom:6px"><i id="mBar" style="width:0%"></i></div>
-  <div id="milestones"></div>
-
-  <h2 class="eyebrow"><span class="g" aria-hidden="true">具</span>Free study links</h2>
-  <div class="res-grid" id="resources"></div>
+  <div class="grid-two" style="margin-top:34px">
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">道</span>Milestones<span class="hint" id="mPct">0% done</span></h2>
+      <div class="bar" style="margin-bottom:10px"><i id="mBar" style="width:0%"></i></div>
+      <div class="card-wrap" id="milestones"></div>
+    </section>
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">具</span>Free study links</h2>
+      <div class="card-wrap" id="resources"></div>
+    </section>
+  </div>
 
   <footer>
     <span>Progress saves automatically in this browser.</span>
     <span class="stamp" aria-hidden="true">頑張れ</span>
   </footer>
   <div style="text-align:right;margin-top:14px"><button class="reset" id="resetBtn">Reset all progress</button></div>
-  <p class="save-note">Tip: bookmark this page. Your streak, logs, milestones, and quiz scores live in this browser, so return here on the same device to keep them.</p>
+  <p class="save-note">Tip: bookmark this page. Your streak, logs, milestones, flashcard schedule, and quiz scores live in this browser, so return here on the same device to keep them.</p>
 </div>
 
 <script>
@@ -397,6 +448,7 @@
   if(!state.logs) state.logs = {};
   if(!state.milestones) state.milestones = {};
   if(!state.quiz) state.quiz = {};
+  if(!state.srs) state.srs = {};   // flashcard schedule: id -> {ivl,ease,reps,lapses,due}
   // Default answer input: on a phone use its own keyboard (blank box); on a
   // computer show the clickable on-screen kana keys. The user can switch either way.
   if(state.quiz.input == null) state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
@@ -404,6 +456,7 @@
 
   function dkey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function today(){ return dkey(new Date()); }
+  function addDays(dstr, n){ var d=new Date(dstr+"T00:00:00"); d.setDate(d.getDate()+n); return dkey(d); }
   function dayMins(log){ if(!log) return 0; var m=0; for(var k in MINS){ if(log[k]) m+=MINS[k]; } return m; }
   function dayActive(log){ return !!(log && log.vocab); }
 
@@ -438,6 +491,11 @@
     });
     document.getElementById("todayDate").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
   }
+  function srsDueCount(){
+    var t=today(), n=0;
+    for(var id in state.srs){ if(state.srs[id].due <= t) n++; }
+    return n;
+  }
   function renderStats(){
     var cur=computeStreak(), best=Math.max(bestStreak(),cur), days=0, mins=0;
     for(var k in state.logs){ if(dayActive(state.logs[k])) days++; mins+=dayMins(state.logs[k]); }
@@ -446,6 +504,8 @@
     document.getElementById("sBest").textContent=best;
     document.getElementById("sDays").textContent=days;
     document.getElementById("sHrs").textContent=(mins/60).toFixed(1);
+    document.getElementById("sSeen").textContent=Object.keys(state.srs).length;
+    document.getElementById("sDue").textContent=srsDueCount();
   }
   function tier(m){ if(m<=0)return""; if(m<15)return"t1"; if(m<35)return"t2"; if(m<55)return"t3"; return"t4"; }
   function renderHeat(){
@@ -494,18 +554,258 @@
     });
   }
 
-  // ---- Quiz ----
+  function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  function sample(arr,n){ return shuffle(arr.slice()).slice(0,n); }
+  function sel(a,b){ return a===b ? " selected" : ""; }
+  function norm(s){ return (s||"").trim().toLowerCase().replace(/\s+/g,"").replace(/['’`_-]/g,"").replace(/ā/g,"a").replace(/ī/g,"i").replace(/ū/g,"u").replace(/ē/g,"e").replace(/ō/g,"o"); }
+
+  function kanaFilter(setName){
+    var sets = setName==="basic" ? ["basic"] : (setName==="daku" ? ["basic","daku"] : ["basic","daku","combo"]);
+    return KANA.filter(function(x){ return sets.indexOf(x.s)>=0; });
+  }
+
+  // ============================================================
+  //  FLASHCARDS — spaced repetition (SM-2 lite, day-based)
+  // ============================================================
+  var fcCfg = { deck:"kana", dir:"jp", script:"hira", set:"basic", newLimit:15 };
+  var fcSession = null;
+
+  function fcCards(){
+    var cards=[];
+    if(fcCfg.deck==="kana"){
+      kanaFilter(fcCfg.set).forEach(function(x){
+        if(fcCfg.script==="hira"||fcCfg.script==="both") cards.push({id:"k:h:"+x.h, jp:x.h, reading:x.r, meaning:"", script:"h"});
+        if(fcCfg.script==="kata"||fcCfg.script==="both") cards.push({id:"k:k:"+h2k(x.h), jp:h2k(x.h), reading:x.r, meaning:"", script:"k"});
+      });
+    } else {
+      WORDS.forEach(function(w){ cards.push({id:"w:"+w.k, jp:w.k, reading:w.r[0], meaning:w.m, script:w.s}); });
+    }
+    return cards;
+  }
+
+  // Returns the front/back faces for the current direction.
+  function frontBack(c){
+    if(fcCfg.deck==="kana"){
+      var stag = c.script==="k" ? "katakana" : "hiragana";
+      if(fcCfg.dir==="jp") return {front:{big:c.jp, jp:true, sub:""}, back:{big:c.reading, jp:false, sub:stag}};
+      return {front:{big:c.reading, jp:false, sub:stag}, back:{big:c.jp, jp:true, sub:""}};
+    }
+    if(fcCfg.dir==="jp") return {front:{big:c.jp, jp:true, sub:""}, back:{big:c.meaning, jp:false, sub:c.reading}};
+    return {front:{big:c.meaning, jp:false, sub:""}, back:{big:c.jp, jp:true, sub:c.reading}};
+  }
+
+  // Pure scheduler: given the prior record (or null) and a rating, return the new record.
+  function calc(rec, rating){
+    var r = rec ? {ivl:rec.ivl||0, ease:rec.ease||2.5, reps:rec.reps||0, lapses:rec.lapses||0}
+                : {ivl:0, ease:2.5, reps:0, lapses:0};
+    if(rating==="again"){ r.reps=0; r.lapses++; r.ease=Math.max(1.3, r.ease-0.2); r.ivl=0; }
+    else if(rating==="hard"){ r.ease=Math.max(1.3, r.ease-0.15); r.ivl = r.reps===0 ? 1 : Math.max(1, Math.round((r.ivl||1)*1.2)); r.reps++; }
+    else if(rating==="good"){ r.ivl = r.reps===0 ? 1 : (r.reps===1 ? 3 : Math.round((r.ivl||1)*r.ease)); r.reps++; }
+    else { r.ease=r.ease+0.15; r.ivl = r.reps===0 ? 4 : Math.round((r.ivl||1)*r.ease*1.3); r.reps++; }
+    return r;
+  }
+  function fmtIvl(ivl){
+    if(ivl<=0) return "<10m";
+    if(ivl===1) return "1d";
+    if(ivl<30) return ivl+"d";
+    if(ivl<365) return Math.round(ivl/30)+"mo";
+    return (Math.round(ivl/36.5)/10)+"y";
+  }
+
+  function fcDeckField(){
+    return '<div class="qz-field"><label>Deck</label><select id="fcDeck">'+
+        '<option value="kana"'+sel(fcCfg.deck,"kana")+'>Kana</option>'+
+        '<option value="words"'+sel(fcCfg.deck,"words")+'>Words of the day</option>'+
+      '</select></div>';
+  }
+  function fcDirField(){
+    var a,b;
+    if(fcCfg.deck==="kana"){ a="Kana → reading"; b="Reading → kana"; }
+    else { a="Japanese → English"; b="English → Japanese"; }
+    return '<div class="qz-field"><label>Show</label><select id="fcDir">'+
+        '<option value="jp"'+sel(fcCfg.dir,"jp")+'>'+a+'</option>'+
+        '<option value="rev"'+sel(fcCfg.dir,"rev")+'>'+b+'</option>'+
+      '</select></div>';
+  }
+  function fcKanaFields(){
+    return '<div class="qz-field"><label>Script</label><select id="fcScript">'+
+        '<option value="hira"'+sel(fcCfg.script,"hira")+'>Hiragana</option>'+
+        '<option value="kata"'+sel(fcCfg.script,"kata")+'>Katakana</option>'+
+        '<option value="both"'+sel(fcCfg.script,"both")+'>Both (mixed)</option>'+
+      '</select></div>'+
+      '<div class="qz-field"><label>Level</label><select id="fcSet">'+
+        '<option value="basic"'+sel(fcCfg.set,"basic")+'>Basic (46)</option>'+
+        '<option value="daku"'+sel(fcCfg.set,"daku")+'>+ dakuten</option>'+
+        '<option value="combo"'+sel(fcCfg.set,"combo")+'>+ combos</option>'+
+      '</select></div>';
+  }
+
+  function fcDeckCounts(){
+    var all=fcCards(), t=today(), due=0, fresh=0;
+    all.forEach(function(c){ var r=state.srs[c.id]; if(!r) fresh++; else if(r.due<=t) due++; });
+    return { total:all.length, due:due, fresh:fresh };
+  }
+
+  function renderFcConfig(){
+    fcSession=null;
+    var host=document.getElementById("flash");
+    var c=fcDeckCounts();
+    document.getElementById("fcHint").textContent = c.due+" due · "+c.fresh+" new";
+    var deckFields = fcCfg.deck==="kana" ? fcKanaFields() : "";
+    host.innerHTML =
+      '<p class="qz-intro">Real spaced-repetition study. Flip each card, then rate how well you knew it — cards you miss come back fast, ones you know get pushed further out. Finishing a session ticks off <b>Flashcards</b> for today.</p>'+
+      '<div class="qz-controls">'+ fcDeckField() + fcDirField() + deckFields +
+        '<button class="btn btn-seal" id="fcStart">Start studying</button>'+
+      '</div>'+
+      '<p class="fc-countline"><b>'+c.due+'</b> due for review · <b>'+c.fresh+'</b> new card'+(c.fresh===1?"":"s")+' waiting · '+c.total+' in this deck</p>';
+    document.getElementById("fcDeck").onchange=function(){ fcCfg.deck=this.value; renderFcConfig(); };
+    document.getElementById("fcDir").onchange=function(){ fcCfg.dir=this.value; };
+    if(fcCfg.deck==="kana"){
+      document.getElementById("fcScript").onchange=function(){ fcCfg.script=this.value; renderFcConfig(); };
+      document.getElementById("fcSet").onchange=function(){ fcCfg.set=this.value; renderFcConfig(); };
+    }
+    document.getElementById("fcStart").onclick=startFc;
+  }
+
+  function startFc(){
+    var all=fcCards(), t=today(), due=[], fresh=[];
+    all.forEach(function(c){ var r=state.srs[c.id]; if(!r) fresh.push(c); else if(r.due<=t) due.push(c); });
+    shuffle(due); shuffle(fresh);
+    var queue = due.concat(fresh.slice(0, fcCfg.newLimit));
+    if(queue.length===0){ renderFcCaughtUp(); return; }
+    shuffle(queue);
+    fcSession = { queue:queue, pos:0, graduated:0, againCount:0, newCount:Math.min(fresh.length,fcCfg.newLimit), reviewCount:due.length, flipped:false, cram:false };
+    renderFcCard();
+  }
+
+  function cramFc(){
+    var all=fcCards();
+    fcSession = { queue:sample(all, Math.min(20, all.length)), pos:0, graduated:0, againCount:0, newCount:0, reviewCount:0, flipped:false, cram:true };
+    renderFcCard();
+  }
+
+  function renderFcCard(){
+    var s=fcSession, c=s.queue[s.pos], fb=frontBack(c);
+    var left = s.queue.length - s.pos;
+    var doneApprox = s.graduated;
+    var pct = (doneApprox+left) ? (doneApprox/(doneApprox+left)*100) : 0;
+    var host=document.getElementById("flash");
+    function face(cls, lbl, data){
+      return '<div class="fc-face '+cls+'"><span class="fc-facelbl">'+lbl+'</span>'+
+        '<div><div class="fc-big'+(data.jp?" jp":"")+(data.big&&data.big.length>6?" small":"")+'">'+data.big+'</div>'+
+        (data.sub?'<div class="fc-sub">'+data.sub+'</div>':'')+'</div>'+
+        (cls==="fc-front"?'<span class="fc-tap">tap to flip</span>':'')+'</div>';
+    }
+    var ratings=[
+      {k:"again",lbl:"Again",cls:"r-again",key:"1"},
+      {k:"hard", lbl:"Hard", cls:"r-hard", key:"2"},
+      {k:"good", lbl:"Good", cls:"r-good", key:"3"},
+      {k:"easy", lbl:"Easy", cls:"r-easy", key:"4"}
+    ];
+    var rateHtml="";
+    ratings.forEach(function(rt){
+      var ivl = fmtIvl(calc(state.srs[c.id], rt.k).ivl);
+      rateHtml+='<button data-r="'+rt.k+'"><span class="rlbl '+rt.cls+'">'+rt.lbl+'</span><span class="rivl">'+ivl+'</span><span class="rkey">'+rt.key+'</span></button>';
+    });
+    host.innerHTML =
+      '<div class="qz-topbar"><span>'+(s.cram?"Cram session":"Studying")+'</span><span>'+left+' left · '+s.graduated+' done</span></div>'+
+      '<div class="qz-progress-bar"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="fc-scene"><div class="fc-card" id="fcCard">'+
+        face("fc-front","Prompt", fb.front)+
+        face("fc-back","Answer", fb.back)+
+      '</div></div>'+
+      '<div class="fc-under">'+
+        '<button class="btn btn-seal fc-reveal" id="fcReveal">Show answer</button>'+
+        '<div class="fc-rate" id="fcRate">'+rateHtml+'</div>'+
+      '</div>'+
+      '<div class="fc-actions"><button class="btn btn-ghost" id="fcQuit">End session</button></div>';
+    s.flipped=false;
+    var card=document.getElementById("fcCard");
+    var reveal=document.getElementById("fcReveal");
+    var rateRow=document.getElementById("fcRate");
+    function flip(){ if(s.flipped) return; s.flipped=true; card.classList.add("flipped"); reveal.style.display="none"; rateRow.style.display="flex"; }
+    card.onclick=flip; reveal.onclick=flip;
+    rateRow.querySelectorAll("button").forEach(function(b){ b.onclick=function(){ rateFc(b.getAttribute("data-r")); }; });
+    document.getElementById("fcQuit").onclick=function(){ finishFc(true); };
+  }
+
+  function rateFc(rating){
+    var s=fcSession; if(!s || !s.flipped) return;
+    var c=s.queue[s.pos];
+    var r=calc(state.srs[c.id], rating);
+    r.due = addDays(today(), r.ivl);   // ivl 0 → due today (re-shown this session)
+    state.srs[c.id]=r;
+    if(rating==="again"){ s.againCount++; s.queue.push(c); }
+    else s.graduated++;
+    s.pos++; save();
+    if(s.pos >= s.queue.length) finishFc(false);
+    else renderFcCard();
+  }
+
+  function finishFc(early){
+    var s=fcSession;
+    var studied = s ? s.graduated : 0;
+    // Finishing real study logs Flashcards for today (the keystone habit).
+    if(studied>0){ var l=state.logs[today()]||{}; if(!l.vocab){ l.vocab=true; state.logs[today()]=l; } }
+    save(); renderAll();
+    fcSession=null;
+    var c=fcDeckCounts();
+    document.getElementById("fcHint").textContent = c.due+" due · "+c.fresh+" new";
+    var host=document.getElementById("flash");
+    var msg = early ? "Session ended." :
+      (studied>0 ? "Nice work — every card you rated is now scheduled to come back at the right time." : "Session ended.");
+    host.innerHTML =
+      '<div class="qz-result">'+
+        '<div><span class="big">'+studied+'</span><span class="of"> card'+(studied===1?"":"s")+' studied</span></div>'+
+        (s && s.againCount ? '<div class="qz-dir" style="margin-top:6px">'+s.againCount+' repeat'+(s.againCount===1?"":"s")+' along the way</div>' : '')+
+        '<p class="msg">'+msg+' <br>'+c.due+' still due · '+c.fresh+' new left in this deck.</p>'+
+        '<div class="actions">'+
+          '<button class="btn btn-seal" id="fcMore">Study more</button>'+
+          '<button class="btn btn-ghost" id="fcChange">Change deck</button>'+
+        '</div>'+
+      '</div>';
+    document.getElementById("fcMore").onclick=startFc;
+    document.getElementById("fcChange").onclick=renderFcConfig;
+  }
+
+  function renderFcCaughtUp(){
+    var host=document.getElementById("flash");
+    host.innerHTML =
+      '<div class="qz-result">'+
+        '<div class="big" style="font-size:2.2rem">✓ All caught up</div>'+
+        '<p class="msg">Nothing is due in this deck right now, and there are no new cards left. Come back later, or cram a quick round anyway.</p>'+
+        '<div class="actions">'+
+          '<button class="btn btn-seal" id="fcCram">Cram 20 anyway</button>'+
+          '<button class="btn btn-ghost" id="fcChange">Change deck</button>'+
+        '</div>'+
+      '</div>';
+    document.getElementById("fcCram").onclick=cramFc;
+    document.getElementById("fcChange").onclick=renderFcConfig;
+  }
+
+  // Keyboard shortcuts while a flashcard is on screen: Space/Enter flips, 1–4 rate.
+  document.addEventListener("keydown", function(e){
+    if(!fcSession) return;
+    var card=document.getElementById("fcCard"); if(!card) return;
+    var tag=e.target && e.target.tagName ? e.target.tagName.toLowerCase() : "";
+    if(tag==="input"||tag==="textarea"||tag==="select") return;
+    if(!fcSession.flipped){
+      if(e.key===" "||e.key==="Enter"){ e.preventDefault(); var r=document.getElementById("fcReveal"); if(r) r.click(); }
+    } else {
+      var map={"1":"again","2":"hard","3":"good","4":"easy"};
+      if(map[e.key]){ e.preventDefault(); rateFc(map[e.key]); }
+    }
+  });
+
+  // ============================================================
+  //  QUIZ  (kana / words / writing practice)
+  // ============================================================
   var cfg = { type:"kana", script:"hira", set:"basic", writePrompt:"kana" };
   var quiz = null;
   var writer = null;
-  function sel(a,b){ return a===b ? " selected" : ""; }
-  function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
-  function sample(arr,n){ return shuffle(arr.slice()).slice(0,n); }
-  function norm(s){ return (s||"").trim().toLowerCase().replace(/\s+/g,"").replace(/['’`_-]/g,"").replace(/ā/g,"a").replace(/ī/g,"i").replace(/ū/g,"u").replace(/ē/g,"e").replace(/ō/g,"o"); }
 
   function kanaPool(){
-    var sets = cfg.set==="basic" ? ["basic"] : (cfg.set==="daku" ? ["basic","daku"] : ["basic","daku","combo"]);
-    var base = KANA.filter(function(x){ return sets.indexOf(x.s)>=0; });
+    var base = kanaFilter(cfg.set);
     var pool=[];
     base.forEach(function(x){
       if(cfg.script==="hira"||cfg.script==="both") pool.push({kana:x.h, romaji:x.r, script:"h"});
@@ -612,17 +912,12 @@
     var scriptTag = "";
     if(q.dir==="romaji"){ scriptTag = ' <span style="font-size:0.8rem;color:var(--ink-soft)">('+(q.script==="k"?"katakana":"hiragana")+')</span>'; }
     var meaning = q.meaning ? '<div class="qz-meaning">meaning: <b>'+q.meaning+'</b></div>' : '';
-    // "Answer in Japanese" questions have two input styles the user can switch between:
-    //   keypad   — tap on-screen kana keys (no Japanese keyboard needed; good on a PC)
-    //   keyboard — a blank box typed with the device's own keyboard (good on a phone)
     var useKeypad = q.dir==="romaji" && state.quiz.input==="keypad";
     var toggle = q.dir==="romaji" ? inputToggleHtml() : '';
     var pad = useKeypad ? '<div class="qz-pad" id="qzPad"></div>' : '';
     var ansCls = q.dir==="romaji" ? "qz-answer jp" : "qz-answer";
     var ph = q.dir==="jp" ? "type rōmaji, then Enter"
       : (useKeypad ? "tap kana below (or type)" : "type Japanese with your keyboard");
-    // In keypad mode, suppress the device's soft keyboard so it can't cover the keys.
-    // In keyboard mode, leave it on so the phone's own keyboard appears.
     var im = useKeypad ? ' inputmode="none"' : '';
     host.innerHTML =
       '<div class="qz-topbar"><span>Question '+(quiz.idx+1)+' / '+quiz.qs.length+'</span><span>Score '+quiz.score+'</span></div>'+
@@ -670,7 +965,6 @@
     var isK = quiz.padScript==="k";
     var keysHtml="";
     KANA.forEach(function(x){ var ch = isK ? h2k(x.h) : x.h; keysHtml+='<button class="qz-key" data-k="'+ch+'">'+ch+'</button>'; });
-    // extras: small tsu + long-vowel mark
     var tsu = isK ? "ッ" : "っ";
     keysHtml+='<button class="qz-key" data-k="'+tsu+'">'+tsu+'</button>';
     keysHtml+='<button class="qz-key" data-k="ー">ー</button>';
@@ -766,7 +1060,6 @@
   }
 
   function startWrite(){
-    // Answer stays hidden by default so it's a real recall test.
     writer = { guideOn:false, cur:pickWriteTarget() };
     renderWrite();
   }
@@ -850,12 +1143,14 @@
   function renderAll(){ renderToday(); renderStats(); renderHeat(); }
 
   document.getElementById("resetBtn").onclick=function(){
-    if(confirm("Reset everything? Your streak, logs, milestones, and quiz scores will be cleared.")){
-      state={logs:{},milestones:{},quiz:{}}; save(); renderAll(); renderMilestones(); renderConfig();
+    if(confirm("Reset everything? Your streak, logs, milestones, flashcard schedule, and quiz scores will be cleared.")){
+      state={logs:{},milestones:{},quiz:{},srs:{}};
+      state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
+      save(); renderAll(); renderMilestones(); renderConfig(); renderFcConfig();
     }
   };
 
-  renderAll(); renderMilestones(); renderResources(); renderConfig();
+  renderAll(); renderMilestones(); renderResources(); renderConfig(); renderFcConfig();
 })();
 </script>
 </body>
