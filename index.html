@@ -209,6 +209,56 @@
   .stamp { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); border:1.5px solid var(--seal); border-radius:4px; padding:3px 9px; transform:rotate(-2deg); }
   .save-note { font-size:0.76rem; color:var(--ink-soft); margin-top:8px; }
 
+  /* Audio */
+  .aud-ctl { display:flex; align-items:center; gap:6px; margin-left:16px; }
+  .aud-auto, .aud-rate {
+    font:inherit; font-size:0.72rem; background:none; border:1px solid var(--line);
+    color:var(--ink-soft); border-radius:4px; padding:4px 9px; cursor:pointer; white-space:nowrap;
+  }
+  .aud-auto.on { border-color:var(--seal); color:var(--seal); }
+  .aud-auto:hover, .aud-rate:hover { border-color:var(--seal); color:var(--seal); }
+  .aud-auto:focus-visible, .aud-rate:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+
+  .spk {
+    font:inherit; font-size:0.8rem; line-height:1; vertical-align:middle;
+    background:none; border:1px solid var(--line); color:var(--ink-soft);
+    border-radius:50%; width:30px; height:30px; padding:0; cursor:pointer;
+    display:inline-grid; place-items:center; margin-left:10px; flex:0 0 auto;
+    transition:border-color .13s ease, color .13s ease, transform .1s ease;
+  }
+  .spk:hover { border-color:var(--seal); color:var(--seal); }
+  .spk:active { transform:scale(0.9); }
+  .spk:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .spk.big { width:40px; height:40px; font-size:1.05rem; }
+
+  .aud-warn {
+    margin:14px 0 0; padding:11px 15px; border:1px solid var(--line);
+    border-left:3px solid var(--seal); border-radius:5px; background:var(--surface);
+    font-size:0.83rem; color:var(--ink-soft); line-height:1.55;
+  }
+  .aud-warn b { color:var(--ink); }
+  .aud-warn .how { display:block; margin-top:5px; }
+  .aud-warn .x {
+    float:right; font:inherit; font-size:1rem; line-height:1; background:none; border:none;
+    color:var(--ink-soft); cursor:pointer; padding:0 0 0 12px;
+  }
+  .aud-warn .x:hover { color:var(--seal); }
+
+  /* Listening quiz */
+  .qz-listen { display:flex; flex-direction:column; align-items:center; gap:9px; margin:20px 0 8px; }
+  .qz-play {
+    font:inherit; font-size:1.7rem; width:88px; height:88px; border-radius:50%;
+    background:var(--seal); color:#fff; border:none; cursor:pointer;
+    display:grid; place-items:center; transition:background .13s ease, transform .1s ease;
+  }
+  .qz-play:hover { background:var(--seal-deep); }
+  .qz-play:active { transform:scale(0.94); }
+  .qz-play:focus-visible { outline:2px solid var(--indigo); outline-offset:3px; }
+  .qz-replay { font-size:0.74rem; letter-spacing:0.05em; color:var(--ink-soft); }
+  .qz-reveal-jp { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:1.5rem; }
+  .fc-say { display:flex; align-items:center; justify-content:center; gap:2px; margin-bottom:10px; }
+  .fc-say span { font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); }
+
   @media (max-width:1024px){
     .study-row { grid-template-columns:1fr; }
     .study-row section + section { margin-top:6px; }
@@ -221,6 +271,8 @@
   @media (max-width:600px){
     .wrap{padding:26px 16px 56px;}
     .top{gap:14px;} .top h1{font-size:1.4rem;}
+    .top{flex-wrap:wrap;} .aud-ctl{margin-left:0;} .top-reset{margin-left:auto;}
+    .spk{width:34px;height:34px;} .qz-play{width:96px;height:96px;}
     .qz-show{font-size:2.4rem;}
     .qz-keys{grid-template-columns:repeat(auto-fill,minmax(42px,1fr));}
     .qz-key{padding:11px 0; font-size:1.2rem;}
@@ -242,8 +294,10 @@
       <div class="flame" id="streakBig">0</div>
       <div class="lbl">Day streak</div>
     </div>
+    <div class="aud-ctl" id="audCtl"></div>
     <button class="top-reset" id="resetTop" title="Reset all saved progress">↺ Reset</button>
   </header>
+  <div id="audWarn"></div>
 
   <div class="dash-top">
     <section>
@@ -467,7 +521,143 @@
   // Default answer input: on a phone use its own keyboard (blank box); on a
   // computer show the clickable on-screen kana keys. The user can switch either way.
   if(state.quiz.input == null) state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
+  if(!state.audio) state.audio = {};
+  if(state.audio.auto == null) state.audio.auto = true;   // speak on reveal
+  if(state.audio.rate == null) state.audio.rate = 0.8;    // beginners want it slower
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+
+  // ============================================================
+  //  AUDIO  (Web Speech API — no files, no network, no keys)
+  // ============================================================
+  // Android, iOS and Edge all ship a Japanese voice. Chrome on Windows only
+  // exposes voices the OS itself has, so a machine with no Japanese language
+  // pack has none — we detect that and say so, rather than letting an English
+  // voice read kana in an American accent.
+  var Speech = (function(){
+    var synth = window.speechSynthesis;
+    var voice = null;      // the chosen ja-JP voice, or null if there is none
+    var settled = false;   // the voice list has actually arrived
+    var subs = [];
+
+    function pick(){
+      var vs = (synth && synth.getVoices()) || [];
+      if(!vs.length) return false;   // Chrome returns [] until voices load
+      var ja = vs.filter(function(v){ return /^ja\b|^ja[-_]/i.test(v.lang || ""); });
+      // Prefer an offline voice: instant, and works with no connection.
+      var local = ja.filter(function(v){ return v.localService; });
+      voice = local[0] || ja[0] || null;
+      return true;
+    }
+    function settle(){
+      if(settled) return;
+      if(!pick()) return;
+      settled = true;
+      subs.forEach(function(f){ f(); }); subs = [];
+    }
+    if(synth){
+      settle();
+      if(!settled){
+        if(synth.addEventListener) synth.addEventListener("voiceschanged", settle);
+        else synth.onvoiceschanged = settle;
+        // Some builds never fire the event. Give up after a moment so the UI
+        // stops waiting on a list that is never coming.
+        setTimeout(function(){
+          if(settled) return;
+          pick(); settled = true;
+          subs.forEach(function(f){ f(); }); subs = [];
+        }, 2000);
+      }
+    }
+    return {
+      supported: function(){ return !!synth; },
+      ok:        function(){ return !!(synth && voice); },
+      voice:     function(){ return voice; },
+      onReady:   function(f){ if(settled) f(); else subs.push(f); },
+      stop:      function(){ try { if(synth) synth.cancel(); } catch(e){} },
+      say: function(text, opts){
+        if(!synth || !voice || !text) return false;
+        opts = opts || {};
+        try {
+          var u = new SpeechSynthesisUtterance(String(text));
+          u.lang  = voice.lang || "ja-JP";
+          // Naming the voice is better than relying on lang alone, but a
+          // rejected assignment must not cost us the whole utterance.
+          try { u.voice = voice; } catch(e){}
+          u.rate  = opts.rate != null ? opts.rate : (state.audio.rate || 0.8);
+          // Chrome silently drops an utterance queued in the same tick as
+          // cancel(), so when something is already playing, give it a beat.
+          if(synth.speaking || synth.pending){
+            synth.cancel();
+            setTimeout(function(){ try { synth.speak(u); } catch(e){} }, 80);
+          } else synth.speak(u);
+          return true;
+        } catch(e){ return false; }
+      }
+    };
+  })();
+
+  function speak(text, opts){ return Speech.say(text, opts); }
+  function autoSpeak(text){ if(state.audio.auto) Speech.say(text); }
+  function esc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;")
+                    .replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  // Markup for a 🔊 button. One delegated handler below serves every one of
+  // them, so callers just drop the string into their HTML.
+  function spk(text, big){
+    if(!Speech.ok() || !text) return "";
+    return '<button type="button" class="spk'+(big?" big":"")+'" data-say="'+esc(text)+'"'+
+      ' title="Play audio" aria-label="Play audio"><span aria-hidden="true">🔊</span></button>';
+  }
+  // Capture phase: a speaker button sitting on a flashcard must not also flip it.
+  document.addEventListener("click", function(e){
+    var b = e.target && e.target.closest ? e.target.closest(".spk") : null;
+    if(!b) return;
+    e.preventDefault(); e.stopPropagation();
+    speak(b.getAttribute("data-say"));
+  }, true);
+
+  function renderAudioCtl(){
+    var host=document.getElementById("audCtl"); if(!host) return;
+    if(!Speech.ok()){ host.innerHTML=""; return; }
+    var r=String(state.audio.rate);
+    host.innerHTML =
+      '<button type="button" class="aud-auto'+(state.audio.auto?" on":"")+'" id="audAuto"'+
+        ' title="Play the Japanese automatically whenever an answer is revealed">'+
+        (state.audio.auto?"🔊":"🔇")+' Auto</button>'+
+      '<select class="aud-rate" id="audRate" title="Playback speed" aria-label="Audio speed">'+
+        '<option value="0.6"'+sel(r,"0.6")+'>Slow</option>'+
+        '<option value="0.8"'+sel(r,"0.8")+'>Relaxed</option>'+
+        '<option value="1"'+sel(r,"1")+'>Normal</option>'+
+      '</select>';
+    document.getElementById("audAuto").onclick=function(){
+      state.audio.auto=!state.audio.auto; save(); renderAudioCtl();
+      if(state.audio.auto) speak("はい");
+    };
+    document.getElementById("audRate").onchange=function(){
+      state.audio.rate=parseFloat(this.value); save(); speak("こんにちは");
+    };
+  }
+
+  function renderAudioWarn(){
+    var host=document.getElementById("audWarn"); if(!host) return;
+    if(Speech.ok() || state.audio.hideWarn){ host.innerHTML=""; return; }
+    var body = Speech.supported()
+      ? '<b>No Japanese voice on this device, so audio is off.</b>'+
+        '<span class="how">Everything else works as before. To turn audio on — '+
+        '<b>Windows:</b> Settings → Time &amp; language → Language &amp; region → Add a language → '+
+        '日本語, then tick <i>Speech</i> and restart your browser. '+
+        '<b>Or just open this page in Microsoft Edge</b>, which has Japanese voices built in with '+
+        'nothing to install. Android and iPhone already have one.</span>'
+      : '<b>This browser has no speech support, so audio is off.</b>'+
+        '<span class="how">Everything else works as before.</span>';
+    host.innerHTML='<p class="aud-warn"><button type="button" class="x" id="audX" '+
+      'title="Dismiss" aria-label="Dismiss">×</button>'+body+'</p>';
+    document.getElementById("audX").onclick=function(){
+      state.audio.hideWarn=true; save(); renderAudioWarn();
+    };
+  }
 
   function dkey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function today(){ return dkey(new Date()); }
@@ -731,6 +921,10 @@
       '</div></div>'+
       '<div class="fc-under">'+
         '<button class="btn btn-seal fc-reveal" id="fcReveal">Show answer</button>'+
+        // Sits below the card so it works in both directions — on a
+        // "kana → reading" card the Japanese is on the front, not the back.
+        (spk(c.jp) ? '<div class="fc-say" id="fcSay" style="display:none">'+
+          '<span>Hear it</span>'+spk(c.jp)+'</div>' : '')+
         '<div class="fc-rate" id="fcRate">'+rateHtml+'</div>'+
       '</div>'+
       '<div class="fc-actions"><button class="btn btn-ghost" id="fcSkip">Skip →</button><button class="btn btn-ghost" id="fcQuit">End session</button></div>';
@@ -738,7 +932,15 @@
     var card=document.getElementById("fcCard");
     var reveal=document.getElementById("fcReveal");
     var rateRow=document.getElementById("fcRate");
-    function flip(){ if(s.flipped) return; s.flipped=true; card.classList.add("flipped"); reveal.style.display="none"; rateRow.style.display="flex"; }
+    // Flipping reveals the answer, so this is the safe moment to play the
+    // Japanese — whichever face it happens to be on.
+    function flip(){
+      if(s.flipped) return;
+      s.flipped=true; card.classList.add("flipped");
+      reveal.style.display="none"; rateRow.style.display="flex";
+      var say=document.getElementById("fcSay"); if(say) say.style.display="flex";
+      autoSpeak(c.jp);
+    }
     card.onclick=flip; reveal.onclick=flip;
     rateRow.querySelectorAll("button").forEach(function(b){ b.onclick=function(){ rateFc(b.getAttribute("data-r")); }; });
     // Skip: move to the next card without rating (the current card returns later this session).
@@ -817,7 +1019,7 @@
   // ============================================================
   //  QUIZ  (kana / words / writing practice)
   // ============================================================
-  var cfg = { type:"kana", script:"hira", set:"basic", writePrompt:"kana" };
+  var cfg = { type:"kana", script:"hira", set:"basic", writePrompt:"kana", listenSrc:"kana" };
   var quiz = null;
   var writer = null;
 
@@ -833,6 +1035,20 @@
 
   function buildQuestions(){
     var qs=[];
+    if(cfg.type==="listen"){
+      // Pure ear training: the character is never shown, only played.
+      if(cfg.listenSrc==="words"){
+        sample(WORDS, Math.min(20, WORDS.length)).forEach(function(w){
+          qs.push({dir:"listen", audio:w.k, accept:w.r, correct:w.r[0], reveal:w.k, meaning:w.m, script:w.s});
+        });
+      } else {
+        var lp=kanaPool();
+        sample(lp, Math.min(20, lp.length)).forEach(function(p){
+          qs.push({dir:"listen", audio:p.kana, accept:rvar(p.romaji), correct:p.romaji, reveal:p.kana, script:p.script});
+        });
+      }
+      return shuffle(qs);
+    }
     if(cfg.type==="kana"){
       var pool=kanaPool();
       var toRomaji=sample(pool, Math.min(10,pool.length));
@@ -848,16 +1064,23 @@
     return shuffle(qs);
   }
 
+  function bestKeyFor(t){
+    return t==="listen" ? "listenBest" : t==="kana" ? "kanaBest" : "wordsBest";
+  }
   function renderBest(){
     if(cfg.type==="write"){ document.getElementById("qzBest").textContent = ""; return; }
-    var b = cfg.type==="kana" ? state.quiz.kanaBest : state.quiz.wordsBest;
+    var b = state.quiz[bestKeyFor(cfg.type)];
     document.getElementById("qzBest").textContent = (b!=null) ? ("Best "+b+" / 20") : "";
   }
 
   function typeField(){
+    // Listening is only offered when there is a voice to listen to.
+    var listen = Speech.ok()
+      ? '<option value="listen"'+sel(cfg.type,"listen")+'>Listening quiz</option>' : '';
     return '<div class="qz-field"><label>Mode</label><select id="qzType">'+
         '<option value="kana"'+sel(cfg.type,"kana")+'>Kana quiz</option>'+
         '<option value="words"'+sel(cfg.type,"words")+'>Words quiz</option>'+
+        listen +
         '<option value="write"'+sel(cfg.type,"write")+'>Writing practice</option>'+
       '</select></div>';
   }
@@ -900,6 +1123,27 @@
       return;
     }
 
+    if(cfg.type==="listen"){
+      var src = '<div class="qz-field"><label>Listen to</label><select id="lsSrc">'+
+          '<option value="kana"'+sel(cfg.listenSrc,"kana")+'>Kana</option>'+
+          '<option value="words"'+sel(cfg.listenSrc,"words")+'>Words of the day</option>'+
+        '</select></div>';
+      var lOpts = cfg.listenSrc==="kana" ? kanaFields() : "";
+      host.innerHTML =
+        '<p class="qz-intro">Ear training: 20 rounds where you only <b>hear</b> the Japanese — nothing is shown. Type what you heard in rōmaji. Replay as often as you like; use the <b>Slow</b> speed in the header while you’re getting started. Reading practice this is not — it’s the one drill that trains the ear.</p>'+
+        '<div class="qz-controls">'+ typeField() + src + lOpts +
+          '<button class="btn btn-seal" id="qzStart">Start listening</button>'+
+        '</div>';
+      document.getElementById("qzType").onchange=function(){ cfg.type=this.value; renderConfig(); };
+      document.getElementById("lsSrc").onchange=function(){ cfg.listenSrc=this.value; renderConfig(); };
+      if(cfg.listenSrc==="kana"){
+        document.getElementById("qzScript").onchange=function(){ cfg.script=this.value; };
+        document.getElementById("qzSet").onchange=function(){ cfg.set=this.value; };
+      }
+      document.getElementById("qzStart").onclick=startQuiz;
+      return;
+    }
+
     var kanaOpts = cfg.type==="kana" ? kanaFields() : "";
     host.innerHTML =
       '<p class="qz-intro">20 questions: 10 show Japanese (type the rōmaji) and 10 show rōmaji (answer in Japanese). For the Japanese answers, use your device’s own keyboard or tap the on-screen kana keys — it picks a default for your device ('+(isTouchDevice?"phone: your keyboard":"computer: on-screen keys")+') and you can switch per question.</p>'+
@@ -924,23 +1168,34 @@
     var q=quiz.qs[quiz.idx];
     quiz.answered=false;
     quiz.padScript = q.script==="k" ? "k" : "h";
-    var dirLabel = q.dir==="jp" ? "Type the rōmaji" : "Answer in Japanese";
+    var isListen = q.dir==="listen";
+    var dirLabel = isListen ? "Listen and type the rōmaji"
+      : q.dir==="jp" ? "Type the rōmaji" : "Answer in Japanese";
     var showCls = q.dir==="jp" ? "qz-show" : "qz-show romaji";
     var scriptTag = "";
     if(q.dir==="romaji"){ scriptTag = ' <span style="font-size:0.8rem;color:var(--ink-soft)">('+(q.script==="k"?"katakana":"hiragana")+')</span>'; }
-    var meaning = q.meaning ? '<div class="qz-meaning">meaning: <b>'+q.meaning+'</b></div>' : '';
+    // In listening rounds the meaning would give the answer away — hold it back
+    // until the feedback.
+    var meaning = (q.meaning && !isListen) ? '<div class="qz-meaning">meaning: <b>'+q.meaning+'</b></div>' : '';
     var useKeypad = q.dir==="romaji" && state.quiz.input==="keypad";
     var toggle = q.dir==="romaji" ? inputToggleHtml() : '';
     var pad = useKeypad ? '<div class="qz-pad" id="qzPad"></div>' : '';
     var ansCls = q.dir==="romaji" ? "qz-answer jp" : "qz-answer";
-    var ph = q.dir==="jp" ? "type rōmaji, then Enter"
+    var ph = (q.dir==="jp"||isListen) ? "type rōmaji, then Enter"
       : (useKeypad ? "tap kana below (or type)" : "type Japanese with your keyboard");
     var im = useKeypad ? ' inputmode="none"' : '';
+    var stage = isListen
+      ? '<div class="qz-listen">'+
+          '<button type="button" class="qz-play" id="qzPlay" aria-label="Play the sound">'+
+            '<span aria-hidden="true">🔊</span></button>'+
+          '<span class="qz-replay">tap to replay</span>'+
+        '</div>'
+      : '<div class="'+showCls+'">'+q.show+scriptTag+'</div>';
     host.innerHTML =
       '<div class="qz-topbar"><span>Question '+(quiz.idx+1)+' / '+quiz.qs.length+'</span><span>Score '+quiz.score+'</span></div>'+
       '<div class="qz-progress-bar"><i style="width:'+(quiz.idx/quiz.qs.length*100)+'%"></i></div>'+
       '<div class="qz-dir">'+dirLabel+'</div>'+
-      '<div class="'+showCls+'">'+q.show+scriptTag+'</div>'+ meaning +
+      stage + meaning +
       '<input class="'+ansCls+'" id="qzAns"'+im+' autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+ph+'">'+
       toggle + pad +
       '<div class="qz-feedback" id="qzFb"></div>'+
@@ -948,6 +1203,10 @@
     var ans=document.getElementById("qzAns");
     if(useKeypad) renderPad();
     if(q.dir==="romaji") wireInputToggle();
+    if(isListen){
+      document.getElementById("qzPlay").onclick=function(){ speak(q.audio); };
+      speak(q.audio);   // play once on arrival; the button replays it
+    }
     ans.focus();
     ans.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); onAction(); } });
     document.getElementById("qzCheck").onclick=onAction;
@@ -1019,17 +1278,28 @@
     var q=quiz.qs[quiz.idx];
     var val=document.getElementById("qzAns").value;
     var ok;
-    if(q.dir==="jp"){ ok = q.accept.some(function(a){ return norm(a)===norm(val); }); }
+    // Rōmaji answers are compared loosely (norm); Japanese answers exactly.
+    if(q.dir==="jp"||q.dir==="listen"){ ok = q.accept.some(function(a){ return norm(a)===norm(val); }); }
     else { ok = q.accept.some(function(a){ return a.trim()===val.trim(); }); }
     quiz.answered=true;
     if(ok) quiz.score++;
     var fb=document.getElementById("qzFb");
     fb.className="qz-feedback show "+(ok?"ok":"no");
-    if(ok){ fb.innerHTML="<b>✓ Correct!</b>"; }
-    else {
-      var ansTxt = q.dir==="jp" ? q.correct : '<span class="ans">'+q.correct+'</span>';
-      fb.innerHTML="<b>✗ Not quite.</b> Answer: "+ansTxt;
+    // The answer is out now, so the Japanese can be shown and heard.
+    var jp = q.dir==="listen" ? q.reveal : (q.dir==="jp" ? q.show : q.correct);
+    var extra = "";
+    if(q.dir==="listen"){
+      extra = ' <span class="qz-reveal-jp jp">'+q.reveal+'</span>'+
+        (q.meaning ? ' <span style="color:var(--ink-soft)">· '+q.meaning+'</span>' : '');
     }
+    if(ok){ fb.innerHTML="<b>✓ Correct!</b>"+extra+spk(jp); }
+    else {
+      var ansTxt = (q.dir==="jp"||q.dir==="listen") ? q.correct : '<span class="ans">'+q.correct+'</span>';
+      fb.innerHTML="<b>✗ Not quite.</b> Answer: "+ansTxt+extra+spk(jp);
+    }
+    // Don't replay in listening mode — they just heard it, and a repeat on top
+    // of a manual replay is noise.
+    if(q.dir!=="listen") autoSpeak(jp);
     document.getElementById("qzAns").disabled=true;
     var btn=document.getElementById("qzCheck");
     btn.textContent = (quiz.idx+1 < quiz.qs.length) ? "Next" : "See score";
@@ -1042,7 +1312,7 @@
 
   function renderResult(){
     var n=quiz.score, total=quiz.qs.length;
-    var bestKey = cfg.type==="kana" ? "kanaBest" : "wordsBest";
+    var bestKey = bestKeyFor(cfg.type);
     var prev=state.quiz[bestKey];
     var isBest = (prev==null || n>prev);
     if(isBest){ state.quiz[bestKey]=n; save(); }
@@ -1086,8 +1356,10 @@
     var c=writer.cur, hasTarget=!!c.target;
     var modeLbl = cfg.writePrompt==="kana" ? "Kana" : cfg.writePrompt==="words" ? "Words" : "Free";
     var stag = c.script==="k" ? "katakana" : "hiragana";
+    // Hearing the sound is the point of the prompt; it gives away nothing
+    // about the shape you have to draw.
     var promptHtml = hasTarget
-      ? '<div class="wr-prompt"><span class="lbl">Write in Japanese</span><span class="tgt" style="font-family:inherit;font-weight:700">'+c.romaji+'</span><span class="rom">('+stag+')'+(c.meaning?" · "+c.meaning:"")+'</span></div>'
+      ? '<div class="wr-prompt"><span class="lbl">Write in Japanese</span><span class="tgt" style="font-family:inherit;font-weight:700">'+c.romaji+spk(c.target)+'</span><span class="rom">('+stag+')'+(c.meaning?" · "+c.meaning:"")+'</span></div>'
       : '<div class="wr-prompt"><span class="lbl">Free draw</span><span class="rom">write anything you’re practicing — kana, kanji, whatever</span></div>';
     var guideHtml = hasTarget ? '<div class="wr-guide" id="wrGuide"'+(writer.guideOn?"":' style="display:none"')+'>'+c.target+'</div>' : '';
     host.innerHTML =
@@ -1109,6 +1381,7 @@
         writer.guideOn=!writer.guideOn;
         document.getElementById("wrGuide").style.display=writer.guideOn?"":"none";
         this.textContent=writer.guideOn?"Hide answer":"Reveal answer";
+        if(writer.guideOn) autoSpeak(c.target);
       };
     }
     var nx=document.getElementById("wrNext");
@@ -1161,15 +1434,25 @@
 
   function doReset(){
     if(confirm("Reset everything? Your streak, logs, milestones, flashcard schedule, and quiz scores will be cleared.")){
-      state={logs:{},milestones:{},quiz:{},srs:{}};
+      state={logs:{},milestones:{},quiz:{},srs:{},audio:{auto:true,rate:0.8}};
       state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
+      Speech.stop();
       save(); renderAll(); renderMilestones(); renderConfig(); renderFcConfig();
+      renderAudioCtl(); renderAudioWarn();
     }
   }
   document.getElementById("resetBtn").onclick=doReset;
   document.getElementById("resetTop").onclick=doReset;
 
   renderAll(); renderMilestones(); renderResources(); renderConfig(); renderFcConfig();
+
+  // Voices arrive asynchronously in Chrome, so the audio controls and the
+  // Listening mode can only be drawn once the list is in. At that point
+  // nothing is in progress yet, but guard anyway rather than wiping a session.
+  Speech.onReady(function(){
+    renderAudioCtl(); renderAudioWarn();
+    if(!quiz && !writer) renderConfig();
+  });
 })();
 </script>
 </body>
