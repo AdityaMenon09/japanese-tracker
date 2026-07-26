@@ -289,6 +289,38 @@
   .ls-row .enx { font-size:0.83rem; color:var(--ink-soft); margin-top:2px; }
   .ls-row .knj { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:0.95rem; color:var(--ink-soft); margin-top:2px; }
 
+  /* Personal sentences (per lesson) */
+  .mine { margin-top:13px; padding-top:11px; border-top:1px dashed var(--line-soft); }
+  .mine .lbl { display:block; font-size:0.6rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; margin-bottom:6px; }
+  .mine-form { display:flex; gap:7px; align-items:flex-start; }
+  .mine-in {
+    flex:1 1 auto; min-width:0; font:inherit; font-size:0.9rem; padding:8px 11px;
+    background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:5px;
+  }
+  .mine-in:focus { outline:2px solid var(--indigo); outline-offset:1px; }
+  .mine-go { font:inherit; font-size:0.82rem; font-weight:600; padding:8px 14px; border:none; border-radius:5px; background:var(--seal); color:#fff; cursor:pointer; white-space:nowrap; }
+  .mine-go:hover:not(:disabled) { background:var(--seal-deep); }
+  .mine-go:disabled { opacity:0.55; cursor:default; }
+  .mine-msg { margin:7px 0 0; font-size:0.78rem; color:var(--ink-soft); }
+  .mine-msg.bad { color:var(--bad); }
+  .mine-prev {
+    min-height:1.9rem; margin-top:7px; padding:7px 11px; border-radius:5px;
+    background:var(--sunken); border:1px solid var(--line-soft);
+    font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif;
+    font-size:1.25rem; line-height:1.5; word-break:break-word;
+  }
+  .mine-prev:empty::before { content:"かな"; opacity:0.35; }
+  .mine-list { margin-top:11px; }
+  .mine-row { display:flex; align-items:flex-start; gap:4px; padding:8px 0; border-bottom:1px dashed var(--line-soft); }
+  .mine-row:last-child { border-bottom:none; }
+  .mine-row .txt { flex:1 1 auto; min-width:0; }
+  .mine-row .jpx { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:1.12rem; line-height:1.5; }
+  .mine-row .enx { font-size:0.83rem; color:var(--ink-soft); margin-top:2px; }
+  .mine-row .knj { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:0.95rem; color:var(--ink-soft); margin-top:2px; }
+  .mine-row .nte { font-size:0.79rem; color:var(--ink-soft); font-style:italic; margin-top:3px; }
+  .mine-del { font:inherit; font-size:0.95rem; line-height:1; background:none; border:none; color:var(--ink-soft); cursor:pointer; padding:2px 4px; flex:0 0 auto; }
+  .mine-del:hover { color:var(--seal); }
+
   /* Sentence of the day */
   .sod { display:grid; grid-template-columns:1fr 1fr; gap:18px 22px; }
   .sod-card { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:15px 18px 17px; min-width:0; }
@@ -751,6 +783,7 @@
   // computer show the clickable on-screen kana keys. The user can switch either way.
   if(state.quiz.input == null) state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
   if(!state.lessons) state.lessons = {};   // lesson number -> true when done
+  if(!state.mine) state.mine = {};         // lesson number -> [{en,kana,kanji,romaji,note}]
   if(!state.sent) state.sent = {};
   // Kanji off by default — the plan gets there in months 1–3, not on day one.
   if(state.sent.kanji == null) state.sent.kanji = false;
@@ -978,6 +1011,175 @@
     };
   }
 
+  // ---- Rōmaji → kana ----
+  // A small IME: type "watashi wa gakusei desu" and get わたしはがくせいです.
+  // Pure transliteration, so it runs offline with no service behind it.
+  // An UPPERCASE syllable produces katakana, which is how you write loanwords:
+  // "koNBINI" → こンビニ… so type the whole word up: "KONBINI" → コンビニ.
+  var ROMA = {
+    a:"あ", i:"い", u:"う", e:"え", o:"お",
+    ka:"か", ki:"き", ku:"く", ke:"け", ko:"こ",
+    ga:"が", gi:"ぎ", gu:"ぐ", ge:"げ", go:"ご",
+    sa:"さ", shi:"し", si:"し", su:"す", se:"せ", so:"そ",
+    za:"ざ", ji:"じ", zi:"じ", zu:"ず", ze:"ぜ", zo:"ぞ",
+    ta:"た", chi:"ち", ti:"ち", tsu:"つ", tu:"つ", te:"て", to:"と",
+    da:"だ", di:"ぢ", du:"づ", de:"で", "do":"ど",
+    na:"な", ni:"に", nu:"ぬ", ne:"ね", no:"の",
+    ha:"は", hi:"ひ", fu:"ふ", hu:"ふ", he:"へ", ho:"ほ",
+    ba:"ば", bi:"び", bu:"ぶ", be:"べ", bo:"ぼ",
+    pa:"ぱ", pi:"ぴ", pu:"ぷ", pe:"ぺ", po:"ぽ",
+    ma:"ま", mi:"み", mu:"む", me:"め", mo:"も",
+    ya:"や", yu:"ゆ", yo:"よ",
+    ra:"ら", ri:"り", ru:"る", re:"れ", ro:"ろ",
+    wa:"わ", wo:"を", wi:"うぃ", we:"うぇ",
+    va:"ゔぁ", vi:"ゔぃ", vu:"ゔ", ve:"ゔぇ", vo:"ゔぉ",
+    kya:"きゃ", kyu:"きゅ", kyo:"きょ",
+    gya:"ぎゃ", gyu:"ぎゅ", gyo:"ぎょ",
+    sha:"しゃ", shu:"しゅ", she:"しぇ", sho:"しょ",
+    sya:"しゃ", syu:"しゅ", syo:"しょ",
+    ja:"じゃ", ju:"じゅ", je:"じぇ", jo:"じょ",
+    jya:"じゃ", jyu:"じゅ", jyo:"じょ",
+    zya:"じゃ", zyu:"じゅ", zyo:"じょ",
+    cha:"ちゃ", chu:"ちゅ", che:"ちぇ", cho:"ちょ",
+    cya:"ちゃ", cyu:"ちゅ", cyo:"ちょ",
+    tya:"ちゃ", tyu:"ちゅ", tyo:"ちょ",
+    tha:"てゃ", thi:"てぃ", thu:"てゅ", tho:"てょ",
+    tsa:"つぁ", tsi:"つぃ", tse:"つぇ", tso:"つぉ",
+    dya:"ぢゃ", dyu:"ぢゅ", dyo:"ぢょ",
+    dha:"でゃ", dhi:"でぃ", dhu:"でゅ", dho:"でょ",
+    nya:"にゃ", nyu:"にゅ", nyo:"にょ",
+    hya:"ひゃ", hyu:"ひゅ", hyo:"ひょ",
+    bya:"びゃ", byu:"びゅ", byo:"びょ",
+    pya:"ぴゃ", pyu:"ぴゅ", pyo:"ぴょ",
+    mya:"みゃ", myu:"みゅ", myo:"みょ",
+    rya:"りゃ", ryu:"りゅ", ryo:"りょ",
+    fa:"ふぁ", fi:"ふぃ", fe:"ふぇ", fo:"ふぉ",
+    xa:"ぁ", xi:"ぃ", xu:"ぅ", xe:"ぇ", xo:"ぉ",
+    la:"ぁ", li:"ぃ", lu:"ぅ", le:"ぇ", lo:"ぉ",
+    xya:"ゃ", xyu:"ゅ", xyo:"ょ", xtsu:"っ", xtu:"っ", ltu:"っ", ltsu:"っ"
+  };
+  var PUNCT = {".":"。", ",":"、", "?":"？", "!":"！", "-":"ー", "~":"〜"};
+
+  function romajiToKana(src){
+    var s = String(src||""), out = "", i = 0;
+    var lastVowel = "";   // trailing vowel of the previous katakana syllable
+    while(i < s.length){
+      var up = s[i] === s[i].toUpperCase() && s[i] !== s[i].toLowerCase();
+      var rest = s.slice(i).toLowerCase();
+
+      // ん — "n'", "nn", or n before any consonant / end of input
+      if(rest[0] === "n"){
+        if(rest[1] === "'"){ out += up?"ン":"ん"; i += 2; continue; }
+        if(rest[1] === "n"){
+          // A vowel after the second n means the second n opens a new syllable:
+          // "konnichiwa" is ko-n-ni-chi-wa, not ko-n-i-chi-wa. With no vowel
+          // after it, "nn" is just the usual way to force a final ん ("honn").
+          var after = rest[2];
+          out += up?"ン":"ん"; lastVowel = "";
+          i += (after && "aiueoy".indexOf(after) !== -1) ? 1 : 2;
+          continue;
+        }
+        if(!rest[1] || "aiueoy".indexOf(rest[1]) === -1){ out += up?"ン":"ん"; lastVowel = ""; i += 1; continue; }
+      }
+      // っ — a doubled consonant, plus the "tch" spelling as in "matcha"
+      if(rest[0] === "t" && rest[1] === "c" && rest[2] === "h"){ out += up?"ッ":"っ"; lastVowel = ""; i += 1; continue; }
+      if(rest[0] === rest[1] && "aiueon".indexOf(rest[0]) === -1 && /[a-z]/.test(rest[0])){
+        out += up?"ッ":"っ"; lastVowel = ""; i += 1; continue;
+      }
+      // Longest syllable first, so "kyo" wins over "ki".
+      var hit = null, len = 0;
+      for(var n = 4; n >= 1; n--){
+        var c = rest.slice(0, n);
+        // Near the end of the input slice() returns fewer than n characters, so
+        // take the length from the match itself rather than from n.
+        if(ROMA[c]){ hit = ROMA[c]; len = c.length; break; }
+      }
+      if(hit){
+        var chunk = rest.slice(0, len);
+        // Katakana writes a repeated vowel as ー: KOOHII → コーヒー, not コオヒイ.
+        // Hiragana keeps the vowel (おおきい), so this only applies in caps.
+        if(up && len === 1 && chunk === lastVowel){
+          out += "ー"; i += 1; continue;
+        }
+        out += up ? h2k(hit) : hit;
+        var tail = chunk.slice(-1);
+        lastVowel = (up && "aiueo".indexOf(tail) !== -1) ? tail : "";
+        i += len; continue;
+      }
+      if(PUNCT[s[i]]){ out += PUNCT[s[i]]; lastVowel = ""; i += 1; continue; }
+      // Anything unrecognised (spaces, digits) passes through untouched.
+      out += s[i]; lastVowel = ""; i += 1;
+    }
+    return out;
+  }
+
+  // ---- Personal sentences ----
+  // Your own sentence saved against a lesson: you write the Japanese in rōmaji,
+  // the page turns it into kana, and you supply the English yourself.
+  function mineBlock(n){
+    var list = state.mine[n] || [];
+    var rows = "";
+    list.forEach(function(s, i){
+      rows += '<div class="mine-row"><div class="txt">'+
+        '<div class="jpx">'+esc(s.kana)+'</div>'+
+        (s.en ? '<div class="enx">'+esc(s.en)+'</div>' : '')+
+        (state.sent.romaji && s.romaji ? '<div class="enx">'+esc(s.romaji)+'</div>' : '')+
+      '</div>'+spk(s.kana)+
+      '<button type="button" class="mine-del" data-del="'+n+':'+i+'" title="Delete" aria-label="Delete sentence">×</button></div>';
+    });
+    return '<div class="mine"><span class="lbl">My sentences</span>'+
+      '<div class="mine-form">'+
+        '<input class="mine-in" data-mine-r="'+n+'" maxlength="200" autocomplete="off"'+
+          ' autocapitalize="off" spellcheck="false" placeholder="Type rōmaji — watashi wa gakusei desu">'+
+      '</div>'+
+      '<div class="mine-prev" data-mine-prev="'+n+'"></div>'+
+      '<div class="mine-form" style="margin-top:7px">'+
+        '<input class="mine-in" data-mine-en="'+n+'" maxlength="200" autocomplete="off"'+
+          ' placeholder="What it means in English (optional)">'+
+        '<button type="button" class="mine-go" data-mine-go="'+n+'">Save</button>'+
+      '</div>'+
+      '<p class="mine-msg" data-mine-msg="'+n+'">Lowercase gives hiragana; CAPITALS give katakana — <b>KONBINI</b> → コンビニ. '+
+        'As on a real Japanese keyboard, the particles は and へ are typed <b>ha</b> and <b>he</b>.</p>'+
+      (rows ? '<div class="mine-list">'+rows+'</div>' : '')+
+    '</div>';
+  }
+
+  function wireMine(host){
+    host.querySelectorAll("[data-mine-go]").forEach(function(btn){
+      var n = +btn.getAttribute("data-mine-go");
+      var rIn = host.querySelector('[data-mine-r="'+n+'"]');
+      var enIn = host.querySelector('[data-mine-en="'+n+'"]');
+      var prev = host.querySelector('[data-mine-prev="'+n+'"]');
+      var msg = host.querySelector('[data-mine-msg="'+n+'"]');
+
+      function draw(){ prev.textContent = romajiToKana(rIn.value); }
+      rIn.oninput = draw;
+      draw();
+
+      function saveOne(){
+        var romaji = (rIn.value||"").trim();
+        var kana = romajiToKana(romaji).trim();
+        if(!kana){ msg.className="mine-msg bad"; msg.textContent="Type the Japanese in rōmaji first."; return; }
+        if(!state.mine[n]) state.mine[n] = [];
+        state.mine[n].push({kana:kana, romaji:romaji, en:(enIn.value||"").trim()});
+        save(); renderLessons();
+        autoSpeak(kana);
+      }
+      btn.onclick = saveOne;
+      function onEnter(e){ if(e.key==="Enter"){ e.preventDefault(); saveOne(); } }
+      rIn.onkeydown = onEnter;
+      enIn.onkeydown = onEnter;
+    });
+    host.querySelectorAll("[data-del]").forEach(function(b){
+      b.onclick = function(){
+        var parts = b.getAttribute("data-del").split(":");
+        var n = +parts[0], i = +parts[1];
+        if(state.mine[n]){ state.mine[n].splice(i,1); if(!state.mine[n].length) delete state.mine[n]; }
+        save(); renderLessons();
+      };
+    });
+  }
+
   // ---- Lessons ----
   var lsOpen = null;   // which lesson is expanded (view state, not saved)
   function renderLessons(){
@@ -1005,6 +1207,7 @@
         body='<div class="ls-body">'+
             '<p class="ls-g"><span class="lbl">Grammar</span>'+L.g+'</p>'+
             '<div class="ls-ex"><span class="lbl">Examples</span>'+rows+'</div>'+
+            mineBlock(L.n)+
           '</div>';
       }
       html+='<div class="ls-item'+(on?" done":"")+(open?" open":"")+(isNext?" next":"")+'" data-n="'+L.n+'">'+
@@ -1038,6 +1241,7 @@
         renderLessons();
       };
     });
+    wireMine(host);
   }
 
   function srsDueCount(){
@@ -1780,7 +1984,7 @@
 
   function doReset(){
     if(confirm("Reset everything? Your streak, logs, milestones, flashcard schedule, and quiz scores will be cleared.")){
-      state={logs:{},milestones:{},quiz:{},srs:{},lessons:{},audio:{auto:true,rate:0.8},sent:{kanji:false,romaji:false}};
+      state={logs:{},milestones:{},quiz:{},srs:{},lessons:{},mine:{},audio:{auto:true,rate:0.8},sent:{kanji:false,romaji:false}};
       state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
       Speech.stop(); lsOpen=null;
       save(); renderAll(); renderMilestones(); renderConfig(); renderFcConfig();
