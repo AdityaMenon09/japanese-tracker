@@ -256,6 +256,30 @@
   .qz-play:focus-visible { outline:2px solid var(--indigo); outline-offset:3px; }
   .qz-replay { font-size:0.74rem; letter-spacing:0.05em; color:var(--ink-soft); }
   .qz-reveal-jp { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:1.5rem; }
+  /* Sentence of the day */
+  .sod { display:grid; grid-template-columns:1fr 1fr; gap:18px 22px; }
+  .sod-card { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:15px 18px 17px; min-width:0; }
+  .sod-card .tag { font-size:0.64rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--seal); font-weight:700; }
+  .sod-line { display:flex; align-items:flex-start; gap:4px; margin:7px 0 0; }
+  .sod-jp {
+    font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif;
+    font-size:1.5rem; line-height:1.55; flex:1 1 auto; min-width:0; word-break:break-word;
+  }
+  .sod-en { margin:9px 0 0; font-size:0.93rem; }
+  .sod-rom { margin:3px 0 0; font-size:0.84rem; color:var(--ink-soft); font-style:italic; }
+  .sod-kanji { margin-top:11px; padding-top:10px; border-top:1px dashed var(--line-soft); }
+  .sod-kanji .lbl { display:block; font-size:0.62rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; margin-bottom:3px; }
+  .sod-kanji .txt { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:1.2rem; line-height:1.5; }
+  .sod-kanji .none { font-size:0.85rem; color:var(--ink-soft); font-style:italic; }
+  .sod-tog { margin-left:auto; display:flex; gap:6px; align-items:center; }
+  .sod-tog button {
+    font:inherit; font-size:0.7rem; font-weight:600; background:none; border:1px solid var(--line);
+    color:var(--ink-soft); border-radius:4px; padding:4px 10px; cursor:pointer; white-space:nowrap;
+  }
+  .sod-tog button.on { border-color:var(--seal); color:var(--seal); }
+  .sod-tog button:hover { border-color:var(--seal); color:var(--seal); }
+  .sod-tog button:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+
   .fc-say { display:flex; align-items:center; justify-content:center; gap:2px; margin-bottom:10px; }
   .fc-say span { font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); }
 
@@ -264,6 +288,7 @@
     .study-row section + section { margin-top:6px; }
   }
   @media (max-width:860px){
+    .sod { grid-template-columns:1fr; }
     .dash-top { grid-template-columns:1fr; }
     .grid-two { grid-template-columns:1fr; }
     .grid-two section + section { margin-top:6px; }
@@ -271,8 +296,14 @@
   @media (max-width:600px){
     .wrap{padding:26px 16px 56px;}
     .top{gap:14px;} .top h1{font-size:1.4rem;}
-    .top{flex-wrap:wrap;} .aud-ctl{margin-left:0;} .top-reset{margin-left:auto;}
+    /* Two tidy rows: seal + title + streak, then the audio and reset controls.
+       Without the flex-basis the title claims a whole row to itself. */
+    .top{flex-wrap:wrap;}
+    .top-title{flex:1 1 150px; min-width:0;}
+    .streak-badge{margin-left:auto;}
+    .aud-ctl{margin-left:0;} .top-reset{margin-left:0;}
     .spk{width:34px;height:34px;} .qz-play{width:96px;height:96px;}
+    .sod-jp{font-size:1.35rem;}
     .qz-show{font-size:2.4rem;}
     .qz-keys{grid-template-columns:repeat(auto-fill,minmax(42px,1fr));}
     .qz-key{padding:11px 0; font-size:1.2rem;}
@@ -286,7 +317,7 @@
 <div class="wrap">
   <header class="top">
     <div class="seal-mark" aria-hidden="true">継</div>
-    <div>
+    <div class="top-title">
       <h1 class="serif">My Japanese Tracker</h1>
       <p class="sub">One hour a day. The only rule that can't break: the flashcards.</p>
     </div>
@@ -322,6 +353,11 @@
       </div>
     </section>
   </div>
+
+  <section>
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">句</span>Sentence of the day<span class="sod-tog" id="sodTog"></span></h2>
+    <div class="sod" id="sod"></div>
+  </section>
 
   <div class="study-row">
     <section>
@@ -505,6 +541,75 @@
     {k:"バナナ",r:["banana"],m:"banana",s:"k"}
   ];
 
+  // ---- Sentence of the day ----
+  // Two a day: one written purely in hiragana, one built around katakana
+  // loanwords. An all-katakana sentence is not a thing in real Japanese —
+  // katakana marks borrowed words, so this is how you actually meet it.
+  // k = kana form (what you read), j = the natural form with kanji (hidden by
+  // default), r = rōmaji, m = meaning.
+  var SENT_HIRA = [
+    {k:"きょうは いい てんきですね。", j:"今日はいい天気ですね。", r:"kyou wa ii tenki desu ne.", m:"Nice weather today, isn’t it?"},
+    {k:"おはよう ございます。", j:"", r:"ohayou gozaimasu.", m:"Good morning."},
+    {k:"いってきます。", j:"行ってきます。", r:"ittekimasu.", m:"I’m off. (leaving home)"},
+    {k:"ただいま。", j:"", r:"tadaima.", m:"I’m home."},
+    {k:"おなかが すきました。", j:"お腹が空きました。", r:"onaka ga sukimashita.", m:"I’m hungry."},
+    {k:"のどが かわきました。", j:"喉が渇きました。", r:"nodo ga kawakimashita.", m:"I’m thirsty."},
+    {k:"すこし つかれました。", j:"少し疲れました。", r:"sukoshi tsukaremashita.", m:"I’m a little tired."},
+    {k:"きょうは しごとが あります。", j:"今日は仕事があります。", r:"kyou wa shigoto ga arimasu.", m:"I have work today."},
+    {k:"あした えいがを みます。", j:"明日映画を見ます。", r:"ashita eiga o mimasu.", m:"I’m watching a film tomorrow."},
+    {k:"これは いくらですか。", j:"", r:"kore wa ikura desu ka.", m:"How much is this?"},
+    {k:"みずを ください。", j:"水をください。", r:"mizu o kudasai.", m:"Water, please."},
+    {k:"えきは どこですか。", j:"駅はどこですか。", r:"eki wa doko desu ka.", m:"Where is the station?"},
+    {k:"わたしは がくせいです。", j:"私は学生です。", r:"watashi wa gakusei desu.", m:"I’m a student."},
+    {k:"にほんごを べんきょうして います。", j:"日本語を勉強しています。", r:"nihongo o benkyou shite imasu.", m:"I’m studying Japanese."},
+    {k:"ちょっと まって ください。", j:"ちょっと待ってください。", r:"chotto matte kudasai.", m:"Just a moment, please."},
+    {k:"ありがとう ございます。", j:"", r:"arigatou gozaimasu.", m:"Thank you."},
+    {k:"すみません、わかりません。", j:"すみません、分かりません。", r:"sumimasen, wakarimasen.", m:"Sorry, I don’t understand."},
+    {k:"もういちど おねがいします。", j:"もう一度お願いします。", r:"mou ichido onegaishimasu.", m:"One more time, please."},
+    {k:"あさ ろくじに おきます。", j:"朝六時に起きます。", r:"asa rokuji ni okimasu.", m:"I get up at six in the morning."},
+    {k:"よる じゅうじに ねます。", j:"夜十時に寝ます。", r:"yoru juuji ni nemasu.", m:"I go to bed at ten at night."},
+    {k:"ごはんを たべましょう。", j:"ご飯を食べましょう。", r:"gohan o tabemashou.", m:"Let’s eat."},
+    {k:"きょうは あついですね。", j:"今日は暑いですね。", r:"kyou wa atsui desu ne.", m:"It’s hot today, isn’t it?"},
+    {k:"さむく なりました。", j:"寒くなりました。", r:"samuku narimashita.", m:"It’s turned cold."},
+    {k:"あめが ふって います。", j:"雨が降っています。", r:"ame ga futte imasu.", m:"It’s raining."},
+    {k:"ともだちに あいます。", j:"友達に会います。", r:"tomodachi ni aimasu.", m:"I’m meeting a friend."},
+    {k:"いえに かえります。", j:"家に帰ります。", r:"ie ni kaerimasu.", m:"I’m going home."},
+    {k:"たのしかったです。", j:"楽しかったです。", r:"tanoshikatta desu.", m:"That was fun."},
+    {k:"また あした。", j:"また明日。", r:"mata ashita.", m:"See you tomorrow."},
+    {k:"おやすみなさい。", j:"", r:"oyasuminasai.", m:"Good night."},
+    {k:"がんばって ください。", j:"頑張ってください。", r:"ganbatte kudasai.", m:"Good luck. / Do your best."}
+  ];
+  var SENT_KATA = [
+    {k:"コーヒーを ください。", j:"", r:"koohii o kudasai.", m:"A coffee, please."},
+    {k:"コンビニに いきます。", j:"コンビニに行きます。", r:"konbini ni ikimasu.", m:"I’m going to the convenience store."},
+    {k:"バスで がっこうに いきます。", j:"バスで学校に行きます。", r:"basu de gakkou ni ikimasu.", m:"I go to school by bus."},
+    {k:"テレビを みて います。", j:"テレビを見ています。", r:"terebi o mite imasu.", m:"I’m watching TV."},
+    {k:"パンを たべました。", j:"パンを食べました。", r:"pan o tabemashita.", m:"I ate some bread."},
+    {k:"スマホを わすれました。", j:"スマホを忘れました。", r:"sumaho o wasuremashita.", m:"I forgot my phone."},
+    {k:"アイスクリームが すきです。", j:"アイスクリームが好きです。", r:"aisukuriimu ga suki desu.", m:"I like ice cream."},
+    {k:"エレベーターは あそこです。", j:"", r:"erebeetaa wa asoko desu.", m:"The lift is over there."},
+    {k:"チケットを かいました。", j:"チケットを買いました。", r:"chiketto o kaimashita.", m:"I bought a ticket."},
+    {k:"シャワーを あびます。", j:"シャワーを浴びます。", r:"shawaa o abimasu.", m:"I take a shower."},
+    {k:"メールを おくりました。", j:"メールを送りました。", r:"meeru o okurimashita.", m:"I sent an email."},
+    {k:"レストランで ばんごはんを たべます。", j:"レストランで晩ご飯を食べます。", r:"resutoran de bangohan o tabemasu.", m:"I’m eating dinner at a restaurant."},
+    {k:"タクシーを よんで ください。", j:"タクシーを呼んでください。", r:"takushii o yonde kudasai.", m:"Please call a taxi."},
+    {k:"ホテルは えきの ちかくです。", j:"ホテルは駅の近くです。", r:"hoteru wa eki no chikaku desu.", m:"The hotel is near the station."},
+    {k:"インターネットが おそいです。", j:"インターネットが遅いです。", r:"intaanetto ga osoi desu.", m:"The internet is slow."},
+    {k:"ゲームを して います。", j:"ゲームをしています。", r:"geemu o shite imasu.", m:"I’m playing a game."},
+    {k:"ジュースを のみたいです。", j:"ジュースを飲みたいです。", r:"juusu o nomitai desu.", m:"I want to drink juice."},
+    {k:"カメラを もって きました。", j:"カメラを持ってきました。", r:"kamera o motte kimashita.", m:"I brought a camera."},
+    {k:"ノートに かきます。", j:"ノートに書きます。", r:"nooto ni kakimasu.", m:"I write it in my notebook."},
+    {k:"スーパーで やさいを かいます。", j:"スーパーで野菜を買います。", r:"suupaa de yasai o kaimasu.", m:"I buy vegetables at the supermarket."},
+    {k:"カードで はらえますか。", j:"カードで払えますか。", r:"kaado de haraemasu ka.", m:"Can I pay by card?"},
+    {k:"パソコンが こわれました。", j:"パソコンが壊れました。", r:"pasokon ga kowaremashita.", m:"My computer broke."},
+    {k:"ビールを もう いっぱい ください。", j:"ビールをもう一杯ください。", r:"biiru o mou ippai kudasai.", m:"One more beer, please."},
+    {k:"トイレは どこですか。", j:"", r:"toire wa doko desu ka.", m:"Where is the toilet?"},
+    {k:"サッカーを します。", j:"", r:"sakkaa o shimasu.", m:"I play football."},
+    {k:"ケーキを つくりました。", j:"ケーキを作りました。", r:"keeki o tsukurimashita.", m:"I made a cake."},
+    {k:"スーツを きます。", j:"スーツを着ます。", r:"suutsu o kimasu.", m:"I wear a suit."},
+    {k:"ラーメンが おいしいです。", j:"", r:"raamen ga oishii desu.", m:"The ramen is delicious."}
+  ];
+
   // ---- device detection ----
   // Touch-primary device (phone/tablet) = true; computer with a mouse = false.
   // A touchscreen laptop still reports hover, so it counts as a computer.
@@ -521,6 +626,10 @@
   // Default answer input: on a phone use its own keyboard (blank box); on a
   // computer show the clickable on-screen kana keys. The user can switch either way.
   if(state.quiz.input == null) state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
+  if(!state.sent) state.sent = {};
+  // Kanji off by default — the plan gets there in months 1–3, not on day one.
+  if(state.sent.kanji == null) state.sent.kanji = false;
+  if(state.sent.romaji == null) state.sent.romaji = false;
   if(!state.audio) state.audio = {};
   if(state.audio.auto == null) state.audio.auto = true;   // speak on reveal
   if(state.audio.rate == null) state.audio.rate = 0.8;    // beginners want it slower
@@ -696,6 +805,53 @@
     });
     document.getElementById("todayDate").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
   }
+  // ---- Sentence of the day ----
+  // Keyed off the calendar day, so it is the same all day and on every reload,
+  // and rolls over on its own at midnight. The two lists are different lengths
+  // so the pairing keeps changing.
+  function dayNumber(){
+    var d=new Date();
+    return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())/86400000);
+  }
+  function sodCard(tag, s){
+    var showKanji = state.sent.kanji, showRom = state.sent.romaji;
+    var kanji = "";
+    if(showKanji){
+      kanji = '<div class="sod-kanji"><span class="lbl">With kanji</span>'+
+        (s.j ? '<div class="txt jp">'+s.j+'</div>'
+             : '<div class="none">This one is written without kanji.</div>')+
+      '</div>';
+    }
+    return '<div class="sod-card">'+
+      '<span class="tag">'+tag+'</span>'+
+      // Speak the kanji form when there is one: speech engines segment words
+      // and place pitch far better from natural orthography than from a long
+      // spaced-out hiragana string. It sounds identical, only cleaner.
+      '<div class="sod-line"><span class="sod-jp">'+s.k+'</span>'+spk(s.j || s.k)+'</div>'+
+      '<p class="sod-en">'+s.m+'</p>'+
+      (showRom ? '<p class="sod-rom">'+s.r+'</p>' : '')+
+      kanji +
+    '</div>';
+  }
+  function renderSentence(){
+    var n=dayNumber();
+    var a=SENT_HIRA[n % SENT_HIRA.length];
+    var b=SENT_KATA[n % SENT_KATA.length];
+    document.getElementById("sod").innerHTML =
+      sodCard("Hiragana", a) + sodCard("Katakana", b);
+    document.getElementById("sodTog").innerHTML =
+      '<button type="button" id="sodKanji" class="'+(state.sent.kanji?"on":"")+'"'+
+        ' title="Show the natural written form, which uses kanji">漢字</button>'+
+      '<button type="button" id="sodRom" class="'+(state.sent.romaji?"on":"")+'"'+
+        ' title="Show the rōmaji reading">rōmaji</button>';
+    document.getElementById("sodKanji").onclick=function(){
+      state.sent.kanji=!state.sent.kanji; save(); renderSentence();
+    };
+    document.getElementById("sodRom").onclick=function(){
+      state.sent.romaji=!state.sent.romaji; save(); renderSentence();
+    };
+  }
+
   function srsDueCount(){
     var t=today(), n=0;
     for(var id in state.srs){ if(state.srs[id].due <= t) n++; }
@@ -1430,11 +1586,13 @@
     wrCtx.clearRect(0,0,wrCanvas.width,wrCanvas.height);
   }
 
-  function renderAll(){ renderToday(); renderStats(); renderHeat(); }
+  // renderSentence rides along so the pair rolls over on its own if the page
+  // is left open across midnight.
+  function renderAll(){ renderToday(); renderStats(); renderHeat(); renderSentence(); }
 
   function doReset(){
     if(confirm("Reset everything? Your streak, logs, milestones, flashcard schedule, and quiz scores will be cleared.")){
-      state={logs:{},milestones:{},quiz:{},srs:{},audio:{auto:true,rate:0.8}};
+      state={logs:{},milestones:{},quiz:{},srs:{},audio:{auto:true,rate:0.8},sent:{kanji:false,romaji:false}};
       state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
       Speech.stop();
       save(); renderAll(); renderMilestones(); renderConfig(); renderFcConfig();
@@ -1450,7 +1608,7 @@
   // Listening mode can only be drawn once the list is in. At that point
   // nothing is in progress yet, but guard anyway rather than wiping a session.
   Speech.onReady(function(){
-    renderAudioCtl(); renderAudioWarn();
+    renderAudioCtl(); renderAudioWarn(); renderSentence();
     if(!quiz && !writer) renderConfig();
   });
 })();
