@@ -256,6 +256,39 @@
   .qz-play:focus-visible { outline:2px solid var(--indigo); outline-offset:3px; }
   .qz-replay { font-size:0.74rem; letter-spacing:0.05em; color:var(--ink-soft); }
   .qz-reveal-jp { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:1.5rem; }
+  /* Lessons */
+  .ls-intro { margin:0 0 14px; font-size:0.88rem; color:var(--ink-soft); }
+  .ls-list { display:grid; grid-template-columns:1fr 1fr; gap:10px 22px; align-items:start; }
+  .ls-item { border:1px solid var(--line); border-radius:6px; background:var(--surface); overflow:hidden; }
+  .ls-item.next { border-color:var(--seal); }
+  .ls-head { display:flex; align-items:center; gap:11px; padding:11px 14px; cursor:pointer; }
+  .ls-head:hover .ls-t { color:var(--seal); }
+  .ls-tick {
+    flex:0 0 auto; width:22px; height:22px; border:1.5px solid var(--line); border-radius:4px;
+    display:grid; place-items:center; background:var(--paper); color:#fff; font-size:0.8rem;
+    cursor:pointer; padding:0;
+  }
+  .ls-tick.on { background:var(--seal); border-color:var(--seal); }
+  .ls-tick:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .ls-n { flex:0 0 auto; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .ls-item.next .ls-n { color:var(--seal); }
+  .ls-t { flex:1 1 auto; min-width:0; font-size:0.94rem; font-weight:600; }
+  .ls-item.done .ls-t { color:var(--ink-soft); }
+  .ls-badge { flex:0 0 auto; font-size:0.6rem; letter-spacing:0.13em; text-transform:uppercase; font-weight:700; color:var(--seal); }
+  .ls-arw { flex:0 0 auto; color:var(--ink-soft); font-size:0.75rem; transition:transform .15s ease; }
+  .ls-item.open .ls-arw { transform:rotate(90deg); }
+  .ls-body { display:none; padding:0 14px 14px; border-top:1px dashed var(--line-soft); }
+  .ls-item.open .ls-body { display:block; }
+  .ls-g { margin:11px 0 0; font-size:0.85rem; line-height:1.7; }
+  .ls-g .lbl, .ls-ex .lbl { display:block; font-size:0.6rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; margin-bottom:3px; }
+  .ls-ex { margin-top:12px; }
+  .ls-row { display:flex; align-items:flex-start; gap:4px; padding:7px 0; border-bottom:1px dashed var(--line-soft); }
+  .ls-row:last-child { border-bottom:none; }
+  .ls-row .txt { flex:1 1 auto; min-width:0; }
+  .ls-row .jpx { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:1.12rem; line-height:1.5; }
+  .ls-row .enx { font-size:0.83rem; color:var(--ink-soft); margin-top:2px; }
+  .ls-row .knj { font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif; font-size:0.95rem; color:var(--ink-soft); margin-top:2px; }
+
   /* Sentence of the day */
   .sod { display:grid; grid-template-columns:1fr 1fr; gap:18px 22px; }
   .sod-card { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:15px 18px 17px; min-width:0; }
@@ -288,6 +321,7 @@
     .study-row section + section { margin-top:6px; }
   }
   @media (max-width:860px){
+    .ls-list { grid-template-columns:1fr; }
     .sod { grid-template-columns:1fr; }
     .dash-top { grid-template-columns:1fr; }
     .grid-two { grid-template-columns:1fr; }
@@ -369,6 +403,13 @@
       <div class="quiz" id="quiz"></div>
     </section>
   </div>
+
+  <section>
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">課</span>Lessons<span class="hint" id="lsHint"></span></h2>
+    <div class="bar" style="margin-bottom:10px"><i id="lsBar" style="width:0%"></i></div>
+    <p class="ls-intro">The <b>みんなの日本語 初級I</b> grammar order, Lessons 1–25 — the standard N5 path. Tap a lesson to see what it covers and hear the examples. Tick it off when you’ve worked through it.</p>
+    <div id="lessons"></div>
+  </section>
 
   <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
   <div class="heat" id="heat"></div>
@@ -541,6 +582,89 @@
     {k:"バナナ",r:["banana"],m:"banana",s:"k"}
   ];
 
+  // ---- Lessons: the Minna no Nihongo I syllabus (N5) ----
+  // Grammar order follows 『みんなの日本語 初級I』 Lessons 1–25, so a copy of the
+  // book slots straight in. Lessons 16–25 were checked against the grammar
+  // index printed in the Book II notes; 1–15 are the standard published order.
+  // The example sentences are written here, not taken from the book.
+  var LESSONS = [
+    {n:1, t:"Introducing yourself", g:"NはNです · じゃありません · Nも · N1のN2", ex:[
+      {k:"わたしは がくせいです。", j:"私は学生です。", r:"watashi wa gakusei desu.", m:"I am a student."},
+      {k:"かれは せんせいじゃ ありません。", j:"彼は先生じゃありません。", r:"kare wa sensei ja arimasen.", m:"He isn’t a teacher."}]},
+    {n:2, t:"This, that, that over there", g:"これ/それ/あれ · この/その/あのN · Nの · そうです", ex:[
+      {k:"これは ほんです。", j:"これは本です。", r:"kore wa hon desu.", m:"This is a book."},
+      {k:"それは わたしの かさです。", j:"それは私の傘です。", r:"sore wa watashi no kasa desu.", m:"That is my umbrella."}]},
+    {n:3, t:"Places and directions", g:"ここ/そこ/あそこ · こちら/そちら/あちら · Nはどこですか", ex:[
+      {k:"トイレは どこですか。", j:"", r:"toire wa doko desu ka.", m:"Where is the toilet?"},
+      {k:"エレベーターは あそこです。", j:"", r:"erebeetaa wa asoko desu.", m:"The lift is over there."}]},
+    {n:4, t:"Telling time, and your first verbs", g:"〜時〜分 · Vます/ません/ました · N(time)に · からまで", ex:[
+      {k:"いま しちじです。", j:"今七時です。", r:"ima shichi-ji desu.", m:"It’s seven o’clock now."},
+      {k:"まいあさ ろくじに おきます。", j:"毎朝六時に起きます。", r:"maiasa roku-ji ni okimasu.", m:"I get up at six every morning."}]},
+    {n:5, t:"Going places", g:"N(place)へ行きます · N(vehicle)で · N(person)と · いつ", ex:[
+      {k:"あした とうきょうへ いきます。", j:"明日東京へ行きます。", r:"ashita Toukyou e ikimasu.", m:"I’m going to Tokyo tomorrow."},
+      {k:"でんしゃで かいしゃへ いきます。", j:"電車で会社へ行きます。", r:"densha de kaisha e ikimasu.", m:"I go to the office by train."}]},
+    {n:6, t:"Doing things, and inviting", g:"NをV · N(place)で · Vませんか · Vましょう", ex:[
+      {k:"まいにち ごはんを たべます。", j:"毎日ご飯を食べます。", r:"mainichi gohan o tabemasu.", m:"I eat a meal every day."},
+      {k:"いっしょに えいがを みませんか。", j:"一緒に映画を見ませんか。", r:"issho ni eiga o mimasen ka.", m:"Shall we watch a film together?"}]},
+    {n:7, t:"Tools, giving and receiving", g:"N(means)で · N(person)にあげます/もらいます · もうVました", ex:[
+      {k:"はしで ごはんを たべます。", j:"箸でご飯を食べます。", r:"hashi de gohan o tabemasu.", m:"I eat with chopsticks."},
+      {k:"ともだちに プレゼントを あげました。", j:"友達にプレゼントをあげました。", r:"tomodachi ni purezento o agemashita.", m:"I gave my friend a present."}]},
+    {n:8, t:"Adjectives", g:"い-adj · な-adj · adj+N · とても/あまり · どんなN", ex:[
+      {k:"この ラーメンは おいしいです。", j:"", r:"kono raamen wa oishii desu.", m:"This ramen is delicious."},
+      {k:"きょうは あまり さむく ないです。", j:"今日はあまり寒くないです。", r:"kyou wa amari samuku nai desu.", m:"It isn’t very cold today."}]},
+    {n:9, t:"Likes, ability and reasons", g:"Nが好き/上手/わかります · 〜から · どうして", ex:[
+      {k:"わたしは にほんごが すきです。", j:"私は日本語が好きです。", r:"watashi wa nihongo ga suki desu.", m:"I like Japanese."},
+      {k:"あたまが いたいですから、かえります。", j:"頭が痛いですから、帰ります。", r:"atama ga itai desu kara, kaerimasu.", m:"I have a headache, so I’m going home."}]},
+    {n:10, t:"What exists where", g:"あります/います · N(place)にNがあります · NのN(position) · や", ex:[
+      {k:"つくえの うえに ほんが あります。", j:"机の上に本があります。", r:"tsukue no ue ni hon ga arimasu.", m:"There is a book on the desk."},
+      {k:"こうえんに こどもが います。", j:"公園に子供がいます。", r:"kouen ni kodomo ga imasu.", m:"There are children in the park."}]},
+    {n:11, t:"Counting things", g:"counters 〜つ/〜人/〜枚/〜回 · quantifier+V · どのくらい", ex:[
+      {k:"りんごを みっつ ください。", j:"りんごを三つください。", r:"ringo o mittsu kudasai.", m:"Three apples, please."},
+      {k:"きってを ごまい かいました。", j:"切手を五枚買いました。", r:"kitte o go-mai kaimashita.", m:"I bought five stamps."}]},
+    {n:12, t:"The past, and comparing", g:"でした · かったです · N1はN2より · どちらが · 一番", ex:[
+      {k:"きのうは あめでした。", j:"昨日は雨でした。", r:"kinou wa ame deshita.", m:"It was rainy yesterday."},
+      {k:"でんしゃは バスより はやいです。", j:"電車はバスより速いです。", r:"densha wa basu yori hayai desu.", m:"Trains are faster than buses."}]},
+    {n:13, t:"Wanting things", g:"Nがほしい · Vたいです · N(place)へVに行きます · なにか/どこか", ex:[
+      {k:"あたらしい パソコンが ほしいです。", j:"新しいパソコンが欲しいです。", r:"atarashii pasokon ga hoshii desu.", m:"I want a new computer."},
+      {k:"にほんへ りょこうに いきたいです。", j:"日本へ旅行に行きたいです。", r:"nihon e ryokou ni ikitai desu.", m:"I want to travel to Japan."}]},
+    {n:14, t:"The て-form", g:"verb groups · Vてください · Vています · Vましょうか", ex:[
+      {k:"ちょっと まって ください。", j:"ちょっと待ってください。", r:"chotto matte kudasai.", m:"Please wait a moment."},
+      {k:"いま ごはんを たべて います。", j:"今ご飯を食べています。", r:"ima gohan o tabete imasu.", m:"I’m eating right now."}]},
+    {n:15, t:"Permission and prohibition", g:"Vてもいいです · Vてはいけません · Nに勤めています", ex:[
+      {k:"しゃしんを とっても いいですか。", j:"写真を撮ってもいいですか。", r:"shashin o tottemo ii desu ka.", m:"May I take a photo?"},
+      {k:"ここで たばこを すっては いけません。", j:"ここでタバコを吸ってはいけません。", r:"koko de tabako o sutte wa ikemasen.", m:"You mustn’t smoke here."}]},
+    {n:16, t:"Joining actions together", g:"Vて、Vて · い-adjくて · な-adjで · Vてから · どうやって", ex:[
+      {k:"あさ おきて、かおを あらって、ごはんを たべます。", j:"朝起きて、顔を洗って、ご飯を食べます。", r:"asa okite, kao o aratte, gohan o tabemasu.", m:"I get up, wash my face and eat."},
+      {k:"しごとが おわってから、かえります。", j:"仕事が終わってから、帰ります。", r:"shigoto ga owatte kara, kaerimasu.", m:"I’ll go home after work finishes."}]},
+    {n:17, t:"The ない-form", g:"Vないでください · Vなければなりません · Vなくてもいいです · までに", ex:[
+      {k:"ここに くるまを とめないで ください。", j:"ここに車を止めないでください。", r:"koko ni kuruma o tomenaide kudasai.", m:"Please don’t park here."},
+      {k:"あした はやく おきなければ なりません。", j:"明日早く起きなければなりません。", r:"ashita hayaku okinakereba narimasen.", m:"I have to get up early tomorrow."}]},
+    {n:18, t:"Dictionary form and ability", g:"Vる · Vることができます · 趣味はVること · Vるまえに · ぜひ", ex:[
+      {k:"にほんごを はなす ことが できます。", j:"日本語を話すことができます。", r:"nihongo o hanasu koto ga dekimasu.", m:"I can speak Japanese."},
+      {k:"ねる まえに、ほんを よみます。", j:"寝る前に、本を読みます。", r:"neru mae ni, hon o yomimasu.", m:"I read a book before going to bed."}]},
+    {n:19, t:"The た-form, and change", g:"Vたことがあります · Vたり、Vたり · く/に なります", ex:[
+      {k:"にほんへ いった ことが あります。", j:"日本へ行ったことがあります。", r:"nihon e itta koto ga arimasu.", m:"I have been to Japan."},
+      {k:"さむく なりました。", j:"寒くなりました。", r:"samuku narimashita.", m:"It has got cold."}]},
+    {n:20, t:"Plain (casual) style", g:"plain form · polite vs plain · casual conversation", ex:[
+      {k:"あした ひまだ。", j:"明日暇だ。", r:"ashita hima da.", m:"I’m free tomorrow."},
+      {k:"もう ごはんを たべた？", j:"もうご飯を食べた？", r:"mou gohan o tabeta?", m:"Have you eaten yet?"}]},
+    {n:21, t:"Saying what you think", g:"〜と思います · 「〜」と言います · でしょう？ · Vないと", ex:[
+      {k:"あしたは あめだと おもいます。", j:"明日は雨だと思います。", r:"ashita wa ame da to omoimasu.", m:"I think it will rain tomorrow."},
+      {k:"この えいがは おもしろいでしょう？", j:"この映画は面白いでしょう？", r:"kono eiga wa omoshiroi deshou?", m:"This film is interesting, isn’t it?"}]},
+    {n:22, t:"Describing nouns with clauses", g:"noun modification by sentences · Vる時間/約束/用事", ex:[
+      {k:"これは わたしが とった しゃしんです。", j:"これは私が撮った写真です。", r:"kore wa watashi ga totta shashin desu.", m:"This is a photo I took."},
+      {k:"きのう かった ほんを よみました。", j:"昨日買った本を読みました。", r:"kinou katta hon o yomimashita.", m:"I read the book I bought yesterday."}]},
+    {n:23, t:"When, and automatic results", g:"Vる時、〜 · Vた時、〜 · Vると、〜 · N(place)をV", ex:[
+      {k:"にほんへ いく とき、パスポートが いります。", j:"日本へ行く時、パスポートが要ります。", r:"nihon e iku toki, pasupooto ga irimasu.", m:"When you go to Japan, you need a passport."},
+      {k:"この ボタンを おすと、きっぷが でます。", j:"このボタンを押すと、切符が出ます。", r:"kono botan o osu to, kippu ga demasu.", m:"If you press this button, a ticket comes out."}]},
+    {n:24, t:"Doing things for each other", g:"くれます · Vてあげます/もらいます/くれます · 疑問詞がV", ex:[
+      {k:"ともだちが てつだって くれました。", j:"友達が手伝ってくれました。", r:"tomodachi ga tetsudatte kuremashita.", m:"My friend helped me out."},
+      {k:"せんせいに にほんごを おしえて もらいました。", j:"先生に日本語を教えてもらいました。", r:"sensei ni nihongo o oshiete moraimashita.", m:"I had the teacher teach me Japanese."}]},
+    {n:25, t:"Conditionals", g:"〜たら、〜 · Vても、〜 · もし · いくら", ex:[
+      {k:"あめが ふったら、いきません。", j:"雨が降ったら、行きません。", r:"ame ga futtara, ikimasen.", m:"If it rains, I won’t go."},
+      {k:"あめが ふっても、いきます。", j:"雨が降っても、行きます。", r:"ame ga futte mo, ikimasu.", m:"Even if it rains, I’ll go."}]}
+  ];
+
   // ---- Sentence of the day ----
   // Two a day: one written purely in hiragana, one built around katakana
   // loanwords. An all-katakana sentence is not a thing in real Japanese —
@@ -626,6 +750,7 @@
   // Default answer input: on a phone use its own keyboard (blank box); on a
   // computer show the clickable on-screen kana keys. The user can switch either way.
   if(state.quiz.input == null) state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
+  if(!state.lessons) state.lessons = {};   // lesson number -> true when done
   if(!state.sent) state.sent = {};
   // Kanji off by default — the plan gets there in months 1–3, not on day one.
   if(state.sent.kanji == null) state.sent.kanji = false;
@@ -844,12 +969,75 @@
         ' title="Show the natural written form, which uses kanji">漢字</button>'+
       '<button type="button" id="sodRom" class="'+(state.sent.romaji?"on":"")+'"'+
         ' title="Show the rōmaji reading">rōmaji</button>';
+    // The lesson examples honour the same two toggles, so redraw both.
     document.getElementById("sodKanji").onclick=function(){
-      state.sent.kanji=!state.sent.kanji; save(); renderSentence();
+      state.sent.kanji=!state.sent.kanji; save(); renderSentence(); renderLessons();
     };
     document.getElementById("sodRom").onclick=function(){
-      state.sent.romaji=!state.sent.romaji; save(); renderSentence();
+      state.sent.romaji=!state.sent.romaji; save(); renderSentence(); renderLessons();
     };
+  }
+
+  // ---- Lessons ----
+  var lsOpen = null;   // which lesson is expanded (view state, not saved)
+  function renderLessons(){
+    var host=document.getElementById("lessons");
+    var done=0;
+    LESSONS.forEach(function(L){ if(state.lessons[L.n]) done++; });
+    // "Up next" is the first one not ticked — the answer to "what do I do today".
+    var next=null;
+    for(var i=0;i<LESSONS.length;i++){ if(!state.lessons[LESSONS[i].n]){ next=LESSONS[i].n; break; } }
+
+    var html="";
+    LESSONS.forEach(function(L){
+      var on=!!state.lessons[L.n], open=(lsOpen===L.n), isNext=(L.n===next);
+      var body="";
+      if(open){
+        var rows="";
+        L.ex.forEach(function(e){
+          rows+='<div class="ls-row"><div class="txt">'+
+            '<div class="jpx">'+e.k+'</div>'+
+            '<div class="enx">'+e.m+'</div>'+
+            (state.sent.romaji ? '<div class="enx">'+e.r+'</div>' : '')+
+            (state.sent.kanji && e.j ? '<div class="knj">'+e.j+'</div>' : '')+
+          '</div>'+spk(e.j || e.k)+'</div>';
+        });
+        body='<div class="ls-body">'+
+            '<p class="ls-g"><span class="lbl">Grammar</span>'+L.g+'</p>'+
+            '<div class="ls-ex"><span class="lbl">Examples</span>'+rows+'</div>'+
+          '</div>';
+      }
+      html+='<div class="ls-item'+(on?" done":"")+(open?" open":"")+(isNext?" next":"")+'" data-n="'+L.n+'">'+
+        '<div class="ls-head" data-toggle="'+L.n+'">'+
+          '<button type="button" class="ls-tick'+(on?" on":"")+'" data-tick="'+L.n+'"'+
+            ' aria-pressed="'+(on?"true":"false")+'" aria-label="Mark lesson '+L.n+' done">'+(on?"✓":"")+'</button>'+
+          '<span class="ls-n">L'+L.n+'</span>'+
+          '<span class="ls-t">'+L.t+'</span>'+
+          (isNext?'<span class="ls-badge">next</span>':'')+
+          '<span class="ls-arw" aria-hidden="true">▸</span>'+
+        '</div>'+ body +
+      '</div>';
+    });
+    host.innerHTML='<div class="ls-list">'+html+'</div>';
+
+    document.getElementById("lsHint").textContent = done+" / "+LESSONS.length+" done";
+    document.getElementById("lsBar").style.width = (done/LESSONS.length*100)+"%";
+
+    host.querySelectorAll("[data-tick]").forEach(function(b){
+      b.onclick=function(e){
+        e.stopPropagation();   // ticking must not also expand the lesson
+        var n=+b.getAttribute("data-tick");
+        if(state.lessons[n]) delete state.lessons[n]; else state.lessons[n]=true;
+        save(); renderLessons();
+      };
+    });
+    host.querySelectorAll("[data-toggle]").forEach(function(h){
+      h.onclick=function(){
+        var n=+h.getAttribute("data-toggle");
+        lsOpen = (lsOpen===n) ? null : n;
+        renderLessons();
+      };
+    });
   }
 
   function srsDueCount(){
@@ -1588,13 +1776,13 @@
 
   // renderSentence rides along so the pair rolls over on its own if the page
   // is left open across midnight.
-  function renderAll(){ renderToday(); renderStats(); renderHeat(); renderSentence(); }
+  function renderAll(){ renderToday(); renderStats(); renderHeat(); renderSentence(); renderLessons(); }
 
   function doReset(){
     if(confirm("Reset everything? Your streak, logs, milestones, flashcard schedule, and quiz scores will be cleared.")){
-      state={logs:{},milestones:{},quiz:{},srs:{},audio:{auto:true,rate:0.8},sent:{kanji:false,romaji:false}};
+      state={logs:{},milestones:{},quiz:{},srs:{},lessons:{},audio:{auto:true,rate:0.8},sent:{kanji:false,romaji:false}};
       state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
-      Speech.stop();
+      Speech.stop(); lsOpen=null;
       save(); renderAll(); renderMilestones(); renderConfig(); renderFcConfig();
       renderAudioCtl(); renderAudioWarn();
     }
@@ -1608,7 +1796,7 @@
   // Listening mode can only be drawn once the list is in. At that point
   // nothing is in progress yet, but guard anyway rather than wiping a session.
   Speech.onReady(function(){
-    renderAudioCtl(); renderAudioWarn(); renderSentence();
+    renderAudioCtl(); renderAudioWarn(); renderSentence(); renderLessons();
     if(!quiz && !writer) renderConfig();
   });
 })();
