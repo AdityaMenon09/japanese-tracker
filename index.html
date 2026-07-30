@@ -574,18 +574,21 @@
   function rvar(r){ return RVAR[r] ? RVAR[r].slice() : [r]; }
 
   // ---- Words ----
+  // `s` is the script the word is actually written in: "h" = all hiragana,
+  // "k" = all katakana. The flashcard deck filters on it, so each group below
+  // has to stay internally pure — no mixed-script entries.
+  // Within each script the words are grouped by sound: plain kana, then
+  // dakuten (が ざ だ ば rows), then handakuten (ぱ row). All are real words —
+  // the point is to meet the voiced marks in vocabulary rather than as drills.
   var WORDS = [
+    // --- hiragana · plain ---
     {k:"ねこ",r:["neko"],m:"cat",s:"h"},
     {k:"いぬ",r:["inu"],m:"dog",s:"h"},
-    {k:"みず",r:["mizu"],m:"water",s:"h"},
     {k:"ほん",r:["hon"],m:"book",s:"h"},
     {k:"あさ",r:["asa"],m:"morning",s:"h"},
     {k:"よる",r:["yoru"],m:"night",s:"h"},
     {k:"ひと",r:["hito"],m:"person",s:"h"},
     {k:"くるま",r:["kuruma"],m:"car",s:"h"},
-    {k:"でんわ",r:["denwa"],m:"telephone",s:"h"},
-    {k:"がっこう",r:["gakkou","gakko","gakkoo"],m:"school",s:"h"},
-    {k:"ともだち",r:["tomodachi"],m:"friend",s:"h"},
     {k:"せんせい",r:["sensei","sensee"],m:"teacher",s:"h"},
     {k:"たべる",r:["taberu"],m:"to eat",s:"h"},
     {k:"のむ",r:["nomu"],m:"to drink",s:"h"},
@@ -596,22 +599,121 @@
     {k:"あめ",r:["ame"],m:"rain",s:"h"},
     {k:"はな",r:["hana"],m:"flower",s:"h"},
     {k:"さかな",r:["sakana"],m:"fish",s:"h"},
+    {k:"やま",r:["yama"],m:"mountain",s:"h"},
+    {k:"うみ",r:["umi"],m:"sea",s:"h"},
+    {k:"そら",r:["sora"],m:"sky",s:"h"},
+    {k:"いえ",r:["ie"],m:"house",s:"h"},
+    {k:"へや",r:["heya"],m:"room",s:"h"},
+    {k:"にく",r:["niku"],m:"meat",s:"h"},
+    {k:"やさい",r:["yasai"],m:"vegetable",s:"h"},
+    {k:"くつ",r:["kutsu"],m:"shoes",s:"h"},
+    {k:"おかね",r:["okane"],m:"money",s:"h"},
+    {k:"おいしい",r:["oishii","oishi"],m:"delicious",s:"h"},
+    // --- hiragana · dakuten (が ざ だ ば) ---
+    {k:"みず",r:["mizu"],m:"water",s:"h"},
+    {k:"でんわ",r:["denwa"],m:"telephone",s:"h"},
+    {k:"がっこう",r:["gakkou","gakko","gakkoo"],m:"school",s:"h"},
+    {k:"ともだち",r:["tomodachi"],m:"friend",s:"h"},
     {k:"たまご",r:["tamago"],m:"egg",s:"h"},
+    {k:"かばん",r:["kaban"],m:"bag / satchel",s:"h"},
+    {k:"かぎ",r:["kagi"],m:"key",s:"h"},
+    {k:"まど",r:["mado"],m:"window",s:"h"},
+    {k:"からだ",r:["karada"],m:"body",s:"h"},
+    {k:"みぎ",r:["migi"],m:"right (side)",s:"h"},
+    {k:"ひだり",r:["hidari"],m:"left (side)",s:"h"},
+    {k:"かぞく",r:["kazoku"],m:"family",s:"h"},
+    {k:"じかん",r:["jikan"],m:"time / hour",s:"h"},
+    {k:"ごはん",r:["gohan"],m:"cooked rice / a meal",s:"h"},
+    {k:"ぎんこう",r:["ginkou","ginko","ginkoo"],m:"bank",s:"h"},
+    {k:"だいがく",r:["daigaku"],m:"university",s:"h"},
+    {k:"ざっし",r:["zasshi"],m:"magazine",s:"h"},
+    {k:"しんぶん",r:["shinbun","shimbun"],m:"newspaper",s:"h"},
+    {k:"でんしゃ",r:["densha"],m:"train",s:"h"},
+    {k:"じてんしゃ",r:["jitensha"],m:"bicycle",s:"h"},
+    {k:"でぐち",r:["deguchi"],m:"exit",s:"h"},
+    {k:"いりぐち",r:["iriguchi"],m:"entrance",s:"h"},
+    {k:"げんき",r:["genki"],m:"well / energetic",s:"h"},
+    {k:"でんき",r:["denki"],m:"electricity / a light",s:"h"},
+    {k:"くだもの",r:["kudamono"],m:"fruit",s:"h"},
+    {k:"たまねぎ",r:["tamanegi"],m:"onion",s:"h"},
+    {k:"そば",r:["soba"],m:"soba noodles",s:"h"},
+    {k:"どようび",r:["doyoubi","doyobi"],m:"Saturday",s:"h"},
+    {k:"げつようび",r:["getsuyoubi","getsuyobi"],m:"Monday",s:"h"},
+    {k:"あぶない",r:["abunai"],m:"dangerous",s:"h"},
+    {k:"だいじょうぶ",r:["daijoubu","daijobu"],m:"all right / no problem",s:"h"},
+    {k:"ありがとう",r:["arigatou","arigato"],m:"thank you",s:"h"},
+    // --- hiragana · handakuten (ぱ) ---
+    {k:"えんぴつ",r:["enpitsu","empitsu"],m:"pencil",s:"h"},
+    {k:"きっぷ",r:["kippu"],m:"ticket",s:"h"},
+    {k:"さんぽ",r:["sanpo","sampo"],m:"a walk / stroll",s:"h"},
+    {k:"てんぷら",r:["tenpura","tempura"],m:"tempura",s:"h"},
+    {k:"しんぱい",r:["shinpai","shimpai"],m:"worry",s:"h"},
+    {k:"せんぱい",r:["senpai","sempai"],m:"senior (at school / work)",s:"h"},
+    {k:"かんぱい",r:["kanpai","kampai"],m:"cheers! (a toast)",s:"h"},
+    {k:"いっぱい",r:["ippai"],m:"full / a lot",s:"h"},
+    {k:"ぺらぺら",r:["perapera"],m:"fluently",s:"h"},
+    // --- katakana · plain ---
     {k:"コーヒー",r:["koohii","kohi","koohi","kouhii"],m:"coffee",s:"k"},
-    {k:"テレビ",r:["terebi"],m:"television",s:"k"},
-    {k:"パン",r:["pan"],m:"bread",s:"k"},
     {k:"ケーキ",r:["keeki","keki"],m:"cake",s:"k"},
-    {k:"ビール",r:["biiru","biru"],m:"beer",s:"k"},
     {k:"カメラ",r:["kamera"],m:"camera",s:"k"},
     {k:"ホテル",r:["hoteru"],m:"hotel",s:"k"},
     {k:"タクシー",r:["takushii","takushi"],m:"taxi",s:"k"},
-    {k:"バス",r:["basu"],m:"bus",s:"k"},
-    {k:"ペン",r:["pen"],m:"pen",s:"k"},
     {k:"ノート",r:["nooto","noto"],m:"notebook",s:"k"},
+    {k:"テスト",r:["tesuto"],m:"test",s:"k"},
+    {k:"ラーメン",r:["raamen","ramen"],m:"ramen",s:"k"},
+    {k:"シャツ",r:["shatsu"],m:"shirt",s:"k"},
+    {k:"スカート",r:["sukaato","sukato"],m:"skirt",s:"k"},
+    {k:"ネクタイ",r:["nekutai"],m:"necktie",s:"k"},
+    {k:"カレー",r:["karee","kare"],m:"curry",s:"k"},
+    {k:"トイレ",r:["toire"],m:"toilet",s:"k"},
+    {k:"ナイフ",r:["naifu"],m:"knife",s:"k"},
+    {k:"フォーク",r:["fooku","foku"],m:"fork",s:"k"},
+    {k:"クラス",r:["kurasu"],m:"class",s:"k"},
+    {k:"メール",r:["meeru","meru"],m:"email",s:"k"},
+    {k:"シャワー",r:["shawaa","shawa"],m:"shower",s:"k"},
+    {k:"サッカー",r:["sakkaa","sakka"],m:"soccer",s:"k"},
+    {k:"テニス",r:["tenisu"],m:"tennis",s:"k"},
+    {k:"レストラン",r:["resutoran"],m:"restaurant",s:"k"},
+    {k:"チョコレート",r:["chokoreeto","chokoreto"],m:"chocolate",s:"k"},
+    {k:"アイスクリーム",r:["aisukuriimu","aisukurimu"],m:"ice cream",s:"k"},
+    {k:"スマホ",r:["sumaho"],m:"smartphone",s:"k"},
+    {k:"エアコン",r:["eakon"],m:"air conditioner",s:"k"},
+    // --- katakana · dakuten (ガ ザ ダ バ) ---
+    {k:"テレビ",r:["terebi"],m:"television",s:"k"},
+    {k:"ビール",r:["biiru","biru"],m:"beer",s:"k"},
+    {k:"バス",r:["basu"],m:"bus",s:"k"},
     {k:"ドア",r:["doa"],m:"door",s:"k"},
     {k:"ラジオ",r:["rajio"],m:"radio",s:"k"},
-    {k:"テスト",r:["tesuto"],m:"test",s:"k"},
-    {k:"バナナ",r:["banana"],m:"banana",s:"k"}
+    {k:"バナナ",r:["banana"],m:"banana",s:"k"},
+    {k:"コンビニ",r:["konbini","kombini"],m:"convenience store",s:"k"},
+    {k:"ズボン",r:["zubon"],m:"trousers",s:"k"},
+    {k:"デパート",r:["depaato","depato"],m:"department store",s:"k"},
+    {k:"ジュース",r:["juusu","jusu"],m:"juice",s:"k"},
+    {k:"ゲーム",r:["geemu","gemu"],m:"game",s:"k"},
+    {k:"ギター",r:["gitaa","gita"],m:"guitar",s:"k"},
+    {k:"ビル",r:["biru"],m:"building",s:"k"},
+    {k:"ガラス",r:["garasu"],m:"glass (the material)",s:"k"},
+    {k:"バッグ",r:["baggu"],m:"bag (handbag)",s:"k"},
+    {k:"ベッド",r:["beddo"],m:"bed",s:"k"},
+    {k:"カード",r:["kaado","kado"],m:"card",s:"k"},
+    {k:"ビデオ",r:["bideo"],m:"video",s:"k"},
+    {k:"テーブル",r:["teeburu","teburu"],m:"table",s:"k"},
+    {k:"ダンス",r:["dansu"],m:"dance",s:"k"},
+    {k:"エレベーター",r:["erebeetaa","erebeeta","erebeta"],m:"elevator",s:"k"},
+    // --- katakana · handakuten (パ) ---
+    {k:"パン",r:["pan"],m:"bread",s:"k"},
+    {k:"ペン",r:["pen"],m:"pen",s:"k"},
+    {k:"パソコン",r:["pasokon"],m:"computer",s:"k"},
+    {k:"スーパー",r:["suupaa","supa","supaa","suupa"],m:"supermarket",s:"k"},
+    {k:"プール",r:["puuru","puru"],m:"swimming pool",s:"k"},
+    {k:"ピアノ",r:["piano"],m:"piano",s:"k"},
+    {k:"ポケット",r:["poketto"],m:"pocket",s:"k"},
+    {k:"アパート",r:["apaato","apato"],m:"apartment",s:"k"},
+    {k:"ピザ",r:["piza"],m:"pizza",s:"k"},
+    {k:"パーティー",r:["paatii","paati","patii","pati"],m:"party",s:"k"},
+    {k:"コップ",r:["koppu"],m:"cup / tumbler",s:"k"},
+    {k:"スプーン",r:["supuun","supun"],m:"spoon",s:"k"},
+    {k:"ボールペン",r:["boorupen","borupen"],m:"ballpoint pen",s:"k"}
   ];
 
   // ---- Lessons: the Minna no Nihongo I syllabus (N5) ----
@@ -1317,10 +1419,19 @@
     return KANA.filter(function(x){ return sets.indexOf(x.s)>=0; });
   }
 
+  // Words written purely in one script, or the whole list.
+  function wordFilter(script){
+    if(script==="both") return WORDS.slice();
+    var want = script==="kata" ? "k" : "h";
+    return WORDS.filter(function(w){ return w.s===want; });
+  }
+
   // ============================================================
   //  FLASHCARDS — spaced repetition (SM-2 lite, day-based)
   // ============================================================
-  var fcCfg = { deck:"kana", dir:"jp", script:"hira", set:"basic", newLimit:15 };
+  // `script` filters the kana deck; `wscript` filters the words deck. They are
+  // kept apart so switching decks doesn't quietly change the other one's setting.
+  var fcCfg = { deck:"kana", dir:"jp", script:"hira", set:"basic", wscript:"both", newLimit:15 };
   var fcSession = null;
 
   function fcCards(){
@@ -1331,7 +1442,7 @@
         if(fcCfg.script==="kata"||fcCfg.script==="both") cards.push({id:"k:k:"+h2k(x.h), jp:h2k(x.h), reading:x.r, meaning:"", script:"k"});
       });
     } else {
-      WORDS.forEach(function(w){ cards.push({id:"w:"+w.k, jp:w.k, reading:w.r[0], meaning:w.m, script:w.s}); });
+      wordFilter(fcCfg.wscript).forEach(function(w){ cards.push({id:"w:"+w.k, jp:w.k, reading:w.r[0], meaning:w.m, script:w.s}); });
     }
     return cards;
   }
@@ -1392,6 +1503,14 @@
         '<option value="combo"'+sel(fcCfg.set,"combo")+'>+ combos</option>'+
       '</select></div>';
   }
+  function fcWordFields(){
+    var n = { hira:wordFilter("hira").length, kata:wordFilter("kata").length, both:WORDS.length };
+    return '<div class="qz-field"><label>Script</label><select id="fcWordScript">'+
+        '<option value="hira"'+sel(fcCfg.wscript,"hira")+'>Hiragana only ('+n.hira+')</option>'+
+        '<option value="kata"'+sel(fcCfg.wscript,"kata")+'>Katakana only ('+n.kata+')</option>'+
+        '<option value="both"'+sel(fcCfg.wscript,"both")+'>Both ('+n.both+')</option>'+
+      '</select></div>';
+  }
 
   function fcDeckCounts(){
     var all=fcCards(), t=today(), due=0, fresh=0;
@@ -1404,7 +1523,7 @@
     var host=document.getElementById("flash");
     var c=fcDeckCounts();
     document.getElementById("fcHint").textContent = c.due+" due · "+c.fresh+" new";
-    var deckFields = fcCfg.deck==="kana" ? fcKanaFields() : "";
+    var deckFields = fcCfg.deck==="kana" ? fcKanaFields() : fcWordFields();
     host.innerHTML =
       '<p class="qz-intro">Real spaced-repetition study. Flip each card, then rate how well you knew it — cards you miss come back fast, ones you know get pushed further out. Finishing a session ticks off <b>Flashcards</b> for today.</p>'+
       '<div class="qz-controls">'+ fcDeckField() + fcDirField() + deckFields +
@@ -1416,6 +1535,8 @@
     if(fcCfg.deck==="kana"){
       document.getElementById("fcScript").onchange=function(){ fcCfg.script=this.value; renderFcConfig(); };
       document.getElementById("fcSet").onchange=function(){ fcCfg.set=this.value; renderFcConfig(); };
+    } else {
+      document.getElementById("fcWordScript").onchange=function(){ fcCfg.wscript=this.value; renderFcConfig(); };
     }
     document.getElementById("fcStart").onclick=startFc;
   }
