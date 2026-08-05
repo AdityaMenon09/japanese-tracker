@@ -43,9 +43,10 @@
   .streak-badge { margin-left:auto; text-align:center; }
   .streak-badge .flame { font-size:1.9rem; font-weight:700; color:var(--seal); font-variant-numeric:tabular-nums; line-height:1; }
   .streak-badge .lbl { font-size:0.64rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-soft); }
-  .top-reset { align-self:flex-start; font:inherit; font-size:0.72rem; background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:4px; padding:4px 10px; cursor:pointer; margin-left:16px; white-space:nowrap; }
-  .top-reset:hover { border-color:var(--seal); color:var(--seal); }
-  .top-reset:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .top-reset, .top-home { align-self:flex-start; font:inherit; font-size:0.72rem; background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:4px; padding:4px 10px; cursor:pointer; margin-left:16px; white-space:nowrap; }
+  .top-reset:hover, .top-home:hover { border-color:var(--seal); color:var(--seal); }
+  .top-reset:focus-visible, .top-home:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .top-home { text-decoration:none; }
 
   h2.eyebrow { display:flex; align-items:baseline; gap:11px; margin:34px 0 14px; font-size:1.2rem; font-weight:600; }
   h2.eyebrow .g { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--seal); font-size:1.25rem; }
@@ -367,7 +368,7 @@
     .top{flex-wrap:wrap;}
     .top-title{flex:1 1 150px; min-width:0;}
     .streak-badge{margin-left:auto;}
-    .aud-ctl{margin-left:0;} .top-reset{margin-left:0;}
+    .aud-ctl{margin-left:0;} .top-reset{margin-left:0;} .top-home{margin-left:0;}
     .spk{width:34px;height:34px;} .qz-play{width:96px;height:96px;}
     .sod-jp{font-size:1.35rem;}
     .qz-show{font-size:2.4rem;}
@@ -392,6 +393,7 @@
       <div class="lbl">Day streak</div>
     </div>
     <div class="aud-ctl" id="audCtl"></div>
+    <a class="top-home" href="index.html" title="Back to the landing page">← Home</a>
     <button class="top-reset" id="resetTop" title="Reset all saved progress">↺ Reset</button>
   </header>
   <div id="audWarn"></div>
@@ -1767,6 +1769,7 @@
   }
 
   function renderConfig(){
+    clearAdvance();   // a pending advance must not fire after leaving the quiz
     renderBest();
     var host=document.getElementById("quiz");
 
@@ -1828,7 +1831,8 @@
   }
 
   function startQuiz(){
-    quiz = { qs:buildQuestions(), idx:0, score:0, answered:false, padScript:"h" };
+    clearAdvance();
+    quiz = { qs:buildQuestions(), idx:0, score:0, answered:false, padScript:"h", timer:null };
     renderQuestion();
   }
 
@@ -1877,7 +1881,8 @@
       speak(q.audio);   // play once on arrival; the button replays it
     }
     ans.focus();
-    ans.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); onAction(); } });
+    // Enter is handled once at the document level (see below) so it still works
+    // after the input is disabled, and when focus sits on an on-screen kana key.
     document.getElementById("qzCheck").onclick=onAction;
   }
 
@@ -1943,6 +1948,19 @@
     if(!quiz.answered) checkAnswer(); else nextQuestion();
   }
 
+  // Enter drives the whole quiz: submit the answer, then advance. Bound once on
+  // the document so it keeps working when the answer input is disabled after
+  // checking, or when focus is on an on-screen kana key rather than the input.
+  document.addEventListener("keydown", function(e){
+    if(e.key!=="Enter" || !quiz) return;
+    if(!document.getElementById("qzCheck")) return;   // not on a question screen
+    var t=e.target;
+    // Leave Enter alone in any other field on the page (lesson sentences, etc.)
+    if(t && t.id!=="qzAns" && (t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT")) return;
+    e.preventDefault();   // also stops a focused button firing its own click
+    onAction();
+  });
+
   function checkAnswer(){
     var q=quiz.qs[quiz.idx];
     var val=document.getElementById("qzAns").value;
@@ -1972,9 +1990,22 @@
     document.getElementById("qzAns").disabled=true;
     var btn=document.getElementById("qzCheck");
     btn.textContent = (quiz.idx+1 < quiz.qs.length) ? "Next" : "See score";
+    // Move on by itself. A miss gets longer, so there is time to read the answer
+    // and hear it spoken; Enter or the button still skips ahead immediately.
+    autoAdvance(ok ? 1500 : 2900);
+  }
+
+  function autoAdvance(ms){
+    clearAdvance();
+    quiz.timer = setTimeout(function(){ quiz.timer=null; nextQuestion(); }, ms);
+  }
+
+  function clearAdvance(){
+    if(quiz && quiz.timer){ clearTimeout(quiz.timer); quiz.timer=null; }
   }
 
   function nextQuestion(){
+    clearAdvance();
     quiz.idx++;
     if(quiz.idx < quiz.qs.length) renderQuestion(); else renderResult();
   }
