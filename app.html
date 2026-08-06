@@ -1030,8 +1030,9 @@
   var Speech = (function(){
     var synth = window.speechSynthesis;
     var voice = null;      // the chosen ja-JP voice, or null if there is none
-    var settled = false;   // the voice list has actually arrived
-    var subs = [];
+    var settled = false;   // we've made our first decision about the voice list
+    var readySubs = [];    // run once, when the list first arrives
+    var changeSubs = [];   // run whenever ja-voice availability flips afterwards
 
     function pick(){
       var vs = (synth && synth.getVoices()) || [];
@@ -1042,31 +1043,37 @@
       voice = local[0] || ja[0] || null;
       return true;
     }
-    function settle(){
-      if(settled) return;
-      if(!pick()) return;
-      settled = true;
-      subs.forEach(function(f){ f(); }); subs = [];
+    function fireReady(){ var s = readySubs; readySubs = []; s.forEach(function(f){ f(); }); }
+    function fireChange(){ changeSubs.forEach(function(f){ f(); }); }
+
+    // Mobile browsers often load voices a second or two after the page, and
+    // some only expose a Japanese voice on a *later* voiceschanged event than
+    // the first. So settle once for the first render, then keep listening:
+    // re-pick on every change and re-render whenever ja availability flips —
+    // otherwise a phone whose ja voice arrives late shows no speaker at all.
+    function onVoices(){
+      var had = !!voice;
+      var got = pick();
+      if(!settled){ if(got){ settled = true; fireReady(); } return; }
+      if(!!voice !== had) fireChange();
     }
     if(synth){
-      settle();
+      pick();
+      if((synth.getVoices() || []).length) settled = true;   // list already here
+      if(synth.addEventListener) synth.addEventListener("voiceschanged", onVoices);
+      else synth.onvoiceschanged = onVoices;
+      // Some builds never fire the event and never populate the list; stop
+      // waiting after a moment, but leave the listener above for late arrivals.
       if(!settled){
-        if(synth.addEventListener) synth.addEventListener("voiceschanged", settle);
-        else synth.onvoiceschanged = settle;
-        // Some builds never fire the event. Give up after a moment so the UI
-        // stops waiting on a list that is never coming.
-        setTimeout(function(){
-          if(settled) return;
-          pick(); settled = true;
-          subs.forEach(function(f){ f(); }); subs = [];
-        }, 2000);
+        setTimeout(function(){ if(!settled){ pick(); settled = true; fireReady(); } }, 2000);
       }
     }
     return {
       supported: function(){ return !!synth; },
       ok:        function(){ return !!(synth && voice); },
       voice:     function(){ return voice; },
-      onReady:   function(f){ if(settled) f(); else subs.push(f); },
+      onReady:   function(f){ if(settled) f(); else readySubs.push(f); },
+      onVoiceChange: function(f){ changeSubs.push(f); },
       stop:      function(){ try { if(synth) synth.cancel(); } catch(e){} },
       say: function(text, opts){
         if(!synth || !voice || !text) return false;
@@ -2368,10 +2375,12 @@
   // Voices arrive asynchronously in Chrome, so the audio controls and the
   // Listening mode can only be drawn once the list is in. At that point
   // nothing is in progress yet, but guard anyway rather than wiping a session.
-  Speech.onReady(function(){
+  function onAudioState(){
     renderAudioCtl(); renderAudioWarn(); renderSentence(); renderLessons();
     if(!quiz && !writer) renderConfig();
-  });
+  }
+  Speech.onReady(onAudioState);
+  Speech.onVoiceChange(onAudioState);   // a phone may surface a ja voice late
 })();
 </script>
 </body>
