@@ -68,6 +68,10 @@
     color:var(--seal); opacity:.06; pointer-events:none; white-space:nowrap;
   }
   .top > * { position:relative; z-index:1; }
+  /* Title takes the leftover space and wraps into it, so the seal, streak and
+     controls always stay inside the banner's padding instead of overflowing
+     the rounded corner when the row gets tight. */
+  .top-title { flex:1 1 0; min-width:0; }
   .seal-mark {
     flex:0 0 auto; width:74px; height:74px; border-radius:50%;
     display:grid; place-items:center; font-size:2rem; line-height:1; color:#fff;
