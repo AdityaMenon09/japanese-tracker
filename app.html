@@ -406,6 +406,31 @@
   .fc-say { display:flex; align-items:center; justify-content:center; gap:2px; margin-bottom:10px; }
   .fc-say span { font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); }
 
+  /* ---- Writing practice (finger/mouse drawing pad) ---- */
+  .wr-prompt { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:2px 0 14px; }
+  .wr-prompt .lbl { width:100%; font-size:0.66rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; }
+  .wr-prompt .tgt { display:inline-flex; align-items:center; gap:6px; font-size:1.7rem; font-weight:700; color:var(--seal); }
+  .wr-prompt .rom { font-size:0.92rem; color:var(--ink-soft); }
+  .wr-stage {
+    position:relative; width:100%; height:clamp(240px,48vw,320px);
+    border-radius:16px; overflow:hidden; background:#221F1B;
+    border:1px solid var(--line); box-shadow:inset 0 2px 16px rgba(0,0,0,.5);
+    /* The whole point: a finger-drag here draws — it must never pan the page. */
+    touch-action:none; overscroll-behavior:contain;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  .wr-guide {
+    position:absolute; inset:0; z-index:1; display:grid; place-items:center;
+    font-family:var(--jp); color:rgba(255,255,255,.14); line-height:1;
+    pointer-events:none; user-select:none;
+  }
+  .wr-canvas {
+    position:absolute; inset:0; z-index:2; display:block; width:100%; height:100%;
+    touch-action:none; overscroll-behavior:contain; cursor:crosshair;
+  }
+  .wr-tools { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+  .wr-hint { margin:12px 0 0; font-size:0.82rem; color:var(--ink-soft); line-height:1.55; }
+
   /* ---- Hiragana / Katakana reference chart ---- */
   .kana-chart { background:var(--surface); border:1px solid var(--line); border-radius:var(--card-radius); padding:22px 24px 26px; box-shadow:var(--shadow-clay); }
   .kc-bar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:6px; }
