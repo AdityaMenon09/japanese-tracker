@@ -495,6 +495,99 @@
     .qz-answer{font-size:1.2rem;}
     .fc-big{font-size:2.9rem;}
     .fc-rate .rkey{display:none;}
+    .thm-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
+    .exam-timer{font-size:1.05rem;}
+  }
+
+  /* ============================================================
+     N5 exam-prep additions — countdown, themed vocab, the shared
+     multiple-choice engine, reading passages, and the mock exam.
+     All lean on the tokens above so the voice never changes.
+     ============================================================ */
+
+  /* ---- Exam countdown ---- */
+  .cd { display:flex; flex-wrap:wrap; align-items:center; gap:16px 26px; background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--seal); border-radius:var(--card-radius); padding:20px 24px; box-shadow:var(--shadow-clay); }
+  .cd-days { text-align:center; flex:0 0 auto; min-width:96px; }
+  .cd-days .n { font-family:var(--num); font-size:3.1rem; font-weight:800; color:var(--seal); line-height:1; font-variant-numeric:tabular-nums; }
+  .cd-days .l { font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-soft); margin-top:3px; }
+  .cd-meta { flex:1 1 240px; min-width:0; }
+  .cd-meta .dt { font-weight:700; font-size:1rem; }
+  .cd-meta .note { font-size:0.82rem; color:var(--ink-soft); margin-top:2px; }
+  .cd-facts { display:flex; flex-wrap:wrap; gap:8px; margin-top:11px; }
+  .cd-fact { font-size:0.72rem; background:var(--paper); border:1px solid var(--line); border-radius:var(--pill); padding:5px 12px; color:var(--ink-soft); }
+  .cd-fact b { color:var(--ink); font-weight:700; }
+
+  /* ---- Themed vocabulary ---- */
+  .thm-picker { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:4px; }
+  .thm-chip { font:inherit; font-weight:700; font-size:0.82rem; padding:8px 15px; border:1px solid var(--line); border-radius:var(--pill); background:var(--paper); color:var(--ink-soft); cursor:pointer; transition:transform .15s var(--ease), color .15s, border-color .15s, background .15s; }
+  .thm-chip:hover { border-color:var(--seal); color:var(--seal); transform:translateY(-2px); }
+  .thm-chip.on { color:#fff; background:linear-gradient(180deg,#f08a72,var(--seal) 55%,var(--seal-deep)); border-color:transparent; box-shadow:0 6px 14px -6px rgba(224,103,77,.7); }
+  .thm-chip:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .thm-note { margin:2px 0 0; font-size:0.8rem; color:var(--ink-soft); }
+  .thm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:16px; }
+  .vcard { position:relative; text-align:left; border:1px solid var(--line); border-radius:14px; background:linear-gradient(180deg,var(--surface),var(--paper)); padding:12px 14px 13px; cursor:pointer; font:inherit; color:var(--ink); transition:transform .14s var(--ease), border-color .14s, box-shadow .14s, background .14s; }
+  .vcard:hover { transform:translateY(-3px); border-color:var(--seal); box-shadow:var(--shadow-soft); background:var(--seal-wash); }
+  .vcard:active { transform:translateY(-1px) scale(.98); }
+  .vcard:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .vcard .vk { font-family:var(--jp); font-size:1.45rem; line-height:1.25; word-break:break-word; }
+  .vcard .vr { font-size:0.72rem; color:var(--ink-soft); margin-top:3px; letter-spacing:.02em; }
+  .vcard .vm { font-size:0.86rem; margin-top:5px; line-height:1.35; }
+  .vcard .vspk { position:absolute; top:9px; right:10px; font-size:0.72rem; opacity:.35; }
+
+  /* ---- Shared multiple-choice engine (grammar / reading / mock) ---- */
+  .mc-q { font-family:var(--jp); font-size:1.4rem; line-height:1.75; margin:6px 0 16px; word-break:break-word; }
+  .mc-q.en { font-family:var(--body); font-size:1.12rem; line-height:1.6; }
+  .mc-q .blank { color:var(--seal); font-weight:700; }
+  .mc-opts { display:flex; flex-direction:column; gap:10px; }
+  .mc-opt { display:flex; align-items:center; gap:12px; min-height:52px; padding:11px 15px; border:1.5px solid var(--line); border-radius:14px; background:var(--paper); color:var(--ink); font:inherit; font-size:1.05rem; text-align:left; cursor:pointer; transition:transform .14s var(--ease), border-color .14s, background .14s, box-shadow .14s; }
+  .mc-opt .lt { flex:0 0 auto; width:28px; height:28px; border-radius:8px; display:grid; place-items:center; font-family:var(--num); font-weight:700; font-size:0.92rem; background:var(--sunken); color:var(--ink-soft); transition:background .14s, color .14s; }
+  .mc-opt .ch { flex:1 1 auto; min-width:0; font-family:var(--jp); }
+  .mc-opt .ch.en { font-family:var(--body); }
+  .mc-opt:hover:not(:disabled) { border-color:var(--seal); transform:translateY(-2px); box-shadow:var(--shadow-soft); }
+  .mc-opt:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .mc-opt.correct { border-color:var(--good); background:color-mix(in srgb, var(--good) 15%, var(--surface)); }
+  .mc-opt.correct .lt { background:var(--good); color:#fff; }
+  .mc-opt.wrong { border-color:var(--bad); background:color-mix(in srgb, var(--bad) 12%, var(--surface)); }
+  .mc-opt.wrong .lt { background:var(--bad); color:#fff; }
+  .mc-opt.dim { opacity:.55; }
+  .mc-opt:disabled { cursor:default; }
+  .mc-expl { margin-top:16px; padding:13px 16px; border-radius:12px; background:var(--sunken); border:1px solid var(--line-soft); font-size:0.9rem; line-height:1.65; color:var(--ink-soft); display:none; }
+  .mc-expl.show { display:block; }
+  .mc-expl b { color:var(--ink); font-weight:700; }
+  .mc-expl .jp { font-family:var(--jp); }
+
+  /* ---- Reading passages ---- */
+  .rd-passage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:15px 18px; margin:2px 0 18px; }
+  .rd-title { display:flex; align-items:center; gap:9px; font-weight:700; font-size:0.92rem; margin-bottom:9px; }
+  .rd-title .badge { font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--seal); border:1px solid var(--seal); border-radius:20px; padding:1px 8px; font-weight:700; }
+  .rd-jp { font-family:var(--jp); font-size:1.16rem; line-height:1.95; }
+  .rd-jp .row { display:flex; justify-content:space-between; gap:12px; padding:2px 0; border-bottom:1px dashed var(--line-soft); }
+  .rd-jp .row:last-child { border-bottom:none; }
+  .rd-en { margin-top:12px; padding-top:10px; border-top:1px dashed var(--line-soft); font-size:0.85rem; color:var(--ink-soft); line-height:1.7; display:none; }
+  .rd-en.show { display:block; }
+  .rd-en-btn { font:inherit; font-size:0.72rem; font-weight:600; background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:20px; padding:4px 12px; cursor:pointer; margin-top:11px; }
+  .rd-en-btn:hover { border-color:var(--seal); color:var(--seal); }
+  .rd-en-btn:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+
+  /* ---- Mock exam ---- */
+  .exam-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:8px; }
+  .exam-sec-lbl { font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--indigo); font-weight:700; }
+  .exam-timer { font-family:var(--num); font-weight:800; font-size:1.15rem; font-variant-numeric:tabular-nums; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:var(--pill); padding:5px 15px; }
+  .exam-timer.low { color:var(--bad); border-color:var(--bad); }
+  .exam-scoregrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin:16px 0; }
+  .exam-scard { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:12px 15px; text-align:center; }
+  .exam-scard .sn { font-family:var(--num); font-size:1.6rem; font-weight:800; color:var(--indigo); font-variant-numeric:tabular-nums; line-height:1.05; }
+  .exam-scard .sl { font-size:0.64rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-top:4px; }
+  .exam-verdict { text-align:center; font-weight:700; padding:12px 14px; border-radius:12px; margin:4px 0 16px; line-height:1.5; }
+  .exam-verdict.pass { background:color-mix(in srgb, var(--good) 15%, var(--surface)); color:var(--good); border:1px solid color-mix(in srgb, var(--good) 40%, var(--surface)); }
+  .exam-verdict.work { background:color-mix(in srgb, var(--gold) 16%, var(--surface)); color:var(--gold); border:1px solid color-mix(in srgb, var(--gold) 42%, var(--surface)); }
+  .exam-verdict .vsub { display:block; margin-top:4px; font-weight:400; font-size:0.82rem; color:var(--ink-soft); }
+  .exam-note { font-size:0.8rem; color:var(--ink-soft); line-height:1.6; margin:10px 0 0; }
+
+  @media (max-width:600px){
+    .mc-q{font-size:1.25rem;} .mc-opt{font-size:1rem;}
+    .cd-days .n{font-size:2.6rem;}
+    .rd-jp{font-size:1.06rem;}
   }
 </style>
 </head>
@@ -541,6 +634,11 @@
   </div>
 
   <section>
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">試</span>JLPT N5 countdown<span class="hint">the December sitting</span></h2>
+    <div class="cd" id="countdown"></div>
+  </section>
+
+  <section>
     <h2 class="eyebrow"><span class="g" aria-hidden="true">句</span>Sentence of the day<span class="sod-tog" id="sodTog"></span></h2>
     <div class="sod" id="sod"></div>
   </section>
@@ -556,9 +654,25 @@
     </section>
   </div>
 
+  <div class="grid-two">
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">文</span>Grammar drills<span class="hint" id="grBest"></span></h2>
+      <div class="quiz" id="grammar"></div>
+    </section>
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">読</span>Reading practice<span class="hint" id="rdBest"></span></h2>
+      <div class="quiz" id="reading"></div>
+    </section>
+  </div>
+
   <section>
     <h2 class="eyebrow"><span class="g" aria-hidden="true">仮</span>Kana chart<span class="hint">tap a kana to hear it</span></h2>
     <div class="kana-chart" id="kanaChart"></div>
+  </section>
+
+  <section>
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">語</span>Vocabulary by theme<span class="hint">tap a word to hear it</span></h2>
+    <div class="kana-chart" id="themes"></div>
   </section>
 
   <section>
@@ -566,6 +680,11 @@
     <div class="bar" style="margin-bottom:10px"><i id="lsBar" style="width:0%"></i></div>
     <p class="ls-intro">The <b>みんなの日本語 初級I</b> grammar order, Lessons 1–25 — the standard N5 path. Tap a lesson to see what it covers and hear the examples. Tick it off when you’ve worked through it.</p>
     <div id="lessons"></div>
+  </section>
+
+  <section>
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">模</span>Mock exam<span class="hint" id="mkBest"></span></h2>
+    <div class="quiz" id="mock"></div>
   </section>
 
   <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
@@ -1011,6 +1130,7 @@
   if(state.quiz.input == null) state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
   if(!state.lessons) state.lessons = {};   // lesson number -> true when done
   if(!state.mine) state.mine = {};         // lesson number -> [{en,kana,kanji,romaji,note}]
+  if(!state.exam) state.exam = {};         // best scores: grammar / reading / mock
   if(!state.sent) state.sent = {};
   // Kanji off by default — the plan gets there in months 1–3, not on day one.
   if(state.sent.kanji == null) state.sent.kanji = false;
@@ -2341,16 +2461,471 @@
     }
   }
 
+  // ============================================================
+  //  N5 EXAM PREP — countdown, themed vocab, grammar & reading
+  //  drills, and a mock exam. All four drills share one small
+  //  multiple-choice engine so the real four-choice format is
+  //  baked in once. The existing Quiz and Flashcards are untouched.
+  // ============================================================
+
+  // The December JLPT always falls on the first Sunday. In 2026 that is the 6th.
+  var EXAM_DATE = "2026-12-06";
+
+  // ---- Themed vocabulary (the "basic stuff": numbers, days, colours, body…) ----
+  // k = kana (what you read), j = natural form with kanji (spoken; "" when none),
+  // r = rōmaji, m = meaning. Speech reads j||k so pitch/segmentation stay natural.
+  var THEMES = [
+    {name:"Numbers", note:"4, 7 and 9 have two readings — the second is common in counting and dates.", words:[
+      {k:"ゼロ／れい",j:"",r:"zero / rei",m:"0"},
+      {k:"いち",j:"一",r:"ichi",m:"1"},{k:"に",j:"二",r:"ni",m:"2"},{k:"さん",j:"三",r:"san",m:"3"},
+      {k:"よん／し",j:"四",r:"yon / shi",m:"4"},{k:"ご",j:"五",r:"go",m:"5"},{k:"ろく",j:"六",r:"roku",m:"6"},
+      {k:"なな／しち",j:"七",r:"nana / shichi",m:"7"},{k:"はち",j:"八",r:"hachi",m:"8"},
+      {k:"きゅう／く",j:"九",r:"kyuu / ku",m:"9"},{k:"じゅう",j:"十",r:"juu",m:"10"},
+      {k:"ひゃく",j:"百",r:"hyaku",m:"100"},{k:"せん",j:"千",r:"sen",m:"1,000"},{k:"まん",j:"万",r:"man",m:"10,000"}]},
+    {name:"Days of the week", words:[
+      {k:"にちようび",j:"日曜日",r:"nichiyoubi",m:"Sunday"},{k:"げつようび",j:"月曜日",r:"getsuyoubi",m:"Monday"},
+      {k:"かようび",j:"火曜日",r:"kayoubi",m:"Tuesday"},{k:"すいようび",j:"水曜日",r:"suiyoubi",m:"Wednesday"},
+      {k:"もくようび",j:"木曜日",r:"mokuyoubi",m:"Thursday"},{k:"きんようび",j:"金曜日",r:"kinyoubi",m:"Friday"},
+      {k:"どようび",j:"土曜日",r:"doyoubi",m:"Saturday"},{k:"なんようび",j:"何曜日",r:"nanyoubi",m:"what day?"}]},
+    {name:"Dates", note:"Days 1–10 and 20 are irregular — worth memorising as a block.", words:[
+      {k:"ついたち",j:"一日",r:"tsuitachi",m:"1st"},{k:"ふつか",j:"二日",r:"futsuka",m:"2nd"},
+      {k:"みっか",j:"三日",r:"mikka",m:"3rd"},{k:"よっか",j:"四日",r:"yokka",m:"4th"},
+      {k:"いつか",j:"五日",r:"itsuka",m:"5th"},{k:"むいか",j:"六日",r:"muika",m:"6th"},
+      {k:"なのか",j:"七日",r:"nanoka",m:"7th"},{k:"ようか",j:"八日",r:"youka",m:"8th"},
+      {k:"ここのか",j:"九日",r:"kokonoka",m:"9th"},{k:"とおか",j:"十日",r:"tooka",m:"10th"},
+      {k:"はつか",j:"二十日",r:"hatsuka",m:"20th"}]},
+    {name:"Time", words:[
+      {k:"いま",j:"今",r:"ima",m:"now"},{k:"〜じ",j:"〜時",r:"-ji",m:"o'clock"},{k:"〜ふん／ぷん",j:"〜分",r:"-fun / pun",m:"minute(s)"},
+      {k:"はん",j:"半",r:"han",m:"half past"},{k:"ごぜん",j:"午前",r:"gozen",m:"a.m."},{k:"ごご",j:"午後",r:"gogo",m:"p.m."},
+      {k:"なんじ",j:"何時",r:"nanji",m:"what time?"}]},
+    {name:"Time words", words:[
+      {k:"きのう",j:"昨日",r:"kinou",m:"yesterday"},{k:"きょう",j:"今日",r:"kyou",m:"today"},{k:"あした",j:"明日",r:"ashita",m:"tomorrow"},
+      {k:"けさ",j:"今朝",r:"kesa",m:"this morning"},{k:"こんばん",j:"今晩",r:"konban",m:"tonight"},{k:"あさ",j:"朝",r:"asa",m:"morning"},
+      {k:"ひる",j:"昼",r:"hiru",m:"noon / daytime"},{k:"よる",j:"夜",r:"yoru",m:"night"},{k:"まいにち",j:"毎日",r:"mainichi",m:"every day"},
+      {k:"まいあさ",j:"毎朝",r:"maiasa",m:"every morning"}]},
+    {name:"Colours", note:"あか・あお・しろ・くろ also work as adjectives: あかい, あおい, しろい, くろい.", words:[
+      {k:"あか",j:"赤",r:"aka",m:"red"},{k:"あお",j:"青",r:"ao",m:"blue"},{k:"しろ",j:"白",r:"shiro",m:"white"},
+      {k:"くろ",j:"黒",r:"kuro",m:"black"},{k:"きいろ",j:"黄色",r:"kiiro",m:"yellow"},{k:"みどり",j:"緑",r:"midori",m:"green"},
+      {k:"ちゃいろ",j:"茶色",r:"chairo",m:"brown"},{k:"むらさき",j:"紫",r:"murasaki",m:"purple"},
+      {k:"ピンク",j:"",r:"pinku",m:"pink"},{k:"オレンジ",j:"",r:"orenji",m:"orange"},{k:"いろ",j:"色",r:"iro",m:"colour"}]},
+    {name:"Body", words:[
+      {k:"あたま",j:"頭",r:"atama",m:"head"},{k:"かお",j:"顔",r:"kao",m:"face"},{k:"め",j:"目",r:"me",m:"eye"},
+      {k:"みみ",j:"耳",r:"mimi",m:"ear"},{k:"はな",j:"鼻",r:"hana",m:"nose"},{k:"くち",j:"口",r:"kuchi",m:"mouth"},
+      {k:"は",j:"歯",r:"ha",m:"tooth"},{k:"て",j:"手",r:"te",m:"hand"},{k:"あし",j:"足",r:"ashi",m:"foot / leg"},
+      {k:"おなか",j:"お腹",r:"onaka",m:"stomach"},{k:"からだ",j:"体",r:"karada",m:"body"},{k:"かみ",j:"髪",r:"kami",m:"hair"}]},
+    {name:"Family", note:"Plain forms (ちち, はは) are for your own family; the お〜さん forms are polite / for others'.", words:[
+      {k:"かぞく",j:"家族",r:"kazoku",m:"family"},{k:"ちち",j:"父",r:"chichi",m:"(my) father"},{k:"はは",j:"母",r:"haha",m:"(my) mother"},
+      {k:"おとうさん",j:"お父さん",r:"otousan",m:"father"},{k:"おかあさん",j:"お母さん",r:"okaasan",m:"mother"},
+      {k:"あに",j:"兄",r:"ani",m:"older brother"},{k:"あね",j:"姉",r:"ane",m:"older sister"},
+      {k:"おとうと",j:"弟",r:"otouto",m:"younger brother"},{k:"いもうと",j:"妹",r:"imouto",m:"younger sister"},
+      {k:"こども",j:"子供",r:"kodomo",m:"child"}]},
+    {name:"Food & drink", words:[
+      {k:"ごはん",j:"ご飯",r:"gohan",m:"rice / meal"},{k:"パン",j:"",r:"pan",m:"bread"},{k:"みず",j:"水",r:"mizu",m:"water"},
+      {k:"おちゃ",j:"お茶",r:"ocha",m:"tea"},{k:"ぎゅうにゅう",j:"牛乳",r:"gyuunyuu",m:"milk"},{k:"たまご",j:"卵",r:"tamago",m:"egg"},
+      {k:"にく",j:"肉",r:"niku",m:"meat"},{k:"さかな",j:"魚",r:"sakana",m:"fish"},{k:"やさい",j:"野菜",r:"yasai",m:"vegetable"},
+      {k:"くだもの",j:"果物",r:"kudamono",m:"fruit"},{k:"たべもの",j:"食べ物",r:"tabemono",m:"food"},{k:"のみもの",j:"飲み物",r:"nomimono",m:"drink"}]},
+    {name:"Places", words:[
+      {k:"えき",j:"駅",r:"eki",m:"station"},{k:"がっこう",j:"学校",r:"gakkou",m:"school"},{k:"びょういん",j:"病院",r:"byouin",m:"hospital"},
+      {k:"ぎんこう",j:"銀行",r:"ginkou",m:"bank"},{k:"ゆうびんきょく",j:"郵便局",r:"yuubinkyoku",m:"post office"},
+      {k:"としょかん",j:"図書館",r:"toshokan",m:"library"},{k:"こうえん",j:"公園",r:"kouen",m:"park"},{k:"みせ",j:"店",r:"mise",m:"shop"},
+      {k:"うち",j:"家",r:"uchi",m:"home / house"},{k:"かいしゃ",j:"会社",r:"kaisha",m:"company / office"},{k:"まち",j:"町",r:"machi",m:"town"}]},
+    {name:"Weather & nature", words:[
+      {k:"てんき",j:"天気",r:"tenki",m:"weather"},{k:"はれ",j:"晴れ",r:"hare",m:"clear / sunny"},{k:"あめ",j:"雨",r:"ame",m:"rain"},
+      {k:"ゆき",j:"雪",r:"yuki",m:"snow"},{k:"くもり",j:"曇り",r:"kumori",m:"cloudy"},{k:"かぜ",j:"風",r:"kaze",m:"wind"},
+      {k:"やま",j:"山",r:"yama",m:"mountain"},{k:"かわ",j:"川",r:"kawa",m:"river"},{k:"うみ",j:"海",r:"umi",m:"sea"},
+      {k:"そら",j:"空",r:"sora",m:"sky"},{k:"き",j:"木",r:"ki",m:"tree"},{k:"はな",j:"花",r:"hana",m:"flower"}]},
+    {name:"Adjectives", words:[
+      {k:"おおきい",j:"大きい",r:"ookii",m:"big"},{k:"ちいさい",j:"小さい",r:"chiisai",m:"small"},{k:"あたらしい",j:"新しい",r:"atarashii",m:"new"},
+      {k:"ふるい",j:"古い",r:"furui",m:"old"},{k:"たかい",j:"高い",r:"takai",m:"tall / expensive"},{k:"やすい",j:"安い",r:"yasui",m:"cheap"},
+      {k:"おいしい",j:"",r:"oishii",m:"delicious"},{k:"たのしい",j:"楽しい",r:"tanoshii",m:"fun"},{k:"むずかしい",j:"難しい",r:"muzukashii",m:"difficult"},
+      {k:"かんたん",j:"簡単",r:"kantan",m:"easy / simple"},{k:"いそがしい",j:"忙しい",r:"isogashii",m:"busy"},{k:"げんき",j:"元気",r:"genki",m:"well / lively"}]},
+    {name:"Verbs", words:[
+      {k:"たべる",j:"食べる",r:"taberu",m:"to eat"},{k:"のむ",j:"飲む",r:"nomu",m:"to drink"},{k:"いく",j:"行く",r:"iku",m:"to go"},
+      {k:"くる",j:"来る",r:"kuru",m:"to come"},{k:"かえる",j:"帰る",r:"kaeru",m:"to return home"},{k:"みる",j:"見る",r:"miru",m:"to see / watch"},
+      {k:"きく",j:"聞く",r:"kiku",m:"to listen / ask"},{k:"はなす",j:"話す",r:"hanasu",m:"to speak"},{k:"よむ",j:"読む",r:"yomu",m:"to read"},
+      {k:"かく",j:"書く",r:"kaku",m:"to write"},{k:"かう",j:"買う",r:"kau",m:"to buy"},{k:"ねる",j:"寝る",r:"neru",m:"to sleep"},
+      {k:"おきる",j:"起きる",r:"okiru",m:"to wake up"},{k:"わかる",j:"分かる",r:"wakaru",m:"to understand"}]},
+    {name:"Question words", words:[
+      {k:"なに／なん",j:"何",r:"nani / nan",m:"what"},{k:"だれ",j:"誰",r:"dare",m:"who"},{k:"どこ",j:"",r:"doko",m:"where"},
+      {k:"いつ",j:"",r:"itsu",m:"when"},{k:"どうして",j:"",r:"doushite",m:"why"},{k:"どう",j:"",r:"dou",m:"how"},
+      {k:"いくら",j:"",r:"ikura",m:"how much"},{k:"いくつ",j:"",r:"ikutsu",m:"how many / how old"},
+      {k:"どれ",j:"",r:"dore",m:"which one"},{k:"どちら",j:"",r:"dochira",m:"which (of two)"}]},
+    {name:"Position", words:[
+      {k:"うえ",j:"上",r:"ue",m:"on / above"},{k:"した",j:"下",r:"shita",m:"under / below"},{k:"なか",j:"中",r:"naka",m:"inside"},
+      {k:"そと",j:"外",r:"soto",m:"outside"},{k:"まえ",j:"前",r:"mae",m:"front / before"},{k:"うしろ",j:"後ろ",r:"ushiro",m:"behind"},
+      {k:"みぎ",j:"右",r:"migi",m:"right"},{k:"ひだり",j:"左",r:"hidari",m:"left"},{k:"となり",j:"隣",r:"tonari",m:"next to"},
+      {k:"ちかく",j:"近く",r:"chikaku",m:"near"},{k:"あいだ",j:"間",r:"aida",m:"between"}]},
+    {name:"Greetings", words:[
+      {k:"おはようございます",j:"",r:"ohayou gozaimasu",m:"good morning"},{k:"こんにちは",j:"",r:"konnichiwa",m:"hello / good afternoon"},
+      {k:"こんばんは",j:"",r:"konbanwa",m:"good evening"},{k:"さようなら",j:"",r:"sayounara",m:"goodbye"},
+      {k:"ありがとうございます",j:"",r:"arigatou gozaimasu",m:"thank you"},{k:"すみません",j:"",r:"sumimasen",m:"excuse me / sorry"},
+      {k:"おねがいします",j:"お願いします",r:"onegaishimasu",m:"please"},{k:"はじめまして",j:"",r:"hajimemashite",m:"nice to meet you"},
+      {k:"いただきます",j:"",r:"itadakimasu",m:"before eating"},{k:"おやすみなさい",j:"",r:"oyasuminasai",m:"good night"}]}
+  ];
+
+  // ---- Grammar drill bank (four-choice, ◻ marks the blank) ----
+  var GRAMMAR = [
+    {q:"わたし◻ がくせいです。",a:"は",d:["が","を","へ"],e:"「は」marks the topic — as for me, (I) am a student."},
+    {q:"にほんご◻ べんきょうします。",a:"を",d:["が","は","に"],e:"「を」marks the direct object of the verb."},
+    {q:"あさ 7じ◻ おきます。",a:"に",d:["を","で","へ"],e:"「に」marks a point in clock time."},
+    {q:"うち◻ ばんごはんを たべます。",a:"で",d:["に","を","へ"],e:"「で」marks where an action takes place."},
+    {q:"でんしゃ◻ かいしゃへ いきます。",a:"で",d:["を","に","と"],e:"「で」marks the means — by train."},
+    {q:"ともだち◻ えいがを みます。",a:"と",d:["を","に","へ"],e:"「と」means “with (someone)”."},
+    {q:"これは わたし◻ かさです。",a:"の",d:["を","が","に"],e:"「の」links two nouns — my umbrella."},
+    {q:"わたしは にほんご◻ すきです。",a:"が",d:["を","は","に"],e:"「好き」takes 「が」for the thing liked."},
+    {q:"9じ◻ 5じまで はたらきます。",a:"から",d:["まで","より","では"],e:"「から」= from; paired here with 「まで」= until."},
+    {q:"Aさんは がくせいです。Bさん◻ がくせいです。",a:"も",d:["は","が","を"],e:"「も」= too / also."},
+    {q:"つくえの うえに ねこ◻ います。",a:"が",d:["を","は","に"],e:"Existence: the thing that exists takes 「が」."},
+    {q:"にわに いぬが ◻。",a:"います",d:["あります","いります","なります"],e:"「います」is existence for living things."},
+    {q:"つくえの うえに ほんが ◻。",a:"あります",d:["います","おきます","なります"],e:"「あります」is existence for non-living things."},
+    {q:"きのう えいがを ◻。",a:"みました",d:["みます","みません","みましょう"],e:"Past polite = 〜ました."},
+    {q:"あした がっこうへ ◻。 (will not go)",a:"いきません",d:["いきました","いって","いきたい"],e:"Negative non-past = 〜ません."},
+    {q:"ちょっと ◻ ください。 (please wait)",a:"まって",d:["まちます","まつ","まった"],e:"Request = て-form + ください. 待つ → 待って."},
+    {q:"ここで しゃしんを ◻ ください。 (please don't take)",a:"とらないで",d:["とって","とります","とらない"],e:"Negative request = ない-form + でください."},
+    {q:"にほんへ ◻ です。 (want to go)",a:"いきたい",d:["いって","いく","いきましょう"],e:"Desire = verb stem + たいです. 行きます → 行きたい."},
+    {q:"いっしょに ひるごはんを ◻。 (let's eat)",a:"たべましょう",d:["たべます","たべて","たべたい"],e:"Suggestion = 〜ましょう (let's)."},
+    {q:"コーヒーを のみ◻。 (won't you? — an invitation)",a:"ませんか",d:["ましたか","ました","ましょうか"],e:"〜ませんか politely invites someone."},
+    {q:"この えいがは おもしろ◻。 (is not interesting)",a:"くないです",d:["じゃないです","いでした","かったです"],e:"い-adjective negative: drop い → 〜くない(です)."},
+    {q:"きのうの テストは ◻。 (was difficult)",a:"むずかしかったです",d:["むずかしいでした","むずかしくないです","むずかしいです"],e:"い-adjective past: 〜い → 〜かった(です)."},
+    {q:"ここは ◻ まちです。 (a quiet town)",a:"しずかな",d:["しずか","しずかで","しずかに"],e:"な-adjective before a noun takes 〜な."},
+    {q:"この へやは ◻。 (is not clean)",a:"きれいじゃありません",d:["きれくないです","きれいかったです","きれいい"],e:"な-adjective negative = 〜じゃありません."},
+    {q:"◻ ほんは にほんごの ほんです。 (this book)",a:"この",d:["これ","ここ","こちら"],e:"「この」comes before a noun; 「これ」stands alone."},
+    {q:"りんごを ◻ ください。 (three, please)",a:"みっつ",d:["みつつ","さんつ","みつ"],e:"Native counting: ひとつ・ふたつ・みっつ…"},
+    {q:"きってを ◻ かいました。 (five stamps)",a:"ごまい",d:["ごつ","ごほん","ごにん"],e:"「〜まい」counts flat, thin things."},
+    {q:"きょうしつに がくせいが ◻ います。 (two people)",a:"ふたり",d:["にひき","ににん","ふたつ"],e:"People: ひとり・ふたり, then 〜にん (3人…)."},
+    {q:"でんしゃは バス◻ はやいです。 (faster than the bus)",a:"より",d:["から","まで","ほど"],e:"「N より」= compared to / than N."},
+    {q:"にくと さかなと ◻ が すきですか。 (which of the two)",a:"どちら",d:["どこ","なに","だれ"],e:"「どちら」asks which of two options."},
+    {q:"あたらしい くるま◻ ほしいです。 (want a new car)",a:"が",d:["を","に","は"],e:"「ほしい」(want a thing) takes 「が」."},
+    {q:"これは ◻ ですか。 (how much?)",a:"いくら",d:["いくつ","どこ","なに"],e:"「いくら」asks a price."},
+    {q:"たんじょうびは ◻ ですか。 (when?)",a:"いつ",d:["どこ","だれ","どう"],e:"「いつ」asks when."},
+    {q:"あたまが いたいです◻、かえります。 (because)",a:"から",d:["まで","より","でも"],e:"「〜から」gives a reason — because."},
+    {q:"まいにち にほんごを べんきょう◻。 (do — habitual)",a:"します",d:["しました","しません","して"],e:"する → します for a habitual present action."},
+    {q:"ねる まえに、ほんを ◻。 (read)",a:"よみます",d:["よんで","よんだ","よみたい"],e:"Plain statement, polite present = 〜ます."}
+  ];
+
+  // ---- Reading passages (short passages + one information-finding notice) ----
+  // jp lines; a "a\tb" line renders as a two-column row (used by the notice).
+  // qs are four-choice comprehension questions about the passage above them.
+  var READING = [
+    {kind:"Short passage", title:"わたしの いちにち", en:[
+      "I get up at six every morning. I eat breakfast at seven.",
+      "I go to the office by train. At lunch I often eat a sandwich.",
+      "I go to bed at eleven at night."], jp:[
+      "わたしは まいあさ ６じに おきます。",
+      "７じに あさごはんを たべます。",
+      "でんしゃで かいしゃへ いきます。",
+      "ひるは よく サンドイッチを たべます。",
+      "よる １１じに ねます。"], qs:[
+      {q:"なんじに おきますか。",a:"６じ",d:["７じ","１１じ","８じ"],e:"「まいあさ ６じに おきます」."},
+      {q:"かいしゃへ どうやって いきますか。",a:"でんしゃで",d:["バスで","くるまで","じてんしゃで"],e:"「でんしゃで かいしゃへ いきます」."},
+      {q:"ひるに よく なにを たべますか。",a:"サンドイッチ",d:["あさごはん","ラーメン","おすし"],e:"「ひるは よく サンドイッチを たべます」."}]},
+    {kind:"Message", title:"やまださんからの メール", en:[
+      "Hello, Tanaka. Let's meet tomorrow at 3 in front of the station.",
+      "Would you like to watch a film together?",
+      "After it finishes, let's have dinner. — Yamada"], jp:[
+      "たなかさん、こんにちは。",
+      "あした ３じに えきの まえで あいましょう。",
+      "いっしょに えいがを みませんか。",
+      "おわってから、ばんごはんを たべましょう。",
+      "やまだ"], qs:[
+      {q:"どこで あいますか。",a:"えきの まえ",d:["えいがかん","レストラン","たなかさんの うち"],e:"「えきの まえで あいましょう」."},
+      {q:"なんじに あいますか。",a:"３じ",d:["４じ","１じ","２じ"],e:"「あした ３じに」."},
+      {q:"えいがの あとで なにを しますか。",a:"ばんごはんを たべる",d:["えきへ いく","うちで ねる","かいものを する"],e:"「おわってから、ばんごはんを たべましょう」."}]},
+    {kind:"Notice", title:"としょかんの おしらせ", en:[
+      "Library — Opens 9 a.m., Closes 6 p.m., Closed on Mondays."], jp:[
+      "★ としょかん ★",
+      "ひらく\tごぜん ９じ",
+      "しまる\tごご ６じ",
+      "やすみ\tげつようび"], qs:[
+      {q:"としょかんは なんじに しまりますか。",a:"ごご ６じ",d:["ごご ９じ","ごぜん ６じ","ごぜん ９じ"],e:"「しまる ごご ６じ」= closes at 6 p.m."},
+      {q:"やすみは なんようびですか。",a:"げつようび",d:["にちようび","どようび","きんようび"],e:"「やすみ げつようび」= closed Mondays."},
+      {q:"なんじに ひらきますか。",a:"ごぜん ９じ",d:["ごご ９じ","ごぜん ６じ","ごご ６じ"],e:"「ひらく ごぜん ９じ」= opens at 9 a.m."}]},
+    {kind:"Short passage", title:"しゅうまつ", en:[
+      "Last Saturday I went to the park with a friend. The weather was good.",
+      "We ate a bento in the park. It was a lot of fun."], jp:[
+      "せんしゅうの どようび、ともだちと こうえんへ いきました。",
+      "てんきが よかったです。",
+      "こうえんで べんとうを たべました。",
+      "とても たのしかったです。"], qs:[
+      {q:"いつ こうえんへ いきましたか。",a:"せんしゅうの どようび",d:["きのう","らいしゅうの どようび","せんしゅうの にちようび"],e:"「せんしゅうの どようび … いきました」."},
+      {q:"てんきは どうでしたか。",a:"よかった",d:["わるかった","あめでした","さむかった"],e:"「てんきが よかったです」."},
+      {q:"こうえんで なにを たべましたか。",a:"べんとう",d:["ラーメン","サンドイッチ","なにも たべなかった"],e:"「べんとうを たべました」."}]}
+  ];
+
+  // ---- shared helpers ----
+  function clone(o){ var n={}; for(var k in o){ if(o.hasOwnProperty(k)) n[k]=o[k]; } return n; }
+  function fmtTime(s){ if(s<0) s=0; var m=Math.floor(s/60); return m+":"+String(s%60).padStart(2,"0"); }
+  // n distinct values of `key` from pool, excluding `correct`.
+  function distract(pool, key, correct, n){
+    var seen={}, out=[]; seen[correct]=1;
+    sample(pool, pool.length).forEach(function(x){ var v=x[key]; if(!seen[v]){ seen[v]=1; out.push(v); } });
+    return out.slice(0, n);
+  }
+  // Turn an authored {q,a,d,…} into an engine question with shuffled options.
+  function mkQ(it){
+    var choices = shuffle([it.a].concat(it.d));
+    return {
+      stem: (it.q||"").replace(/◻/g, '<span class="blank">＿＿</span>'),
+      stemEn: !!it.qEn, choices: choices, cEn: !!it.cEn,
+      answer: choices.indexOf(it.a), expl: it.e||"",
+      ctx: it.ctx||null, say: it.say||null, sec: it.sec||null
+    };
+  }
+
+  // ---- the multiple-choice engine (grammar / reading / mock all use it) ----
+  // opts: { label, bare, onDraw(q,i,total), onFinish({score,total,results}) }
+  var LT = ["A","B","C","D","E"];
+  function runMc(host, qs, opts){
+    opts = opts || {};
+    var i=0, score=0, results=[], locked=false;
+    function draw(){
+      if(i>=qs.length){ if(opts.onFinish) opts.onFinish({score:score,total:qs.length,results:results}); return; }
+      var q=qs[i]; locked=false;
+      var html="";
+      if(!opts.bare){
+        html += '<div class="qz-topbar"><span>'+esc(q.sec||opts.label||"Question")+'</span><span>'+(i+1)+' / '+qs.length+'</span></div>';
+      }
+      html += '<div class="qz-progress-bar"><i style="width:'+Math.round(i/qs.length*100)+'%"></i></div>';
+      if(q.ctx) html += q.ctx;
+      if(q.say) html += '<div class="qz-listen"><button type="button" class="qz-play" id="mcPlay" aria-label="Play audio"><span aria-hidden="true">🔊</span></button><span class="qz-replay">tap to replay</span></div>';
+      if(q.stem) html += '<div class="mc-q'+(q.stemEn?" en":"")+'">'+q.stem+'</div>';
+      html += '<div class="mc-opts">';
+      q.choices.forEach(function(c,idx){
+        html += '<button type="button" class="mc-opt" data-i="'+idx+'"><span class="lt">'+LT[idx]+'</span><span class="ch'+(q.cEn?" en":"")+'">'+esc(c)+'</span></button>';
+      });
+      html += '</div><div class="mc-expl" id="mcExpl"></div><div class="qz-actions" id="mcActions"></div>';
+      host.innerHTML = html;
+      if(opts.onDraw) opts.onDraw(q, i, qs.length);
+      if(q.say){
+        var pb=document.getElementById("mcPlay");
+        var play=function(){ speak(q.say); };
+        pb.onclick=play; setTimeout(play, 350);
+      }
+      var btns=host.querySelectorAll(".mc-opt");
+      for(var b=0;b<btns.length;b++){ (function(btn){ btn.onclick=function(){ choose(parseInt(btn.getAttribute("data-i"),10)); }; })(btns[b]); }
+    }
+    function choose(idx){
+      if(locked) return; locked=true;
+      var q=qs[i], ok=(idx===q.answer);
+      if(ok) score++;
+      results.push({sec:q.sec, ok:ok});
+      var btns=host.querySelectorAll(".mc-opt");
+      for(var b=0;b<btns.length;b++){
+        btns[b].disabled=true;
+        if(b===q.answer) btns[b].classList.add("correct");
+        else if(b===idx) btns[b].classList.add("wrong");
+        else btns[b].classList.add("dim");
+      }
+      var expl=document.getElementById("mcExpl");
+      if(q.expl || !ok){ expl.innerHTML=(ok?"<b>正解 — </b>":"<b>おしい — </b>")+(q.expl||""); expl.className="mc-expl show"; }
+      var last=(i===qs.length-1);
+      var act=document.getElementById("mcActions");
+      act.innerHTML='<button class="btn btn-seal" id="mcNext">'+(last?"See score →":"Next →")+'</button>';
+      var nx=document.getElementById("mcNext");
+      nx.onclick=function(){ i++; draw(); };
+      nx.focus();
+    }
+    draw();
+    return { finish:function(){ if(opts.onFinish) opts.onFinish({score:score,total:qs.length,results:results}); } };
+  }
+
+  function resultCard(res, btnId, btnLabel, extra){
+    var pct=res.total?Math.round(res.score/res.total*100):0;
+    var msg=pct>=80?"Excellent.":pct>=60?"Solid — keep going.":pct>=40?"Getting there.":"Early days — review and retry.";
+    return '<div class="qz-result"><div class="big">'+res.score+'<span class="of"> / '+res.total+'</span></div>'+
+      '<div class="msg">'+pct+'% · '+msg+'</div>'+(extra||"")+
+      '<div class="actions"><button class="btn btn-seal" id="'+btnId+'">'+esc(btnLabel)+'</button></div></div>';
+  }
+
+  // ---- countdown ----
+  function daysUntil(target){
+    var t=new Date(target+"T00:00:00"), n=new Date(); n.setHours(0,0,0,0);
+    return Math.round((t-n)/86400000);
+  }
+  function renderCountdown(){
+    var host=document.getElementById("countdown"); if(!host) return;
+    var d=daysUntil(EXAM_DATE);
+    var dt=new Date(EXAM_DATE+"T00:00:00").toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+    var big = d>0 ? d : (d===0 ? "0" : "—");
+    var lbl = d>0 ? "days to go" : (d===0 ? "it's today" : "date passed");
+    host.innerHTML =
+      '<div class="cd-days"><div class="n">'+big+'</div><div class="l">'+lbl+'</div></div>'+
+      '<div class="cd-meta"><div class="dt">'+dt+'</div>'+
+      '<div class="note">JLPT N5, December sitting. Confirm your local test date and registration deadline — sittings and signup windows vary by country.</div>'+
+      '<div class="cd-facts"><span class="cd-fact"><b>3</b> sections</span><span class="cd-fact"><b>~90</b> min</span>'+
+      '<span class="cd-fact">four-choice</span><span class="cd-fact">pass <b>80</b>/180</span></div></div>';
+  }
+
+  // ---- themed vocabulary ----
+  var thmCfg = { sel:0, rom:true };
+  function renderThemes(){
+    var host=document.getElementById("themes"); if(!host) return;
+    var picker=THEMES.map(function(t,i){ return '<button type="button" class="thm-chip'+(i===thmCfg.sel?" on":"")+'" data-i="'+i+'">'+esc(t.name)+'</button>'; }).join("");
+    var t=THEMES[thmCfg.sel]||THEMES[0];
+    var grid=t.words.map(function(w){
+      return '<button type="button" class="vcard" data-say="'+esc(w.j||w.k)+'">'+
+        (Speech.ok()?'<span class="vspk" aria-hidden="true">🔊</span>':'')+
+        '<div class="vk">'+esc(w.k)+'</div>'+
+        (thmCfg.rom?'<div class="vr">'+esc(w.r)+'</div>':'')+
+        '<div class="vm">'+esc(w.m)+'</div></button>';
+    }).join("");
+    host.innerHTML =
+      '<div class="kc-bar" style="align-items:flex-start"><div class="thm-picker" style="flex:1 1 auto">'+picker+'</div>'+
+      '<button type="button" class="kc-rom'+(thmCfg.rom?" on":"")+'" id="thmRom">Rōmaji</button></div>'+
+      (t.note?'<p class="thm-note">'+esc(t.note)+'</p>':'')+
+      '<div class="thm-grid">'+grid+'</div>';
+    var chips=host.querySelectorAll(".thm-chip");
+    for(var c=0;c<chips.length;c++){ (function(b){ b.onclick=function(){ thmCfg.sel=parseInt(b.getAttribute("data-i"),10); renderThemes(); }; })(chips[c]); }
+    document.getElementById("thmRom").onclick=function(){ thmCfg.rom=!thmCfg.rom; renderThemes(); };
+    var cards=host.querySelectorAll(".vcard");
+    for(var v=0;v<cards.length;v++){ (function(b){ b.onclick=function(){ speak(b.getAttribute("data-say")); }; })(cards[v]); }
+  }
+
+  // ---- grammar & reading drills, and the mock exam ----
+  var examBusy=false;
+
+  function renderExamBests(){
+    function set(id,b){ var el=document.getElementById(id); if(el) el.textContent = b?("best "+b.score+"/"+b.total):""; }
+    set("grBest", state.exam.grammar); set("rdBest", state.exam.reading);
+    var m=state.exam.mock, mk=document.getElementById("mkBest"); if(mk) mk.textContent = m?("best "+m.pct+"%"):"";
+  }
+
+  function grammarIntro(){
+    var host=document.getElementById("grammar"); if(!host) return; examBusy=false;
+    var best=state.exam.grammar;
+    host.innerHTML =
+      '<p class="qz-intro">Fill-in-the-blank questions in the N5 four-choice format — particles, verb &amp; adjective forms, counters, question words. Each answer explains itself. '+(best?('Best: <b>'+best.score+'/'+best.total+'</b>. '):'')+'</p>'+
+      '<div class="qz-controls"><div class="qz-field"><label for="grN">Questions</label>'+
+      '<select id="grN"><option value="8">8</option><option value="12" selected>12</option><option value="20">20</option></select></div>'+
+      '<button class="btn btn-seal" id="grStart">Start drill</button></div>';
+    document.getElementById("grStart").onclick=function(){
+      examBusy=true;
+      var n=parseInt(document.getElementById("grN").value,10);
+      var qs=sample(GRAMMAR, Math.min(n,GRAMMAR.length)).map(mkQ);
+      runMc(host, qs, { label:"Grammar", onFinish:grammarDone });
+    };
+  }
+  function grammarDone(res){
+    var best=state.exam.grammar;
+    if(!best || res.score/res.total > best.score/best.total){ state.exam.grammar={score:res.score,total:res.total}; save(); renderExamBests(); }
+    document.getElementById("grammar").innerHTML=resultCard(res,"grAgain","New set");
+    document.getElementById("grAgain").onclick=grammarIntro;
+  }
+
+  function passageHtml(p){
+    var lines=p.jp.map(function(l){
+      if(l.indexOf("\t")>=0){ var q=l.split("\t"); return '<div class="row"><span>'+esc(q[0])+'</span><span>'+esc(q[1])+'</span></div>'; }
+      return '<div>'+esc(l)+'</div>';
+    }).join("");
+    var en=p.en?('<details><summary class="rd-en-btn">Show English</summary><div class="rd-en show" style="border:none;padding-top:8px">'+
+      p.en.map(function(e){ return '<div>'+esc(e)+'</div>'; }).join("")+'</div></details>'):"";
+    return '<div class="rd-passage"><div class="rd-title"><span class="badge">'+esc(p.kind)+'</span>'+esc(p.title)+'</div>'+
+      '<div class="rd-jp">'+lines+'</div>'+en+'</div>';
+  }
+  function readingIntro(){
+    var host=document.getElementById("reading"); if(!host) return; examBusy=false;
+    var best=state.exam.reading;
+    host.innerHTML =
+      '<p class="qz-intro">Read a short passage or notice, then answer — the N5 reading format (comprehension and finding information). '+(best?('Best: <b>'+best.score+'/'+best.total+'</b>. '):'')+'</p>'+
+      '<button class="btn btn-seal" id="rdStart">Start a passage</button>';
+    document.getElementById("rdStart").onclick=function(){
+      examBusy=true;
+      var p=READING[Math.floor(Math.random()*READING.length)];
+      var ctx=passageHtml(p);
+      var qs=p.qs.map(function(q){ var c=clone(q); c.ctx=ctx; c.sec="Reading"; return mkQ(c); });
+      runMc(host, qs, { label:"Reading", onFinish:readingDone });
+    };
+  }
+  function readingDone(res){
+    var best=state.exam.reading;
+    if(!best || res.score/res.total > best.score/best.total){ state.exam.reading={score:res.score,total:res.total}; save(); renderExamBests(); }
+    document.getElementById("reading").innerHTML=resultCard(res,"rdAgain","Another passage");
+    document.getElementById("rdAgain").onclick=readingIntro;
+  }
+
+  function buildMock(){
+    var items=[], pool=[];
+    THEMES.forEach(function(t){ t.words.forEach(function(w){ if((w.m||"").indexOf("?")<0) pool.push(w); }); });
+    // Vocabulary — read the word, choose the meaning.
+    sample(pool,8).forEach(function(w){
+      items.push(mkQ({ q:"「"+w.k+"」", a:w.m, d:distract(pool,"m",w.m,3), cEn:true, sec:"Vocabulary",
+        e:'<span class="jp">'+esc(w.j||w.k)+'</span> = '+esc(w.m) }));
+    });
+    // Grammar
+    sample(GRAMMAR,8).forEach(function(g){ var c=clone(g); c.sec="Grammar"; items.push(mkQ(c)); });
+    // Reading — one passage and its questions.
+    var p=READING[Math.floor(Math.random()*READING.length)], ctx=passageHtml(p);
+    p.qs.forEach(function(q){ var c=clone(q); c.ctx=ctx; c.sec="Reading"; items.push(mkQ(c)); });
+    // Listening — only where a Japanese voice exists.
+    if(Speech.ok()){
+      sample(pool,4).forEach(function(w){
+        items.push(mkQ({ q:"Listen, then choose the meaning.", qEn:true, a:w.m, d:distract(pool,"m",w.m,3),
+          cEn:true, say:(w.j||w.k), sec:"Listening", e:'<span class="jp">'+esc(w.j||w.k)+'</span> = '+esc(w.m) }));
+      });
+    }
+    return items;
+  }
+  function mockIntro(){
+    var host=document.getElementById("mock"); if(!host) return; examBusy=false;
+    var best=state.exam.mock, hasV=Speech.ok();
+    host.innerHTML =
+      '<p class="qz-intro">A short mock in the real N5 order — vocabulary, grammar, reading'+(hasV?", listening":"")+' — all four-choice, on a timer, then scored by section. '+
+      (hasV?"":"<b>Listening is skipped on this device</b> (no Japanese voice) — practise it on your phone or in Edge. ")+
+      (best?('Best so far: <b>'+best.pct+'%</b>. '):'')+'</p>'+
+      '<div class="cd-facts" style="margin-bottom:16px"><span class="cd-fact"><b>~'+(hasV?23:19)+'</b> questions</span>'+
+      '<span class="cd-fact"><b>20 min</b> timer</span><span class="cd-fact">four-choice</span></div>'+
+      '<button class="btn btn-seal" id="mkStart">Start mock exam</button>';
+    document.getElementById("mkStart").onclick=startMock;
+  }
+  function startMock(){
+    examBusy=true;
+    var host=document.getElementById("mock");
+    var items=buildMock();
+    host.innerHTML='<div class="exam-bar"><span class="exam-sec-lbl" id="mkSec"></span><span class="exam-timer" id="mkTimer">20:00</span></div><div id="mockEngine"></div>';
+    var left=20*60;
+    var tid=setInterval(function(){
+      left--; var el=document.getElementById("mkTimer");
+      if(!el){ clearInterval(tid); return; }        // navigated away
+      el.textContent=fmtTime(left); if(left<=60) el.classList.add("low");
+      if(left<=0){ clearInterval(tid); ctrl.finish(); }
+    },1000);
+    var ctrl=runMc(document.getElementById("mockEngine"), items, {
+      bare:true,
+      onDraw:function(q,i,total){ var s=document.getElementById("mkSec"); if(s) s.textContent=(q.sec||"")+"  ·  "+(i+1)+" / "+total; },
+      onFinish:function(res){ clearInterval(tid); mockDone(res); }
+    });
+  }
+  function mockDone(res){
+    var host=document.getElementById("mock");
+    var secs={};
+    res.results.forEach(function(r){ var s=r.sec||"Other"; if(!secs[s]) secs[s]={ok:0,n:0}; secs[s].n++; if(r.ok) secs[s].ok++; });
+    var pct=res.total?Math.round(res.score/res.total*100):0;
+    if(!state.exam.mock || pct>state.exam.mock.pct){ state.exam.mock={score:res.score,total:res.total,pct:pct}; save(); renderExamBests(); }
+    var cards="";
+    ["Vocabulary","Grammar","Reading","Listening"].forEach(function(s){ if(secs[s]) cards+='<div class="exam-scard"><div class="sn">'+secs[s].ok+'/'+secs[s].n+'</div><div class="sl">'+s+'</div></div>'; });
+    var pass=pct>=60;
+    var verdict=pass
+      ? '<div class="exam-verdict pass">On track — '+pct+'% overall<span class="vsub">Hold this across full-length practice and N5 is within reach.</span></div>'
+      : '<div class="exam-verdict work">'+pct+'% overall — more practice needed<span class="vsub">Aim for 60%+ here to sit comfortably above the real pass mark.</span></div>';
+    host.innerHTML =
+      '<div class="qz-result"><div class="big">'+res.score+'<span class="of"> / '+res.total+'</span></div><div class="msg">'+pct+'% overall</div></div>'+
+      verdict+'<div class="exam-scoregrid">'+cards+'</div>'+
+      '<p class="exam-note">The official N5 pass mark is <b>80 / 180</b> (about 44%) with per-section minimums. This mock reports raw percentages, so treat 60%+ as comfortable.</p>'+
+      '<div class="qz-actions"><button class="btn btn-seal" id="mkAgain">New mock</button></div>';
+    document.getElementById("mkAgain").onclick=mockIntro;
+  }
+
   // renderSentence rides along so the pair rolls over on its own if the page
   // is left open across midnight.
   function renderAll(){ renderToday(); renderStats(); renderHeat(); renderSentence(); renderLessons(); }
 
   function doReset(){
     if(confirm("Reset everything? Your streak, logs, milestones, flashcard schedule, and quiz scores will be cleared.")){
-      state={logs:{},milestones:{},quiz:{},srs:{},lessons:{},mine:{},audio:{auto:true,rate:0.8},sent:{kanji:false,romaji:false}};
+      state={logs:{},milestones:{},quiz:{},srs:{},lessons:{},mine:{},exam:{},audio:{auto:true,rate:0.8},sent:{kanji:false,romaji:false}};
       state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
       Speech.stop(); lsOpen=null;
       save(); renderAll(); renderMilestones(); renderConfig(); renderFcConfig();
+      renderCountdown(); renderThemes(); grammarIntro(); readingIntro(); mockIntro(); renderExamBests();
       renderAudioCtl(); renderAudioWarn();
     }
   }
@@ -2358,6 +2933,7 @@
   document.getElementById("resetTop").onclick=doReset;
 
   renderAll(); renderMilestones(); renderResources(); renderConfig(); renderFcConfig(); renderKanaChart();
+  renderCountdown(); renderThemes(); grammarIntro(); readingIntro(); mockIntro(); renderExamBests();
 
   // Gentle scroll-reveal. Only ever hides a block when we can guarantee something
   // will reveal it — motion allowed and IntersectionObserver present — so content
@@ -2378,6 +2954,10 @@
   function onAudioState(){
     renderAudioCtl(); renderAudioWarn(); renderSentence(); renderLessons();
     if(!quiz && !writer) renderConfig();
+    // A ja-voice arriving late unlocks tap-to-hear and the mock's listening
+    // section, so redraw those — but never clobber a drill already in progress.
+    renderThemes();
+    if(!examBusy) mockIntro();
   }
   Speech.onReady(onAudioState);
   Speech.onVoiceChange(onAudioState);   // a phone may surface a ja voice late
