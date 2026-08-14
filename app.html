@@ -582,6 +582,34 @@
   .mc-expl b { color:var(--ink); font-weight:700; }
   .mc-expl .jp { font-family:var(--jp); }
 
+  /* The newer 大問: an instruction line, the sentence under test, ★-assembly,
+     passage blanks, and the listening script revealed with the answer. */
+  .mc-inst { font-family:var(--body); font-size:0.78rem; letter-spacing:0.02em; color:var(--ink-soft);
+    font-weight:700; margin:2px 0 9px; line-height:1.5; }
+  .mc-sent { font-family:var(--jp); font-size:1.28rem; line-height:1.8; margin:0 0 16px; word-break:break-word; }
+  .mc-sit { font-family:var(--body); font-size:0.98rem; line-height:1.6; margin:0 0 8px; padding:10px 13px;
+    border-radius:11px; background:var(--sunken); border:1px solid var(--line-soft); }
+  .mc-u { text-decoration:none; border-bottom:2.5px solid var(--seal); padding-bottom:1px; font-weight:700; }
+  .mc-script { margin-top:9px; padding-top:9px; border-top:1px dashed var(--line-soft); font-size:0.85rem; }
+  .ord-skel { font-family:var(--jp); font-size:1.22rem; line-height:2.1; margin:0 0 16px; word-break:break-word; }
+  .ord-slot { display:inline-block; min-width:52px; margin:0 3px; text-align:center; color:var(--ink-soft); }
+  .ord-slot.star { color:var(--seal); font-weight:700; font-size:1.15em; }
+  .cz-b { display:inline-grid; place-items:center; width:22px; height:22px; margin:0 2px; vertical-align:middle;
+    border-radius:6px; background:var(--sunken); border:1px solid var(--line); color:var(--ink-soft);
+    font-family:var(--num); font-size:0.78rem; font-weight:700; }
+  .cz-b.on { background:var(--seal); border-color:var(--seal); color:#fff; }
+  .exam-mondai { margin-top:16px; }
+  .exam-mondai h4 { margin:0 0 8px; font-size:0.6rem; letter-spacing:0.13em; text-transform:uppercase;
+    color:var(--ink-soft); font-weight:700; }
+  .exam-mondai table { width:100%; border-collapse:collapse; font-size:0.83rem; }
+  .exam-mondai td { padding:5px 8px 5px 0; border-bottom:1px dashed var(--line-soft); vertical-align:middle; }
+  .exam-mondai td:first-child { font-family:var(--jp); }
+  .exam-mondai td:nth-child(2) { white-space:nowrap; font-family:var(--num); color:var(--ink-soft); }
+  .exam-mondai td:last-child { width:38%; }
+  .exam-mondai tr:last-child td { border-bottom:none; }
+  .mkbar { display:block; height:6px; border-radius:3px; background:var(--sunken); overflow:hidden; }
+  .mkbar i { display:block; height:100%; background:var(--seal); border-radius:3px; }
+
   /* ---- Reading passages ---- */
   .rd-passage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:15px 18px; margin:2px 0 18px; }
   .rd-title { display:flex; align-items:center; gap:9px; font-weight:700; font-size:0.92rem; margin-bottom:9px; }
@@ -700,6 +728,17 @@
     <h2 class="eyebrow"><span class="g" aria-hidden="true">語</span>Vocabulary by theme<span class="hint">tap a word to hear it</span></h2>
     <div class="kana-chart" id="themes"></div>
   </section>
+
+  <div class="grid-two">
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">字</span>文字・語彙 drills<span class="hint" id="vdBest"></span></h2>
+      <div class="quiz" id="vocabdrill"></div>
+    </section>
+    <section>
+      <h2 class="eyebrow"><span class="g" aria-hidden="true">聴</span>Listening<span class="hint" id="lsnBest"></span></h2>
+      <div class="quiz" id="listening"></div>
+    </section>
+  </div>
 
   <section>
     <h2 class="eyebrow"><span class="g" aria-hidden="true">課</span>Lessons<span class="hint" id="lsHint"></span></h2>
@@ -3116,7 +3155,7 @@
   // jp lines; a "a\tb" line renders as a two-column row (used by the notice).
   // qs are four-choice comprehension questions about the passage above them.
   var READING = [
-    {kind:"Short passage", title:"わたしの いちにち", en:[
+    {len:"short", kind:"内容理解（短文）", title:"わたしの いちにち", en:[
       "I get up at six every morning. I eat breakfast at seven.",
       "I go to the office by train. At lunch I often eat a sandwich.",
       "I go to bed at eleven at night."], jp:[
@@ -3128,7 +3167,7 @@
       {q:"なんじに おきますか。",a:"６じ",d:["７じ","１１じ","８じ"],e:"「まいあさ ６じに おきます」."},
       {q:"かいしゃへ どうやって いきますか。",a:"でんしゃで",d:["バスで","くるまで","じてんしゃで"],e:"「でんしゃで かいしゃへ いきます」."},
       {q:"ひるに よく なにを たべますか。",a:"サンドイッチ",d:["あさごはん","ラーメン","おすし"],e:"「ひるは よく サンドイッチを たべます」."}]},
-    {kind:"Message", title:"やまださんからの メール", en:[
+    {len:"short", kind:"内容理解（短文）", title:"やまださんからの メール", en:[
       "Hello, Tanaka. Let's meet tomorrow at 3 in front of the station.",
       "Would you like to watch a film together?",
       "After it finishes, let's have dinner. — Yamada"], jp:[
@@ -3140,7 +3179,7 @@
       {q:"どこで あいますか。",a:"えきの まえ",d:["えいがかん","レストラン","たなかさんの うち"],e:"「えきの まえで あいましょう」."},
       {q:"なんじに あいますか。",a:"３じ",d:["４じ","１じ","２じ"],e:"「あした ３じに」."},
       {q:"えいがの あとで なにを しますか。",a:"ばんごはんを たべる",d:["えきへ いく","うちで ねる","かいものを する"],e:"「おわってから、ばんごはんを たべましょう」."}]},
-    {kind:"Notice", title:"としょかんの おしらせ", en:[
+    {len:"info", kind:"情報検索（みじかい）", title:"としょかんの おしらせ", en:[
       "Library — Opens 9 a.m., Closes 6 p.m., Closed on Mondays."], jp:[
       "★ としょかん ★",
       "ひらく\tごぜん ９じ",
@@ -3149,7 +3188,7 @@
       {q:"としょかんは なんじに しまりますか。",a:"ごご ６じ",d:["ごご ９じ","ごぜん ６じ","ごぜん ９じ"],e:"「しまる ごご ６じ」= closes at 6 p.m."},
       {q:"やすみは なんようびですか。",a:"げつようび",d:["にちようび","どようび","きんようび"],e:"「やすみ げつようび」= closed Mondays."},
       {q:"なんじに ひらきますか。",a:"ごぜん ９じ",d:["ごご ９じ","ごぜん ６じ","ごご ６じ"],e:"「ひらく ごぜん ９じ」= opens at 9 a.m."}]},
-    {kind:"Short passage", title:"しゅうまつ", en:[
+    {len:"short", kind:"内容理解（短文）", title:"しゅうまつ", en:[
       "Last Saturday I went to the park with a friend. The weather was good.",
       "We ate a bento in the park. It was a lot of fun."], jp:[
       "せんしゅうの どようび、ともだちと こうえんへ いきました。",
@@ -3158,8 +3197,468 @@
       "とても たのしかったです。"], qs:[
       {q:"いつ こうえんへ いきましたか。",a:"せんしゅうの どようび",d:["きのう","らいしゅうの どようび","せんしゅうの にちようび"],e:"「せんしゅうの どようび … いきました」."},
       {q:"てんきは どうでしたか。",a:"よかった",d:["わるかった","あめでした","さむかった"],e:"「てんきが よかったです」."},
-      {q:"こうえんで なにを たべましたか。",a:"べんとう",d:["ラーメン","サンドイッチ","なにも たべなかった"],e:"「べんとうを たべました」."}]}
+      {q:"こうえんで なにを たべましたか。",a:"べんとう",d:["ラーメン","サンドイッチ","なにも たべなかった"],e:"「べんとうを たべました」."}]},
+
+    // ---- 内容理解（中文）— the ~250-character passages the exam actually uses ----
+    {len:"mid", kind:"内容理解（中文）", title:"わたしの かぞく", en:[
+      "There are four people in my family: my father, my mother, my older brother and me.",
+      "My father is a company employee. He leaves the house at seven every morning and gets home around eight at night.",
+      "He is very busy, but on Sundays he always plays with us.",
+      "My mother is a high-school teacher. She teaches English. She is very good at cooking and makes a delicious dinner every evening.",
+      "My older brother is a university student. He likes music and is learning the guitar.",
+      "I am in the second year of high school. I like reading books.",
+      "Next year I'd like the family to travel to Japan together."], jp:[
+      "わたしの かぞくは 4にんです。ちちと ははと あにと わたしです。",
+      "ちちは かいしゃいんです。まいあさ 7じに うちを でて、よる 8じごろ かえります。",
+      "とても いそがしいですが、にちようびは いつも わたしたちと あそんで くれます。",
+      "ははは こうこうの せんせいです。えいごを おしえて います。",
+      "りょうりが とても じょうずで、まいばん おいしい ばんごはんを つくります。",
+      "あには だいがくせいです。おんがくが すきで、ギターを ならって います。",
+      "わたしは こうこう 2ねんせいです。ほんを よむことが すきです。",
+      "らいねん、かぞくで にほんへ りょこうに いきたいと おもって います。"], qs:[
+      {q:"この ひとの かぞくは なんにんですか。",a:"4にん",d:["3にん","5にん","2にん"],e:"「かぞくは 4にんです」."},
+      {q:"おかあさんの しごとは なんですか。",a:"こうこうの せんせい",d:["かいしゃいん","だいがくせい","りょうりの せんせい"],e:"「ははは こうこうの せんせいです」. She teaches English, not cooking."},
+      {q:"おにいさんは なにを ならって いますか。",a:"ギター",d:["えいご","りょうり","にほんご"],e:"「ギターを ならって います」."},
+      {q:"にちようびに ちちは なにを しますか。",a:"かぞくと あそびます",d:["かいしゃへ いきます","りょうりを します","ギターを ひきます"],e:"「にちようびは いつも わたしたちと あそんで くれます」."},
+      {q:"らいねん なにを したいと おもって いますか。",a:"かぞくで にほんへ りょこうに いきたい",d:["にほんで はたらきたい","あたらしい ギターを かいたい","こうこうの せんせいに なりたい"],e:"最後の 文を 見て ください。"}]},
+
+    {len:"mid", kind:"内容理解（中文）", title:"はじめての アルバイト", en:[
+      "Since last month I've been working part-time at a convenience store.",
+      "The shift is from six to ten in the evening. I go after school finishes.",
+      "The first day I was very nervous. I couldn't understand what the customers said well,",
+      "so I said \"Sorry, could you say that once more?\" many times.",
+      "But the manager was very kind and taught me all sorts of things.",
+      "Now I'm used to the work and enjoy it every day.",
+      "Thanks to the job my Japanese has got better too.",
+      "Next month, with my first pay, I want to buy my family a present."], jp:[
+      "わたしは せんげつから コンビニで アルバイトを して います。",
+      "しごとは よる 6じから 10じまでです。がっこうが おわってから いきます。",
+      "はじめの ひは とても きんちょうしました。",
+      "おきゃくさんの ことばが よく わかりませんでしたから、",
+      "なんども 「すみません、もう いちど おねがいします」と いいました。",
+      "でも、てんちょうさんは とても しんせつで、いろいろ おしえて くれました。",
+      "いまは しごとに なれて、まいにち たのしいです。",
+      "アルバイトの おかげで、にほんごも じょうずに なりました。",
+      "らいげつ、はじめての きゅうりょうで かぞくに プレゼントを かいたいです。"], qs:[
+      {q:"アルバイトは なんじからですか。",a:"よる 6じ",d:["よる 10じ","あさ 6じ","ごご 3じ"],e:"「よる 6じから 10じまで」."},
+      {q:"はじめの ひは どうでしたか。",a:"きんちょうしました",d:["たのしかったです","ひまでした","やすみました"],e:"「はじめの ひは とても きんちょうしました」."},
+      {q:"てんちょうさんは どんな ひとですか。",a:"しんせつな ひと",d:["こわい ひと","いそがしい ひと","わかい ひと"],e:"「てんちょうさんは とても しんせつで」."},
+      {q:"いまの きもちは どうですか。",a:"まいにち たのしいです",d:["まだ きんちょうして います","しごとを やめたいです","がっこうが きらいです"],e:"「いまは しごとに なれて、まいにち たのしいです」."},
+      {q:"きゅうりょうで なにを したいですか。",a:"かぞくに プレゼントを かいたい",d:["あたらしい ふくを かいたい","りょこうに いきたい","にほんごの ほんを かいたい"],e:"最後の 文に 「かぞくに プレゼントを」と あります。"}]},
+
+    // ---- 情報検索 — the exam's ~250-character notices, read for one fact ----
+    {len:"info", kind:"情報検索", title:"みどりまち にほんご きょうしつ", en:[
+      "Midori Town Japanese Classes.",
+      "Class A — for complete beginners, Tuesdays 19:00–20:30.",
+      "Class B — for those who can speak a little, Thursdays 19:00–20:30.",
+      "Class C — for those wanting to study kanji, Saturdays 10:00–11:30.",
+      "Fees: A and B are 300 yen a session; C is 500 yen a session. Under-15s pay 100 yen.",
+      "To apply, telephone 03-1234-5678.",
+      "Closed 28 December to 4 January."], jp:[
+      "★ みどりまち にほんご きょうしつ ★",
+      "クラスA\tはじめての ひと",
+      "\tかようび 19:00〜20:30",
+      "クラスB\tすこし はなせる ひと",
+      "\tもくようび 19:00〜20:30",
+      "クラスC\tかんじを べんきょうしたい ひと",
+      "\tどようび 10:00〜11:30",
+      "おかね\tA・B　1かい 300えん",
+      "\tC　1かい 500えん",
+      "\t15さいまでは 1かい 100えん",
+      "もうしこみ\tでんわ 03-1234-5678",
+      "やすみ\t12月28にち〜1月4か"], qs:[
+      {q:"にほんごを はじめて べんきょうする ひとは なんようびに いきますか。",a:"かようび",d:["もくようび","どようび","げつようび"],e:"はじめての ひとは クラスA、かようびです。"},
+      {q:"おとなが かんじの クラスに いきます。1かい いくらですか。",a:"500えん",d:["300えん","100えん","800えん"],e:"かんじは クラスC で 500えんです。"},
+      {q:"13さいの こどもが クラスBに いきます。1かい いくら はらいますか。",a:"100えん",d:["300えん","500えん","はらいません"],e:"「15さいまでは 1かい 100えん」— age wins over the class fee."},
+      {q:"もうしこみは どう しますか。",a:"でんわを します",d:["メールを おくります","きょうしつへ いきます","てがみを だします"],e:"「もうしこみ　でんわ 03-1234-5678」."}]},
+
+    {len:"info", kind:"情報検索", title:"さくら としょかんの ごあんない", en:[
+      "Sakura Library information.",
+      "Open Tuesday to Friday 9:00–19:00; Saturday and Sunday 9:00–17:00.",
+      "Closed every Monday, and 29 December to 3 January.",
+      "Books: up to 5, for two weeks. CDs and DVDs: up to 2, for one week.",
+      "First-time users need a passport or student card to make a card."], jp:[
+      "★ さくら としょかんの ごあんない ★",
+      "ひらく ひ\tかようび〜きんようび 9:00〜19:00",
+      "\tどようび・にちようび 9:00〜17:00",
+      "やすみ\tまいしゅう げつようび",
+      "\t12月29にち〜1月3か",
+      "ほん\t2しゅうかん・5さつまで",
+      "CD・DVD\t1しゅうかん・2つまで",
+      "カード\tはじめての ひとは パスポートか",
+      "\tがくせいしょうを もって きて ください"], qs:[
+      {q:"にちようびは なんじまで あいて いますか。",a:"17:00",d:["19:00","9:00","21:00"],e:"どようび・にちようびは 17:00までです。"},
+      {q:"ほんは なんさつまで かりられますか。",a:"5さつ",d:["2さつ","1さつ","10さつ"],e:"「ほん　2しゅうかん・5さつまで」."},
+      {q:"げつようびに としょかんへ いけますか。",a:"いいえ、やすみです",d:["はい、9じから あいて います","はい、17じまで あいて います","はい、でも ほんは かりられません"],e:"「やすみ　まいしゅう げつようび」."},
+      {q:"はじめて カードを つくります。なにが いりますか。",a:"パスポートか がくせいしょう",d:["おかね","しゃしん","でんわばんごう"],e:"最後の ぎょうに 書いて あります。"},
+      {q:"DVDは なんしゅうかん かりられますか。",a:"1しゅうかん",d:["2しゅうかん","3しゅうかん","1かげつ"],e:"CD・DVDは 1しゅうかん、ほんは 2しゅうかんです。"}]}
   ];
+
+  // ============================================================================
+  // The remaining official N5 question types.
+  //
+  // Structure follows jlpt.jp's 大問のねらい table for N5 — thirteen 大問 across
+  // three papers. 文法形式の判断 lives in GRAMMAR above; everything else is here.
+  //
+  //   文字・語彙   漢字読み → KANJIR    表記 → HYOKI
+  //                文脈規定 → BUNMYAKU  言い換え類義 → IIKAE
+  //   文法         文の組み立て → ORDER  文章の文法 → CLOZE
+  //   読解         中文 / 情報検索 → the READING entries tagged len:"mid"/"info"
+  //   聴解         課題理解・ポイント理解・発話表現・即時応答 → LISTEN
+  // ============================================================================
+
+  // ---- 漢字読み — the word is written in kanji; pick its reading. ----
+  // s = sentence, ◆ marks where the kanji word sits.
+  var KANJIR = [
+    {s:"わたしの ◆ は にほんじんです。", w:"先生", a:"せんせい", d:["せんせえ","せいせい","ぜんせい"]},
+    {s:"あには ◆ です。", w:"学生", a:"がくせい", d:["がくせえ","かくせい","がっせい"]},
+    {s:"◆ を べんきょうして います。", w:"日本語", a:"にほんご", d:["にほんこ","にっぽんご","にほんぎ"]},
+    {s:"ちちは ◆ で はたらいて います。", w:"会社", a:"かいしゃ", d:["かいしや","がいしゃ","かいさ"]},
+    {s:"◆ が ありませんから、いそぎます。", w:"時間", a:"じかん", d:["じっかん","ときま","じかい"]},
+    {s:"◆ にほんごを べんきょうします。", w:"毎日", a:"まいにち", d:["まいにつ","めいにち","まいひ"]},
+    {s:"◆ は なにも たべませんでした。", w:"今朝", a:"けさ", d:["いまあさ","こんちょう","きょうあさ"]},
+    {s:"へやに ◆ います。", w:"一人", a:"ひとり", d:["いちにん","ひとにん","いちひと"]},
+    {s:"きょうしつに がくせいが ◆ います。", w:"二人", a:"ふたり", d:["ににん","ふたにん","にひと"]},
+    {s:"あの ◆ は とても たかいです。", w:"山", a:"やま", d:["せん","さん","また"]},
+    {s:"この ◆ で およぎました。", w:"川", a:"かわ", d:["せん","かは","こう"]},
+    {s:"◆ かばんを かいました。", w:"大きい", a:"おおきい", d:["だいきい","おうきい","おおいきい"]},
+    {s:"◆ いぬが います。", w:"小さい", a:"ちいさい", d:["しょうさい","こさい","ちさい"]},
+    {s:"◆ くるまが ほしいです。", w:"新しい", a:"あたらしい", d:["しんしい","あらたしい","あたらし"]},
+    {s:"この かばんは ◆ です。", w:"高い", a:"たかい", d:["こうい","だかい","たかいい"]},
+    {s:"この みせは ◆ です。", w:"安い", a:"やすい", d:["あんい","やずい","やすいい"]},
+    {s:"あさごはんを ◆。", w:"食べます", a:"たべます", d:["しょくべます","たへます","たべべます"]},
+    {s:"みずを ◆。", w:"飲みます", a:"のみます", d:["いんみます","のうみます","のみみます"]},
+    {s:"まいばん テレビを ◆。", w:"見ます", a:"みます", d:["けんます","みいます","みります"]},
+    {s:"おんがくを ◆。", w:"聞きます", a:"ききます", d:["ぶんきます","きぎます","きこきます"]},
+    {s:"まいにち しんぶんを ◆。", w:"読みます", a:"よみます", d:["どくみます","よむます","よみいます"]},
+    {s:"なまえを ここに ◆。", w:"書きます", a:"かきます", d:["しょきます","かぎます","かきいます"]},
+    {s:"ともだちと ◆。", w:"話します", a:"はなします", d:["わします","はなしします","だんします"]},
+    {s:"デパートで くつを ◆。", w:"買います", a:"かいます", d:["ばいます","かいいます","かうます"]},
+    {s:"にちようびは ◆。", w:"休みます", a:"やすみます", d:["きゅうみます","やすまます","やすむます"]},
+    {s:"きょうは ◆ が いいです。", w:"天気", a:"てんき", d:["でんき","てんぎ","あまき"]},
+    {s:"◆ で かいしゃへ いきます。", w:"電車", a:"でんしゃ", d:["でんくるま","てんしゃ","でんしゃあ"]},
+    {s:"◆ で おかねを おろします。", w:"銀行", a:"ぎんこう", d:["ぎんぎょう","きんこう","ぎんこ"]},
+    {s:"かぜを ひいて ◆ へ いきました。", w:"病院", a:"びょういん", d:["びよういん","へいいん","びょうえん"]},
+    {s:"◆ で ほんを かりました。", w:"図書館", a:"としょかん", d:["ずしょかん","としょかい","とじょかん"]},
+    {s:"◆ と えいがを みました。", w:"友達", a:"ともだち", d:["ゆうだち","ともたち","ゆうたつ"]},
+    {s:"わたしの ◆ は 4にんです。", w:"家族", a:"かぞく", d:["いえぞく","かそく","けぞく"]},
+    {s:"◆ にほんへ いきました。", w:"先月", a:"せんげつ", d:["せんつき","ぜんげつ","さきげつ"]},
+    {s:"◆ テストが あります。", w:"来週", a:"らいしゅう", d:["らいしゅ","きしゅう","くるしゅう"]},
+    {s:"◆ 3じに あいましょう。", w:"午後", a:"ごご", d:["ごうご","こご","ごこ"]},
+    {s:"ケーキを ◆ たべました。", w:"半分", a:"はんぶん", d:["はんふん","はんぷん","なかぶん"]},
+    {s:"ここに ◆ を かいて ください。", w:"名前", a:"なまえ", d:["めいぜん","なまへ","なぜん"]},
+    {s:"つくえの ◆ に ほんが あります。", w:"上", a:"うえ", d:["じょう","うへ","のぼ"]},
+    {s:"この まちには ◆ が おおいです。", w:"外国人", a:"がいこくじん", d:["そとこくじん","がいこくにん","げこくじん"]},
+    {s:"◆ に でんわを しました。", w:"母", a:"はは", d:["ぼ","かあ","はわ"]}
+  ];
+
+  // ---- 表記 — the word is written in kana; pick how it is written in kanji. ----
+  var HYOKI = [
+    {s:"まいにち ◆ へ いきます。", k:"がっこう", a:"学校", d:["学枚","字校","学交"]},
+    {s:"◆ に しつもんします。", k:"せんせい", a:"先生", d:["先正","失生","先性"]},
+    {s:"◆ の たべものが すきです。", k:"にほん", a:"日本", d:["目本","日木","日体"]},
+    {s:"あの ◆ は たかいです。", k:"やま", a:"山", d:["川","田","出"]},
+    {s:"この ◆ は ながいです。", k:"かわ", a:"川", d:["山","州","水"]},
+    {s:"あの ◆ は だれですか。", k:"ひと", a:"人", d:["入","八","大"]},
+    {s:"◆ かばんを かいました。", k:"おおきい", a:"大きい", d:["犬きい","太きい","天きい"]},
+    {s:"◆ いぬが います。", k:"ちいさい", a:"小さい", d:["少さい","水さい","川さい"]},
+    {s:"あさごはんを ◆。", k:"たべます", a:"食べます", d:["飲べます","良べます","飯べます"]},
+    {s:"おちゃを ◆。", k:"のみます", a:"飲みます", d:["食みます","飯みます","欽みます"]},
+    {s:"テレビを ◆。", k:"みます", a:"見ます", d:["貝ます","目ます","具ます"]},
+    {s:"おんがくを ◆。", k:"ききます", a:"聞きます", d:["間きます","開きます","門きます"]},
+    {s:"はこの ◆ に なにが ありますか。", k:"なか", a:"中", d:["申","虫","半"]},
+    {s:"つくえの ◆ に ほんが あります。", k:"うえ", a:"上", d:["下","止","土"]},
+    {s:"いすの ◆ に ねこが います。", k:"した", a:"下", d:["上","不","十"]},
+    {s:"あたらしい ◆ を かいました。", k:"くるま", a:"車", d:["東","軍","事"]},
+    {s:"◆ ばんごうを おしえて ください。", k:"でんわ", a:"電話", d:["雷話","電活","電語"]},
+    {s:"あには ◆ です。", k:"がくせい", a:"学生", d:["学正","字生","学先"]},
+    {s:"◆ と えいがを みました。", k:"ともだち", a:"友達", d:["反達","友速","右達"]},
+    {s:"ちちは ◆ で はたらいて います。", k:"かいしゃ", a:"会社", d:["今社","会礼","合社"]},
+    {s:"◆ が ありません。", k:"じかん", a:"時間", d:["時聞","寺間","時門"]},
+    {s:"◆ うんどうします。", k:"まいにち", a:"毎日", d:["母日","毎目","海日"]},
+    {s:"◆ ほんを よみました。", k:"あたらしい", a:"新しい", d:["親しい","薪しい","斬しい"]},
+    {s:"この みせは ◆ です。", k:"やすい", a:"安い", d:["案い","女い","宇い"]},
+    {s:"◆ にほんへ いきました。", k:"せんげつ", a:"先月", d:["先目","失月","先肉"]},
+    {s:"◆ 9じに あいましょう。", k:"ごぜん", a:"午前", d:["牛前","午先","年前"]},
+    {s:"わたしの ◆ は インドです。", k:"くに", a:"国", d:["園","図","回"]},
+    {s:"◆ を あらって ください。", k:"て", a:"手", d:["毛","千","午"]},
+    {s:"◆ が いたいです。", k:"め", a:"目", d:["日","且","自"]},
+    {s:"◆ に でんわを しました。", k:"はは", a:"母", d:["毎","海","父"]}
+  ];
+
+  // ---- 文脈規定 — which word fits the context. ----
+  var BUNMYAKU = [
+    {q:"きのうは あめでしたから、うちで ◻ を みました。",a:"テレビ",d:["でんしゃ","びょういん","えんぴつ"],e:"You watch television indoors on a rainy day."},
+    {q:"のどが かわきました。みずを ◻。",a:"のみます",d:["たべます","ききます","よみます"],e:"のどが かわく = to be thirsty, so you drink."},
+    {q:"この もんだいは ◻ ですから、わかりません。",a:"むずかしい",d:["やさしい","おいしい","あかるい"],e:"If you don’t understand it, it is difficult."},
+    {q:"てがみを だしますから、◻ へ いきます。",a:"ゆうびんきょく",d:["びょういん","としょかん","えいがかん"],e:"You post a letter at the post office."},
+    {q:"◻ で ほんを かりました。",a:"としょかん",d:["ぎんこう","レストラン","えき"],e:"Books are borrowed from a library."},
+    {q:"あついですね。まどを ◻ ください。",a:"あけて",d:["しめて","けして","つけて"],e:"When it is hot you open the window."},
+    {q:"くらいですから、でんきを ◻ ください。",a:"つけて",d:["けして","あけて","しめて"],e:"つけます = to switch on."},
+    {q:"かぜを ひきましたから、◻ へ いきます。",a:"びょういん",d:["がっこう","こうえん","ぎんこう"],e:"かぜを ひく = to catch a cold."},
+    {q:"あさ おきて、かおを ◻。",a:"あらいます",d:["あびます","きます","はきます"],e:"かおを あらう = to wash your face."},
+    {q:"くつを ◻。",a:"はきます",d:["きます","かぶります","かけます"],e:"はきます is for anything worn on the feet or legs."},
+    {q:"ぼうしを ◻。",a:"かぶります",d:["はきます","きます","かけます"],e:"かぶります is for things worn on the head."},
+    {q:"めがねを ◻。",a:"かけます",d:["きます","はきます","かぶります"],e:"めがねを かける = to wear glasses."},
+    {q:"えきで でんしゃに ◻。",a:"のります",d:["おります","あるきます","はしります"],e:"のります = to get on / board."},
+    {q:"つぎの えきで ◻。",a:"おります",d:["のります","いきます","きます"],e:"おります = to get off."},
+    {q:"おかねが ありませんから、なにも ◻。",a:"かいません",d:["かいます","うります","つかいます"],e:"No money, so you buy nothing."},
+    {q:"まいあさ 7じに いえを ◻。",a:"でます",d:["はいります","きます","つきます"],e:"いえを でます = to leave the house."},
+    {q:"◻ が いたいですから、びょういんへ いきます。",a:"あたま",d:["てんき","じかん","きょうしつ"],e:"Only a body part can hurt."},
+    {q:"しゅくだいを ◻ から、あそびます。",a:"して",d:["みて","きて","かって"],e:"〜てから = after doing. Homework is done, not seen."},
+    {q:"「ありがとう ございます。」「◻。」",a:"どういたしまして",d:["すみません","はじめまして","いただきます"],e:"The standard reply to thanks."},
+    {q:"ごはんの まえに 「◻」と いいます。",a:"いただきます",d:["ごちそうさま","おやすみ","いってきます"],e:"いただきます is said before eating; ごちそうさま after."},
+    {q:"ねる まえに 「◻」と いいます。",a:"おやすみなさい",d:["おはようございます","いってきます","ただいま"],e:"Said before going to bed."},
+    {q:"いえを でる とき、「◻」と いいます。",a:"いってきます",d:["ただいま","おかえりなさい","いらっしゃいませ"],e:"Said when leaving home; ただいま is said on returning."},
+    {q:"きょうは ◻ ですから、かさを もって いきます。",a:"あめ",d:["はれ","くもり","かぜ"],e:"You take an umbrella when it rains."},
+    {q:"この へやは ◻ ですね。まどを あけましょう。",a:"あつい",d:["さむい","ひろい","あかるい"],e:"You open a window because it is hot."},
+    {q:"まいばん 30ぷん にほんごの ◻ を します。",a:"べんきょう",d:["りょこう","かいもの","せんたく"],e:"にほんごの べんきょう = studying Japanese."},
+    {q:"とりが ◻ を とんで います。",a:"そら",d:["うみ","やま","かわ"],e:"Birds fly in the sky."},
+    {q:"じかんが ありませんから、◻ いきましょう。",a:"いそいで",d:["ゆっくり","たくさん","まっすぐ"],e:"No time, so hurry."},
+    {q:"◻ わかりませんでした。もう いちど おねがいします。",a:"よく",d:["とても","たいへん","たくさん"],e:"よく わかりません = I don’t understand well."},
+    {q:"この みちを ◻ いって ください。",a:"まっすぐ",d:["ゆっくり","たくさん","ちょっと"],e:"まっすぐ = straight ahead."},
+    {q:"つくえの うえに ほんが ◻ あります。",a:"たくさん",d:["おおぜい","ひとり","みんな"],e:"たくさん for things; おおぜい is only for people."},
+    {q:"しゃしんを ◻ ました。",a:"とり",d:["かき","つくり","み"],e:"しゃしんを とる = to take a photo."},
+    {q:"あたらしい ことばを ◻ に かきます。",a:"ノート",d:["テレビ","ラジオ","カメラ"],e:"You write in a notebook."},
+    {q:"さむいですから、◻ を きます。",a:"コート",d:["ぼうし","くつ","めがね"],e:"きます (wear) goes with a coat; a hat is かぶります."},
+    {q:"きょうは にちようびですから、かいしゃは ◻ です。",a:"やすみ",d:["いそがしい","しごと","あさ"],e:"Sunday means the company is closed."},
+    {q:"えいがは 7じに ◻、9じに おわりました。",a:"はじまって",d:["おわって","あけて","でて"],e:"It started at 7 and finished at 9."}
+  ];
+
+  // ---- 言い換え類義 — pick the sentence closest in meaning. ----
+  var IIKAE = [
+    {q:"この ほんは やさしいです。",a:"この ほんは かんたんです。",d:["この ほんは むずかしいです。","この ほんは おもしろいです。","この ほんは たかいです。"],e:"やさしい = easy = かんたん."},
+    {q:"まいあさ さんぽします。",a:"まいあさ あるきます。",d:["まいあさ はしります。","まいばん あるきます。","ときどき あるきます。"],e:"さんぽ = a walk."},
+    {q:"ちちは いしゃです。",a:"ちちは びょういんで はたらいて います。",d:["ちちは がっこうで はたらいて います。","ちちは びょうきです。","ちちは びょういんに います。"],e:"A doctor works at a hospital."},
+    {q:"この みせは ゆうめいです。",a:"この みせは みんな しって います。",d:["この みせは あたらしいです。","この みせは たかいです。","この みせは ちいさいです。"],e:"ゆうめい = famous, so everyone knows it."},
+    {q:"へやを そうじしました。",a:"へやを きれいに しました。",d:["へやを ひろく しました。","へやを あたたかく しました。","へやを かりました。"],e:"そうじ = cleaning."},
+    {q:"にほんごを ならって います。",a:"にほんごを べんきょうして います。",d:["にほんごを おしえて います。","にほんごが わかりません。","にほんごを はなしません。"],e:"ならう = to learn, not to teach."},
+    {q:"きのうは しごとが やすみでした。",a:"きのうは はたらきませんでした。",d:["きのうは はたらきました。","きのうは いそがしかったです。","きのうは やすみませんでした。"],e:"やすみ = a day off."},
+    {q:"この へやは あかるいです。",a:"この へやは くらくないです。",d:["この へやは くらいです。","この へやは せまいです。","この へやは しずかです。"],e:"あかるい = bright = not dark."},
+    {q:"タクシーで きました。",a:"あるいて きませんでした。",d:["あるいて きました。","でんしゃで きました。","タクシーに のりませんでした。"],e:"Coming by taxi means not on foot."},
+    {q:"まだ しゅくだいを して いません。",a:"しゅくだいは これから します。",d:["しゅくだいは もう おわりました。","しゅくだいは しません。","しゅくだいは やさしいです。"],e:"まだ 〜て いません = not done yet."},
+    {q:"やまださんは たなかさんに ほんを かりました。",a:"たなかさんは やまださんに ほんを かしました。",d:["やまださんは たなかさんに ほんを かしました。","たなかさんは やまださんに ほんを かりました。","ふたりとも ほんを かいました。"],e:"かりる = borrow, かす = lend. The roles swap."},
+    {q:"この りょうりは あまり おいしくないです。",a:"この りょうりは まずいです。",d:["この りょうりは とても おいしいです。","この りょうりは からいです。","この りょうりは あついです。"],e:"あまり おいしくない = not tasty = まずい."},
+    {q:"ははは きょうしです。",a:"ははは がっこうで おしえて います。",d:["ははは がっこうで べんきょうして います。","ははは びょういんで はたらいて います。","ははは がくせいです。"],e:"きょうし = teacher."},
+    {q:"デパートは えきの ちかくです。",a:"デパートは えきから とおくないです。",d:["デパートは えきから とおいです。","デパートは えきの なかです。","えきは デパートの ちかくでは ありません。"],e:"ちかい = near = not far."},
+    {q:"この かばんは 500えんでした。",a:"この かばんは やすかったです。",d:["この かばんは たかかったです。","この かばんは 5000えんでした。","この かばんは かいませんでした。"],e:"500 yen for a bag is cheap."},
+    {q:"まいにち 6じに おきます。",a:"あさ はやく おきます。",d:["よる おそく ねます。","まいにち おそく おきます。","ときどき 6じに おきます。"],e:"Six o’clock is early."},
+    {q:"わたしは いもうとが ふたり います。",a:"わたしは おんなの きょうだいが ふたり います。",d:["わたしは おとこの きょうだいが ふたり います。","わたしは あねが ふたり います。","わたしは こどもが ふたり います。"],e:"いもうと = younger sister — female, and younger."},
+    {q:"しけんは やさしかったです。",a:"しけんは かんたんでした。",d:["しけんは むずかしかったです。","しけんは ながかったです。","しけんは ありませんでした。"],e:"やさしい = かんたん, both in the past."},
+    {q:"まいばん 11じに ねます。",a:"よる おそく ねます。",d:["あさ はやく おきます。","まいばん はやく ねます。","ときどき 11じに ねます。"],e:"11pm is late."},
+    {q:"くるまが ほしいです。",a:"くるまを かいたいです。",d:["くるまを うりたいです。","くるまが あります。","くるまが きらいです。"],e:"ほしい = want to have, so you want to buy one."},
+    {q:"たなかさんは いま でかけて います。",a:"たなかさんは いま いません。",d:["たなかさんは いま います。","たなかさんは いま ねて います。","たなかさんは いま しごとを して います。"],e:"でかけて いる = out."},
+    {q:"この しごとは ぜんぶ おわりました。",a:"この しごとは もう ありません。",d:["この しごとは まだ あります。","この しごとは はじまりました。","この しごとは たいへんです。"],e:"All finished, so none is left."},
+    {q:"あの ひとは にほんごが じょうずです。",a:"あの ひとは にほんごを じょうずに はなします。",d:["あの ひとは にほんごが へたです。","あの ひとは にほんごが わかりません。","あの ひとは にほんじんです。"],e:"Being good at Japanese is not the same as being Japanese."},
+    {q:"けさ なにも たべませんでした。",a:"きょうの あさごはんを たべませんでした。",d:["きのうの あさごはんを たべませんでした。","けさ ぜんぶ たべました。","けさ すこし たべました。"],e:"けさ = this morning."},
+    {q:"きょうは 12月31にちです。",a:"あしたから あたらしい としです。",d:["きょうから あたらしい としです。","きのうは おしょうがつでした。","らいげつは 1がつでは ありません。"],e:"31 December — the new year starts tomorrow."}
+  ];
+
+  // ---- 文の組み立て — order the four fragments, then say which lands on ★. ----
+  // frag is in the CORRECT order; star is the index that carries the ★.
+  var ORDER = [
+    {pre:"つくえの うえに", frag:["ほん","や","ノート","が"], post:"あります。", star:2},
+    {pre:"わたしは", frag:["まいあさ","6じ","に","おきます"], post:"。", star:2},
+    {pre:"きのう", frag:["ともだち","と","えいが","を"], post:"みました。", star:1},
+    {pre:"この", frag:["みせ","の","ケーキ","は"], post:"おいしいです。", star:3},
+    {pre:"わたしは", frag:["にほんご","を","はなす","ことが"], post:"できます。", star:2},
+    {pre:"ちょっと", frag:["ここ","で","まって","いて"], post:"ください。", star:2},
+    {pre:"わたしは", frag:["あたらしい","くるま","が","ほしい"], post:"です。", star:2},
+    {pre:"あした あめが", frag:["ふったら","どこ","にも","いきません"], post:"。", star:1},
+    {pre:"これは", frag:["わたし","が","とった","しゃしん"], post:"です。", star:2},
+    {pre:"にちようびは", frag:["ほん","を","よんだり","えいがを みたり"], post:"します。", star:2},
+    {pre:"ここで", frag:["たばこ","を","すって","は"], post:"いけません。", star:2},
+    {pre:"やまださんは", frag:["わたし","に","にほんご","を"], post:"おしえて くれました。", star:1},
+    {pre:"すみません、", frag:["この","へん","に","ぎんこうは"], post:"ありませんか。", star:2},
+    {pre:"わたしは", frag:["まだ","ひるごはん","を","たべて"], post:"いません。", star:1},
+    {pre:"この", frag:["くすり","を","のむ","まえに"], post:"、なにか たべて ください。", star:2},
+    {pre:"としょかんで", frag:["かりた","ほん","を","かえさなければ"], post:"なりません。", star:1},
+    {pre:"あの", frag:["せが","たかい","ひと","は"], post:"たなかさんです。", star:2},
+    {pre:"わたしは", frag:["にほん","へ","いった","ことが"], post:"あります。", star:2},
+    {pre:"でんしゃ", frag:["は","バス","より","はやい"], post:"です。", star:2},
+    {pre:"にくと", frag:["さかな","と","どちら","が"], post:"すきですか。", star:2},
+    {pre:"へやを", frag:["きれい","に","して","から"], post:"、でかけます。", star:2},
+    {pre:"わたしは", frag:["あした","は","ひま","だと"], post:"おもいます。", star:3},
+    {pre:"この", frag:["ボタン","を","おす","と"], post:"、きっぷが でます。", star:2},
+    {pre:"こどもの とき、", frag:["よく","こうえん","で","あそび"], post:"ました。", star:1},
+    {pre:"すみませんが、", frag:["この","にもつ","を","もって"], post:"ください。", star:2}
+  ];
+
+  // ---- 文章の文法 — a short passage with numbered blanks. ----
+  var CLOZE = [
+    {title:"わたしの まち",
+     en:["My town isn’t very big, but it’s very quiet.",
+         "There’s a park in the town. On Sundays I often take a walk in the park.",
+         "Next to the park there’s a library. I borrow books there.",
+         "Next week a friend is coming to my town. I think we’ll go to the park together."],
+     lines:["わたしの まちは あまり おおきくないです。でも、とても しずか【1】。",
+            "まちの なかに こうえんが あります。にちようびに、よく こうえん【2】 さんぽします。",
+            "こうえんの となりに としょかんが あります。わたしは そこ【3】 ほんを かります。",
+            "らいしゅう、ともだちが わたしの まちへ きます。いっしょに こうえんへ いく【4】 おもいます。"],
+     blanks:[{a:"です",d:["でした","じゃない","だ"],e:"な-adjective + です. The passage is in the present, and the style is polite."},
+             {a:"を",d:["に","で","が"],e:"さんぽします takes を for the space walked through."},
+             {a:"で",d:["に","を","へ"],e:"Borrowing happens at the library, so the action location takes で."},
+             {a:"と",d:["を","が","は"],e:"〜と おもいます, with the clause before it in plain form."}]},
+
+    {title:"にほんごの べんきょう",
+     en:["I’ve been studying Japanese since a year ago.",
+         "Every morning I memorise words on the train. Then in the evening I do exercises at home.",
+         "Kanji is very difficult, but it’s interesting.",
+         "Next year I want to travel to Japan. I want to speak with Japanese people in Japanese.",
+         "I want to get good quickly. I study about an hour every day."],
+     lines:["わたしは 1ねん まえから にほんごを べんきょうして います。",
+            "まいあさ でんしゃの なかで たんごを おぼえます。【1】、よる うちで もんだいを します。",
+            "かんじは とても むずかしいです【2】、おもしろいです。",
+            "らいねん、にほんへ りょこうに いきたいです。にほんじんと にほんご【3】 はなしたいです。",
+            "はやく じょうずに なりたいです。まいにち 1じかん【4】 べんきょうします。"],
+     blanks:[{a:"それから",d:["でも","しかし","だから"],e:"それから = and then. The two actions simply follow one another."},
+             {a:"が",d:["から","ので","と"],e:"〜ですが = but. Difficult *but* interesting."},
+             {a:"で",d:["を","に","が"],e:"A language used as the means of speaking takes で."},
+             {a:"ぐらい",d:["まで","から","より"],e:"〜ぐらい = about, approximately."}]},
+
+    {title:"たなかさんへの てがみ",
+     en:["Tanaka, how are you?",
+         "I live in Tokyo now. Tokyo has a lot of people and is lively.",
+         "I go to the office every day, but the trains are very crowded.",
+         "Last Sunday I went to Asakusa with a friend.",
+         "We saw an old temple and took lots of photos. It was great fun.",
+         "Won’t you come along with me next time?"],
+     lines:["たなかさん、おげんきですか。",
+            "わたしは いま とうきょうに すんで います。とうきょうは ひとが おおくて、【1】です。",
+            "まいにち かいしゃへ いきますが、でんしゃが とても こみます。",
+            "せんしゅうの にちようび、ともだち【2】 あさくさへ いきました。",
+            "ふるい おてらを みて、しゃしんを たくさん とりました。とても 【3】です。",
+            "こんど、たなかさんも いっしょに 【4】か。"],
+     blanks:[{a:"にぎやか",d:["にぎやかな","にぎやかに","にぎやかで"],e:"Before です a な-adjective is bare — にぎやかです."},
+             {a:"と",d:["に","を","へ"],e:"「と」= with (a person)."},
+             {a:"たのしかった",d:["たのしい","たのしいでした","たのしくて"],e:"The trip is over, so the い-adjective goes past: たのしかったです."},
+             {a:"いきません",d:["いきます","いきました","いって"],e:"〜ませんか is the polite invitation."}]},
+
+    {title:"やまださんの いちにち",
+     en:["Yamada gets up at six every morning.",
+         "After getting up, he takes a 30-minute walk.",
+         "He eats breakfast at seven and leaves the house at eight.",
+         "He goes to the office by train. Work is from nine to six.",
+         "After work he sometimes has dinner with friends.",
+         "He goes home and watches TV, reads books and so on. He goes to bed around eleven.",
+         "Yamada is very busy every day."],
+     lines:["やまださんは まいあさ 6じ【1】 おきます。おきてから、30ぷん さんぽを します。",
+            "7じに あさごはんを たべて、8じに うち【2】 でます。",
+            "かいしゃまで でんしゃ【3】 いきます。しごとは 9じから 6じまでです。",
+            "しごとの あと、ときどき ともだちと ばんごはんを たべます。",
+            "うちへ かえって、テレビを みたり、ほんを 【4】 します。11じごろ ねます。",
+            "やまださんは まいにち とても 【5】です。"],
+     blanks:[{a:"に",d:["を","で","へ"],e:"A clock time takes に."},
+             {a:"を",d:["に","で","へ"],e:"うちを でます — you exit *from* a place with を."},
+             {a:"で",d:["に","を","と"],e:"The means of travel takes で."},
+             {a:"よんだり",d:["よみたり","よんで","よむ"],e:"〜たり、〜たり します. Built on the た-form: よんだ → よんだり."},
+             {a:"いそがしい",d:["いそがしく","いそがしいの","いそがしくて"],e:"い-adjective + です as the final predicate."}]}
+  ];
+
+  // ---- 聴解 — the four listening 大問. ----
+  // say = the audio script. For 発話表現 the audio sets the scene and asks
+  // 「なんと いいますか」; for 即時応答 the audio *is* the utterance to answer.
+  var LISTEN = {
+    task:[   // 課題理解 — what does the person do next?
+      {say:"おんな：もしもし、いま どこ？　おとこ：えきだよ。　おんな：じゃあ、コンビニで パンを かって きて。　おとこ：わかった。",
+       q:"おとこの ひとは これから なにを しますか。",a:"パンを かいます",d:["えきへ いきます","うちへ かえります","でんわを します"],e:"「コンビニで パンを かって きて」と たのまれました。"},
+      {say:"せんせい：あした テストが ありますから、きょうは 25ページまで ふくしゅうして ください。　がくせい：はい、わかりました。",
+       q:"がくせいは きょう なにを しますか。",a:"25ページまで ふくしゅうします",d:["テストを うけます","26ページまで よみます","なにも しません"],e:"テストは あしたです。きょうは ふくしゅうです。"},
+      {say:"きゃく：すみません、この シャツ、もう すこし おおきいのは ありますか。　みせのひと：はい、しょうしょう おまち ください。",
+       q:"みせの ひとは これから なにを しますか。",a:"おおきい シャツを もって きます",d:["シャツを うります","おかねを もらいます","シャツを かえします"],e:"「しょうしょう おまち ください」= please wait while I fetch it."},
+      {say:"おんな：たなかさん、かいぎは 3じからですね。　おとこ：いいえ、2じに かわりました。　おんな：えっ、じゃあ すぐ じゅんびします。",
+       q:"かいぎは なんじからですか。",a:"2じ",d:["3じ","1じ","4じ"],e:"「2じに かわりました」— it moved to two."},
+      {say:"はは：ごはんの まえに てを あらって きなさい。　こども：はーい。",
+       q:"こどもは これから なにを しますか。",a:"てを あらいます",d:["ごはんを たべます","そとへ いきます","ねます"],e:"「ごはんの まえに」— washing comes first."},
+      {say:"おとこ：あしたの あさ 9じに えきの まえで あいましょう。　おんな：すみません、9じは ちょっと…。10じは どうですか。　おとこ：いいですよ。",
+       q:"ふたりは あした なんじに あいますか。",a:"10じ",d:["9じ","11じ","8じ"],e:"9じは ことわられて、10じに なりました。"},
+      {say:"てんいん：おきゃくさま、こちらの ほんは いま ありません。らいしゅう きます。　きゃく：じゃあ、らいしゅう また きます。",
+       q:"きゃくは これから どう しますか。",a:"らいしゅう また きます",d:["いま ほんを かいます","ほんを かえします","ほかの みせへ いきます"],e:"ほんは まだ ありませんから、らいしゅうです。"},
+      {say:"おんな：あ、かさを わすれました。　おとこ：だいじょうぶ、わたしのを つかって ください。　おんな：ありがとう ございます。",
+       q:"おんなの ひとは どう しますか。",a:"おとこの ひとの かさを かります",d:["あたらしい かさを かいます","かさを わすれます","かさを つかいません"],e:"「わたしのを つかって ください」を うけました。"}
+    ],
+    point:[  // ポイント理解 — the question is shown before the audio
+      {q:"おとこの ひとは どうして きのう がっこうを やすみましたか。",
+       say:"おんな：きのう どうしたの？　おとこ：ねつが あって、びょういんへ いったんだ。　おんな：だいじょうぶ？",
+       a:"びょうきだったから",d:["りょこうに いったから","しごとが あったから","ねぼうしたから"],e:"「ねつが あって、びょういんへ いった」."},
+      {q:"おんなの ひとは くだものの なかで なにが いちばん すきですか。",
+       say:"おとこ：くだものは なにが すき？　おんな：りんごも みかんも すきだけど、いちばんは いちごかな。",
+       a:"いちご",d:["りんご","みかん","バナナ"],e:"「いちばんは いちご」."},
+      {q:"ふたりは どこで あいますか。",
+       say:"おとこ：えきの まえで あう？　おんな：ひとが おおいから、こうえんの いりぐちの ほうが いいな。　おとこ：わかった。",
+       a:"こうえんの いりぐち",d:["えきの まえ","こうえんの なか","おんなの ひとの うち"],e:"えきの まえは ことわられました。"},
+      {q:"おとこの ひとは きょう なんで かいしゃへ いきますか。",
+       say:"おんな：まいにち でんしゃ？　おとこ：いや、あめの ひは バス。はれの ひは じてんしゃだよ。　おんな：きょうは あめだね。",
+       a:"バス",d:["でんしゃ","じてんしゃ","あるいて"],e:"きょうは あめですから バスです。"},
+      {q:"パーティーは なんようびですか。",
+       say:"おんな：パーティーは どようびだったよね。　おとこ：ううん、にちようびに かわったよ。　おんな：そう、わかった。",
+       a:"にちようび",d:["どようび","きんようび","げつようび"],e:"「にちようびに かわった」."},
+      {q:"おんなの ひとは なにを かいましたか。",
+       say:"てんいん：ぜんぶで 1200えんです。　おんな：えっと、この ノートと ペン 2ほん、それだけです。　てんいん：はい。",
+       a:"ノートと ペン",d:["ノートだけ","ペンだけ","ほんと ノート"],e:"「この ノートと ペン 2ほん」."},
+      {q:"おとこの ひとの おとうさんの しごとは なんですか。",
+       say:"おんな：おとうさんは いしゃ？　おとこ：ううん、ちちは こうこうの せんせい。あにが いしゃだよ。",
+       a:"こうこうの せんせい",d:["いしゃ","かいしゃいん","がくせい"],e:"いしゃは あにです。ちちは せんせいです。"},
+      {q:"あしたの あさの てんきは どうですか。",
+       say:"あしたの てんきです。あしたは あさから あめが ふります。ごごには やみますが、かぜが つよく なるでしょう。",
+       a:"あめです",d:["はれです","ゆきです","くもりです"],e:"「あさから あめが ふります」."}
+    ],
+    utter:[  // 発話表現 — you see the situation, choose what to say (3 options)
+      {sit:"You are going into a friend’s house for the first time.",
+       say:"はじめて ともだちの うちに はいります。なんと いいますか。",
+       a:"おじゃまします。",d:["おかえりなさい。","いってらっしゃい。"],e:"おじゃまします is said on entering someone’s home."},
+      {sit:"You stepped on someone’s foot on the train.",
+       say:"でんしゃで ひとの あしを ふみました。なんと いいますか。",
+       a:"すみません。",d:["ありがとう。","どういたしまして。"],e:"An apology is needed."},
+      {sit:"You want to try on a shirt in a shop.",
+       say:"みせで シャツを きて みたいです。なんと いいますか。",
+       a:"きて みても いいですか。",d:["きて ください。","きましょうか。"],e:"Asking permission: 〜ても いいですか."},
+      {sit:"You are leaving the office before your colleagues.",
+       say:"かいしゃで、ほかの ひとより さきに かえります。なんと いいますか。",
+       a:"おさきに しつれいします。",d:["いってきます。","ただいま。"],e:"The set phrase for leaving before others."},
+      {sit:"You want a friend to take a photo of you.",
+       say:"ともだちに しゃしんを とって ほしいです。なんと いいますか。",
+       a:"しゃしんを とって ください。",d:["しゃしんを とりましょうか。","しゃしんを とっても いいですか。"],e:"A request → 〜て ください. ましょうか would be offering to take it yourself."},
+      {sit:"Your friend is carrying a heavy bag and you want to help.",
+       say:"ともだちの にもつが おもそうです。なんと いいますか。",
+       a:"もちましょうか。",d:["もって ください。","もっても いいですか。"],e:"Offering to do something for someone → 〜ましょうか."},
+      {sit:"You have just arrived home.",
+       say:"うちに かえりました。なんと いいますか。",
+       a:"ただいま。",d:["おじゃまします。","いってきます。"],e:"ただいま on arriving home."},
+      {sit:"Someone has given you a present.",
+       say:"プレゼントを もらいました。なんと いいますか。",
+       a:"ありがとう ございます。",d:["すみませんでした。","おめでとう ございます。"],e:"Thanks, not congratulations."},
+      {sit:"You are about to start eating.",
+       say:"これから ごはんを たべます。なんと いいますか。",
+       a:"いただきます。",d:["ごちそうさまでした。","おいしいです。"],e:"いただきます before, ごちそうさま after."},
+      {sit:"You want to know the price of something in a shop.",
+       say:"みせで ねだんを ききたいです。なんと いいますか。",
+       a:"これは いくらですか。",d:["これは なんですか。","これを ください。"],e:"いくら asks a price."},
+      {sit:"A friend is unwell and going home.",
+       say:"ともだちが びょうきで かえります。なんと いいますか。",
+       a:"おだいじに。",d:["おめでとう。","おつかれさま。"],e:"おだいじに = take care (of your health)."},
+      {sit:"You need to get past people in a crowd.",
+       say:"ひとが おおくて、とおれません。なんと いいますか。",
+       a:"すみません、ちょっと とおして ください。",d:["すみません、まって ください。","すみません、たすけて ください。"],e:"とおす = to let pass."}
+    ],
+    react:[  // 即時応答 — hear a short line, choose the reply (3 options)
+      {say:"では、また あした。",a:"また あした。",d:["はじめまして。","おかえりなさい。"],e:"Mirror the farewell."},
+      {say:"この ペン、かりても いいですか。",a:"ええ、どうぞ。",d:["ええ、かります。","ええ、かしました。"],e:"Granting permission → どうぞ."},
+      {say:"にほんごが おじょうずですね。",a:"いいえ、まだまだです。",d:["はい、じょうずです。","そうですか、ざんねんです。"],e:"A compliment is deflected, not accepted."},
+      {say:"おしごとは なんですか。",a:"きょうしです。",d:["かいしゃです。","9じからです。"],e:"The question asks the job itself."},
+      {say:"もう ひるごはんを たべましたか。",a:"いいえ、まだです。",d:["いいえ、たべます。","はい、たべません。"],e:"The natural “not yet” is まだです."},
+      {say:"すみません、えきは どこですか。",a:"あの しんごうを みぎです。",d:["9じですよ。","500えんです。"],e:"どこ asks a place."},
+      {say:"おたんじょうび、おめでとう ございます。",a:"ありがとう ございます。",d:["おめでとう ございます。","おだいじに。"],e:"You thank the well-wisher."},
+      {say:"いっしょに ひるごはんを たべませんか。",a:"いいですね、いきましょう。",d:["はい、たべませんでした。","いいえ、たべます。"],e:"An invitation is accepted with いいですね."},
+      {say:"にもつ、てつだいましょうか。",a:"ありがとう、おねがいします。",d:["はい、てつだいます。","いいえ、てつだいましょう。"],e:"You accept the offer, not repeat it."},
+      {say:"きのうの えいが、どうでしたか。",a:"とても おもしろかったです。",d:["とても おもしろいでしょう。","あした みます。"],e:"Past question → past answer."},
+      {say:"しつれいします。",a:"どうぞ、おはいり ください。",d:["おじゃましました。","いってらっしゃい。"],e:"しつれいします on entering → please come in."},
+      {say:"この ケーキ、ひとつ いかがですか。",a:"では、いただきます。",d:["では、ごちそうさまでした。","では、つくります。"],e:"いかがですか offers; いただきます accepts."},
+      {say:"あついですね。",a:"そうですね。まどを あけましょうか。",d:["いいえ、さむいです。","はい、あついでしょう。"],e:"Agreeing and offering."},
+      {say:"すみません、この かんじの よみかたを おしえて ください。",a:"ええ、いいですよ。",d:["ええ、おしえます。","ええ、よみました。"],e:"Agreeing to a request."},
+      {say:"きょうは ありがとう ございました。",a:"いいえ、どういたしまして。",d:["いいえ、けっこうです。","はい、ありがとう。"],e:"The standard response to thanks."}
+    ]
+  };
 
   // ---- shared helpers ----
   function clone(o){ var n={}; for(var k in o){ if(o.hasOwnProperty(k)) n[k]=o[k]; } return n; }
@@ -3296,11 +3795,13 @@
   function renderExamBests(){
     function set(id,b){ var el=document.getElementById(id); if(el) el.textContent = b?("best "+b.score+"/"+b.total):""; }
     set("grBest", state.exam.grammar); set("rdBest", state.exam.reading);
+    set("vdBest", state.exam.vocab); set("lsnBest", state.exam.listen);
     var m=state.exam.mock, mk=document.getElementById("mkBest"); if(mk) mk.textContent = m?("best "+m.pct+"%"):"";
   }
 
   var grLesson=0;      // 0 = draw from all 25 lessons
-  var grScored=true;   // only whole-bank drills count towards the best score
+  var grFmt="judge";   // which grammar 大問 to drill
+  var grScored=true;   // only whole-bank 文法形式の判断 counts towards the best score
 
   function grammarIntro(){
     var host=document.getElementById("grammar"); if(!host) return; examBusy=false;
@@ -3309,21 +3810,40 @@
     LESSONS.forEach(function(L){
       opts+='<option value="'+L.n+'"'+(grLesson===L.n?" selected":"")+'>L'+L.n+' · '+L.t+'</option>';
     });
+    var fmts=[["judge","文法形式の判断 — fill the blank"],["order","文の組み立て — build the sentence"],
+              ["cloze","文章の文法 — grammar in a passage"],["all","All three types"]];
+    var fopts=fmts.map(function(f){ return '<option value="'+f[0]+'"'+(grFmt===f[0]?" selected":"")+'>'+f[1]+'</option>'; }).join("");
     host.innerHTML =
-      '<p class="qz-intro">Fill-in-the-blank questions in the N5 four-choice format — the exam’s 文法形式の判断 block. Particles, verb &amp; adjective forms, counters, question words. Each answer explains itself. Pick a lesson to drill just what you have studied; only <b>All 25 lessons</b> counts towards your best score. '+(best?('Best: <b>'+best.score+'/'+best.total+'</b>. '):'')+'</p>'+
-      '<div class="qz-controls"><div class="qz-field"><label for="grL">Lesson</label>'+
-      '<select id="grL">'+opts+'</select></div>'+
+      '<p class="qz-intro">All three grammar 大問. <b>文法形式の判断</b> fills a blank, <b>文の組み立て</b> asks which fragment lands on the ★, '+
+      '<b>文章の文法</b> puts the blanks inside a passage. Each answer explains itself. '+
+      (best?('Best: <b>'+best.score+'/'+best.total+'</b>. '):'')+'Only 文法形式の判断 across <b>All 25 lessons</b> counts towards your best score.</p>'+
+      '<div class="qz-controls"><div class="qz-field"><label for="grF">Question type</label>'+
+      '<select id="grF">'+fopts+'</select></div>'+
+      (grFmt==="judge" ? '<div class="qz-field"><label for="grL">Lesson</label><select id="grL">'+opts+'</select></div>' : '')+
       '<div class="qz-field"><label for="grN">Questions</label>'+
       '<select id="grN"><option value="8">8</option><option value="12" selected>12</option><option value="20">20</option></select></div>'+
       '<button class="btn btn-seal" id="grStart">Start drill</button></div>';
-    document.getElementById("grL").onchange=function(){ grLesson=parseInt(this.value,10)||0; };
+    document.getElementById("grF").onchange=function(){ grFmt=this.value; grammarIntro(); };
+    var lsel=document.getElementById("grL");
+    if(lsel) lsel.onchange=function(){ grLesson=parseInt(this.value,10)||0; };
     document.getElementById("grStart").onclick=function(){
       examBusy=true;
-      var n=parseInt(document.getElementById("grN").value,10);
-      var pool=grLesson ? GRAMMAR.filter(function(g){ return g.L===grLesson; }) : GRAMMAR;
-      grScored=(grLesson===0);
-      var qs=sample(pool, Math.min(n,pool.length)).map(mkQ);
-      runMc(host, qs, { label:(grLesson?("Grammar · L"+grLesson):"Grammar"), onFinish:grammarDone });
+      var n=parseInt(document.getElementById("grN").value,10), qs=[];
+      if(grFmt==="judge"||grFmt==="all"){
+        var pool=(grFmt==="judge"&&grLesson) ? GRAMMAR.filter(function(g){ return g.L===grLesson; }) : GRAMMAR;
+        qs=qs.concat(sample(pool, Math.min(grFmt==="all"?Math.ceil(n/2):n, pool.length)).map(function(g){
+          var c=clone(g); c.sec="文法形式の判断"; return mkQ(c); }));
+      }
+      if(grFmt==="order"||grFmt==="all"){
+        qs=qs.concat(sample(ORDER, Math.min(grFmt==="all"?Math.ceil(n/4):n, ORDER.length)).map(mkOrder));
+      }
+      if(grFmt==="cloze"||grFmt==="all"){
+        var cp=CLOZE[Math.floor(Math.random()*CLOZE.length)];
+        qs=qs.concat(clozeQs(cp).slice(0, grFmt==="all"?Math.ceil(n/4):n));
+      }
+      if(grFmt==="all") qs=shuffle(qs).slice(0,n);
+      grScored=(grFmt==="judge" && grLesson===0);
+      runMc(host, qs, { label:(grLesson&&grFmt==="judge"?("文法 · L"+grLesson):"文法"), onFinish:grammarDone });
     };
   }
   // Jumped to from a lesson's "Drill lesson N" button.
@@ -3352,18 +3872,198 @@
     return '<div class="rd-passage"><div class="rd-title"><span class="badge">'+esc(p.kind)+'</span>'+esc(p.title)+'</div>'+
       '<div class="rd-jp">'+lines+'</div>'+en+'</div>';
   }
+
+  // ---- question builders for the newer 大問 ----
+
+  // 漢字読み — the word is in kanji, pick the reading.
+  function mkKanjiR(it){
+    return mkQ({
+      q:'<div class="mc-inst">＿＿の ことばは ひらがなで どう かきますか。</div>'+
+        '<div class="mc-sent">'+esc(it.s).replace("◆",'<u class="mc-u">'+esc(it.w)+'</u>')+'</div>',
+      a:it.a, d:it.d, sec:"漢字読み", say:it.w,
+      e:'<span class="jp">'+esc(it.w)+'</span> = '+esc(it.a)
+    });
+  }
+  // 表記 — the word is in kana, pick how it is written in kanji.
+  function mkHyoki(it){
+    return mkQ({
+      q:'<div class="mc-inst">＿＿の ことばは かんじで どう かきますか。</div>'+
+        '<div class="mc-sent">'+esc(it.s).replace("◆",'<u class="mc-u">'+esc(it.k)+'</u>')+'</div>',
+      a:it.a, d:it.d, sec:"表記", say:it.a,
+      e:'<span class="jp">'+esc(it.k)+'</span> は <span class="jp">'+esc(it.a)+'</span> と かきます。'
+    });
+  }
+  // 言い換え類義 — pick the sentence closest in meaning.
+  function mkIikae(it){
+    var c=clone(it);
+    c.q='<div class="mc-inst">だいたい おなじ いみの ぶんは どれですか。</div>'+
+        '<div class="mc-sent">'+esc(it.q)+'</div>';
+    c.sec="言い換え類義"; c.say=it.q;
+    return mkQ(c);
+  }
+  // 文の組み立て — order the fragments, then say which one lands on ★.
+  function mkOrder(it){
+    var slots="";
+    for(var i=0;i<it.frag.length;i++){
+      slots += (i===it.star)
+        ? '<span class="ord-slot star">★</span>'
+        : '<span class="ord-slot">＿＿</span>';
+    }
+    var others=[];
+    for(var j=0;j<it.frag.length;j++){ if(j!==it.star) others.push(it.frag[j]); }
+    var full=it.pre+" "+it.frag.join(" ")+" "+it.post;
+    return mkQ({
+      q:'<div class="mc-inst">★ に はいる ものは どれですか。</div>'+
+        '<div class="ord-skel">'+esc(it.pre)+" "+slots+" "+esc(it.post)+'</div>',
+      a:it.frag[it.star], d:others, sec:"文の組み立て", say:full.replace(/\s+/g,""),
+      e:'ただしい じゅんばん — <span class="jp">'+esc(full)+'</span>'
+    });
+  }
+  // 文章の文法 — one question per numbered blank, sharing the passage.
+  function clozeCtx(p, hi){
+    var body=p.lines.map(function(l){
+      return '<div>'+esc(l).replace(/【(\d+)】/g, function(m,n){
+        return '<span class="cz-b'+((+n===hi)?" on":"")+'">'+n+'</span>';
+      })+'</div>';
+    }).join("");
+    var en=p.en?('<details><summary class="rd-en-btn">Show English</summary><div class="rd-en show" style="border:none;padding-top:8px">'+
+      p.en.map(function(e){ return '<div>'+esc(e)+'</div>'; }).join("")+'</div></details>'):"";
+    return '<div class="rd-passage"><div class="rd-title"><span class="badge">文章の文法</span>'+esc(p.title)+'</div>'+
+      '<div class="rd-jp">'+body+'</div>'+en+'</div>';
+  }
+  function clozeQs(p){
+    return p.blanks.map(function(b,i){
+      var c=clone(b);
+      c.q='<div class="mc-inst">【'+(i+1)+'】に はいる ものは どれですか。</div>';
+      c.ctx=clozeCtx(p, i+1); c.sec="文章の文法";
+      return mkQ(c);
+    });
+  }
+  // 聴解 — four 大問, all driven by the engine's `say`.
+  var LSN_LABEL={task:"課題理解", point:"ポイント理解", utter:"発話表現", react:"即時応答"};
+  function mkListen(it, kind){
+    var stem="";
+    if(kind==="task")  stem='<div class="mc-sent">'+esc(it.q)+'</div>';
+    if(kind==="point") stem='<div class="mc-inst">さきに もんだいを よんで ください。</div><div class="mc-sent">'+esc(it.q)+'</div>';
+    if(kind==="utter") stem='<div class="mc-sit">'+esc(it.sit)+'</div><div class="mc-inst">なんと いいますか。</div>';
+    if(kind==="react") stem='<div class="mc-inst">きいて、いちばん いい へんじを えらんで ください。</div>';
+    return mkQ({
+      q:stem, a:it.a, d:it.d, say:it.say, sec:LSN_LABEL[kind],
+      e:(it.e||"")+'<div class="mc-script"><b>スクリプト:</b> <span class="jp">'+esc(it.say)+'</span></div>'
+    });
+  }
+  function listenPool(kind){
+    var ks = kind==="all" ? ["task","point","utter","react"] : [kind];
+    var out=[];
+    ks.forEach(function(k){ LISTEN[k].forEach(function(it){ out.push(mkListen(it,k)); }); });
+    return out;
+  }
+
+  // ---- 文字・語彙 drills (the four vocabulary 大問) ----
+  var vdType="all";
+  function vocabPool(t){
+    var out=[];
+    if(t==="kanji"||t==="all") KANJIR.forEach(function(x){ out.push(mkKanjiR(x)); });
+    if(t==="hyoki"||t==="all") HYOKI.forEach(function(x){ out.push(mkHyoki(x)); });
+    if(t==="ctx"||t==="all")   BUNMYAKU.forEach(function(x){ var c=clone(x); c.sec="文脈規定"; out.push(mkQ(c)); });
+    if(t==="iikae"||t==="all") IIKAE.forEach(function(x){ out.push(mkIikae(x)); });
+    return out;
+  }
+  function vocabIntro(){
+    var host=document.getElementById("vocabdrill"); if(!host) return; examBusy=false;
+    var best=state.exam.vocab;
+    var types=[["all","All four types"],["kanji","漢字読み — read the kanji"],["hyoki","表記 — write it in kanji"],
+               ["ctx","文脈規定 — the word that fits"],["iikae","言い換え類義 — closest meaning"]];
+    var opts=types.map(function(t){ return '<option value="'+t[0]+'"'+(vdType===t[0]?" selected":"")+'>'+t[1]+'</option>'; }).join("");
+    host.innerHTML =
+      '<p class="qz-intro">The whole 文字・語彙 paper — all four 大問 the exam actually sets. '+
+      (best?('Best: <b>'+best.score+'/'+best.total+'</b>. '):'')+'Only <b>All four types</b> counts towards your best score.</p>'+
+      '<div class="qz-controls"><div class="qz-field"><label for="vdT">Question type</label>'+
+      '<select id="vdT">'+opts+'</select></div>'+
+      '<div class="qz-field"><label for="vdN">Questions</label>'+
+      '<select id="vdN"><option value="10">10</option><option value="15" selected>15</option><option value="25">25</option></select></div>'+
+      '<button class="btn btn-seal" id="vdStart">Start drill</button></div>';
+    document.getElementById("vdT").onchange=function(){ vdType=this.value; };
+    document.getElementById("vdStart").onclick=function(){
+      examBusy=true;
+      var n=parseInt(document.getElementById("vdN").value,10);
+      var pool=vocabPool(vdType);
+      runMc(host, sample(pool, Math.min(n,pool.length)), {
+        label:"文字・語彙", scored:(vdType==="all"), onFinish:vocabDone });
+    };
+  }
+  function vocabDone(res){
+    if(vdType==="all"){
+      var best=state.exam.vocab;
+      if(!best || res.score/res.total > best.score/best.total){ state.exam.vocab={score:res.score,total:res.total}; save(); renderExamBests(); }
+    }
+    document.getElementById("vocabdrill").innerHTML=resultCard(res,"vdAgain","New set");
+    document.getElementById("vdAgain").onclick=vocabIntro;
+  }
+
+  // ---- 聴解 drills ----
+  var lsnType="all";
+  function listenIntro(){
+    var host=document.getElementById("listening"); if(!host) return; examBusy=false;
+    if(!Speech.ok()){
+      host.innerHTML='<p class="qz-intro"><b>Listening needs a Japanese voice, and this device has none.</b> '+
+        'Everything here works on your phone, or in Microsoft Edge, which ships Japanese voices. '+
+        'This is the one part of the exam you cannot practise on this laptop as it stands — '+
+        'see the banner at the top of the page for how to add a voice to Windows.</p>';
+      return;
+    }
+    var best=state.exam.listen;
+    var types=[["all","All four types"],["task","課題理解 — what happens next"],["point","ポイント理解 — listen for one point"],
+               ["utter","発話表現 — what do you say?"],["react","即時応答 — pick the reply"]];
+    var opts=types.map(function(t){ return '<option value="'+t[0]+'"'+(lsnType===t[0]?" selected":"")+'>'+t[1]+'</option>'; }).join("");
+    host.innerHTML =
+      '<p class="qz-intro">The 聴解 paper — all four 大問. Audio plays once on its own; tap 🔊 to replay as often as you like '+
+      '(the real exam plays each item twice). '+(best?('Best: <b>'+best.score+'/'+best.total+'</b>. '):'')+
+      'Only <b>All four types</b> counts towards your best score.</p>'+
+      '<div class="qz-controls"><div class="qz-field"><label for="lsnT">Question type</label>'+
+      '<select id="lsnT">'+opts+'</select></div>'+
+      '<div class="qz-field"><label for="lsnN">Questions</label>'+
+      '<select id="lsnN"><option value="8">8</option><option value="12" selected>12</option><option value="20">20</option></select></div>'+
+      '<button class="btn btn-seal" id="lsnStart">Start listening</button></div>';
+    document.getElementById("lsnT").onchange=function(){ lsnType=this.value; };
+    document.getElementById("lsnStart").onclick=function(){
+      examBusy=true;
+      var n=parseInt(document.getElementById("lsnN").value,10);
+      var pool=listenPool(lsnType);
+      runMc(host, sample(pool, Math.min(n,pool.length)), { label:"聴解", onFinish:listenDone });
+    };
+  }
+  function listenDone(res){
+    if(lsnType==="all"){
+      var best=state.exam.listen;
+      if(!best || res.score/res.total > best.score/best.total){ state.exam.listen={score:res.score,total:res.total}; save(); renderExamBests(); }
+    }
+    document.getElementById("listening").innerHTML=resultCard(res,"lsnAgain","New set");
+    document.getElementById("lsnAgain").onclick=listenIntro;
+  }
+  var rdLen="all";
   function readingIntro(){
     var host=document.getElementById("reading"); if(!host) return; examBusy=false;
     var best=state.exam.reading;
+    var lens=[["all","Any passage"],["short","内容理解（短文）— ~80字"],["mid","内容理解（中文）— ~250字"],["info","情報検索 — find the fact"]];
+    var opts=lens.map(function(l){
+      var n=READING.filter(function(p){ return l[0]==="all" || (p.len||"short")===l[0]; }).length;
+      return '<option value="'+l[0]+'"'+(rdLen===l[0]?" selected":"")+'>'+l[1]+' ('+n+')</option>';
+    }).join("");
     host.innerHTML =
-      '<p class="qz-intro">Read a short passage or notice, then answer — the N5 reading format (comprehension and finding information). '+(best?('Best: <b>'+best.score+'/'+best.total+'</b>. '):'')+'</p>'+
-      '<button class="btn btn-seal" id="rdStart">Start a passage</button>';
+      '<p class="qz-intro">Read a passage, then answer — the three reading 大問. 短文 is a short note, 中文 a ~250-character text, '+
+      '情報検索 a notice you scan for one fact. '+(best?('Best: <b>'+best.score+'/'+best.total+'</b>. '):'')+'</p>'+
+      '<div class="qz-controls"><div class="qz-field"><label for="rdL">Passage type</label>'+
+      '<select id="rdL">'+opts+'</select></div>'+
+      '<button class="btn btn-seal" id="rdStart">Start a passage</button></div>';
+    document.getElementById("rdL").onchange=function(){ rdLen=this.value; };
     document.getElementById("rdStart").onclick=function(){
       examBusy=true;
-      var p=READING[Math.floor(Math.random()*READING.length)];
+      var pool=READING.filter(function(p){ return rdLen==="all" || (p.len||"short")===rdLen; });
+      var p=pool[Math.floor(Math.random()*pool.length)];
       var ctx=passageHtml(p);
-      var qs=p.qs.map(function(q){ var c=clone(q); c.ctx=ctx; c.sec="Reading"; return mkQ(c); });
-      runMc(host, qs, { label:"Reading", onFinish:readingDone });
+      var qs=p.qs.map(function(q){ var c=clone(q); c.ctx=ctx; c.sec=p.kind||"読解"; return mkQ(c); });
+      runMc(host, qs, { label:"読解", onFinish:readingDone });
     };
   }
   function readingDone(res){
@@ -3373,37 +4073,58 @@
     document.getElementById("rdAgain").onclick=readingIntro;
   }
 
+  // The mock follows the real paper's order and its mix of 大問, scaled down.
+  // Proportions mirror the actual N5: 文字・語彙 then 文法・読解 then 聴解.
   function buildMock(){
-    var items=[], pool=[];
-    THEMES.forEach(function(t){ t.words.forEach(function(w){ if((w.m||"").indexOf("?")<0) pool.push(w); }); });
-    // Vocabulary — read the word, choose the meaning.
-    sample(pool,8).forEach(function(w){
-      items.push(mkQ({ q:"「"+w.k+"」", a:w.m, d:distract(pool,"m",w.m,3), cEn:true, sec:"Vocabulary",
-        e:'<span class="jp">'+esc(w.j||w.k)+'</span> = '+esc(w.m) }));
+    var items=[];
+    function take(arr,n,fn){ sample(arr, Math.min(n,arr.length)).forEach(function(x){ items.push(fn(x)); }); }
+
+    // ① 言語知識（文字・語彙）— all four 大問
+    take(KANJIR, 4, mkKanjiR);
+    take(HYOKI, 3, mkHyoki);
+    take(BUNMYAKU, 4, function(x){ var c=clone(x); c.sec="文脈規定"; return mkQ(c); });
+    take(IIKAE, 2, mkIikae);
+
+    // ② 言語知識（文法）
+    take(GRAMMAR, 6, function(g){ var c=clone(g); c.sec="文法形式の判断"; return mkQ(c); });
+    take(ORDER, 3, mkOrder);
+    var cp=CLOZE[Math.floor(Math.random()*CLOZE.length)];
+    clozeQs(cp).slice(0,3).forEach(function(q){ items.push(q); });
+
+    // ② 読解 — one short passage and one information-retrieval notice
+    ["short","info"].forEach(function(len){
+      var pool=READING.filter(function(p){ return (p.len||"short")===len; });
+      if(!pool.length) return;
+      var p=pool[Math.floor(Math.random()*pool.length)], ctx=passageHtml(p);
+      p.qs.slice(0,2).forEach(function(q){ var c=clone(q); c.ctx=ctx; c.sec=p.kind||"読解"; items.push(mkQ(c)); });
     });
-    // Grammar
-    sample(GRAMMAR,8).forEach(function(g){ var c=clone(g); c.sec="Grammar"; items.push(mkQ(c)); });
-    // Reading — one passage and its questions.
-    var p=READING[Math.floor(Math.random()*READING.length)], ctx=passageHtml(p);
-    p.qs.forEach(function(q){ var c=clone(q); c.ctx=ctx; c.sec="Reading"; items.push(mkQ(c)); });
-    // Listening — only where a Japanese voice exists.
+
+    // ③ 聴解 — only where a Japanese voice exists
     if(Speech.ok()){
-      sample(pool,4).forEach(function(w){
-        items.push(mkQ({ q:"Listen, then choose the meaning.", qEn:true, a:w.m, d:distract(pool,"m",w.m,3),
-          cEn:true, say:(w.j||w.k), sec:"Listening", e:'<span class="jp">'+esc(w.j||w.k)+'</span> = '+esc(w.m) }));
-      });
+      take(LISTEN.task, 2, function(x){ return mkListen(x,"task"); });
+      take(LISTEN.point, 2, function(x){ return mkListen(x,"point"); });
+      take(LISTEN.utter, 2, function(x){ return mkListen(x,"utter"); });
+      take(LISTEN.react, 2, function(x){ return mkListen(x,"react"); });
     }
     return items;
   }
+  // Which scoring section each 大問 rolls up into, as the real paper does.
+  var MOCK_PAPER={
+    "漢字読み":"文字・語彙","表記":"文字・語彙","文脈規定":"文字・語彙","言い換え類義":"文字・語彙",
+    "文法形式の判断":"文法","文の組み立て":"文法","文章の文法":"文法",
+    "内容理解（短文）":"読解","内容理解（中文）":"読解","情報検索":"読解","情報検索（みじかい）":"読解","読解":"読解",
+    "課題理解":"聴解","ポイント理解":"聴解","発話表現":"聴解","即時応答":"聴解"
+  };
   function mockIntro(){
     var host=document.getElementById("mock"); if(!host) return; examBusy=false;
     var best=state.exam.mock, hasV=Speech.ok();
     host.innerHTML =
-      '<p class="qz-intro">A short mock in the real N5 order — vocabulary, grammar, reading'+(hasV?", listening":"")+' — all four-choice, on a timer, then scored by section. '+
-      (hasV?"":"<b>Listening is skipped on this device</b> (no Japanese voice) — practise it on your phone or in Edge. ")+
+      '<p class="qz-intro">A scaled-down mock in the real paper’s order and mix — 文字・語彙, then 文法・読解'+(hasV?", then 聴解":"")+
+      ' — drawing on every 大問 the exam sets. On a timer, then scored by paper section. '+
+      (hasV?"":"<b>聴解 is skipped on this device</b> (no Japanese voice) — do listening on your phone or in Edge. ")+
       (best?('Best so far: <b>'+best.pct+'%</b>. '):'')+'</p>'+
-      '<div class="cd-facts" style="margin-bottom:16px"><span class="cd-fact"><b>~'+(hasV?23:19)+'</b> questions</span>'+
-      '<span class="cd-fact"><b>20 min</b> timer</span><span class="cd-fact">four-choice</span></div>'+
+      '<div class="cd-facts" style="margin-bottom:16px"><span class="cd-fact"><b>~'+(hasV?35:27)+'</b> questions</span>'+
+      '<span class="cd-fact"><b>25 min</b> timer</span><span class="cd-fact">'+(hasV?13:9)+' 大問 types</span></div>'+
       '<button class="btn btn-seal" id="mkStart">Start mock exam</button>';
     document.getElementById("mkStart").onclick=startMock;
   }
@@ -3411,8 +4132,8 @@
     examBusy=true;
     var host=document.getElementById("mock");
     var items=buildMock();
-    host.innerHTML='<div class="exam-bar"><span class="exam-sec-lbl" id="mkSec"></span><span class="exam-timer" id="mkTimer">20:00</span></div><div id="mockEngine"></div>';
-    var left=20*60;
+    host.innerHTML='<div class="exam-bar"><span class="exam-sec-lbl" id="mkSec"></span><span class="exam-timer" id="mkTimer">25:00</span></div><div id="mockEngine"></div>';
+    var left=25*60;
     var tid=setInterval(function(){
       left--; var el=document.getElementById("mkTimer");
       if(!el){ clearInterval(tid); return; }        // navigated away
@@ -3427,20 +4148,33 @@
   }
   function mockDone(res){
     var host=document.getElementById("mock");
-    var secs={};
-    res.results.forEach(function(r){ var s=r.sec||"Other"; if(!secs[s]) secs[s]={ok:0,n:0}; secs[s].n++; if(r.ok) secs[s].ok++; });
+    var secs={}, papers={};
+    res.results.forEach(function(r){
+      var s=r.sec||"Other";
+      if(!secs[s]) secs[s]={ok:0,n:0}; secs[s].n++; if(r.ok) secs[s].ok++;
+      var pp=MOCK_PAPER[s]||"その他";
+      if(!papers[pp]) papers[pp]={ok:0,n:0}; papers[pp].n++; if(r.ok) papers[pp].ok++;
+    });
     var pct=res.total?Math.round(res.score/res.total*100):0;
     if(!state.exam.mock || pct>state.exam.mock.pct){ state.exam.mock={score:res.score,total:res.total,pct:pct}; save(); renderExamBests(); }
     var cards="";
-    ["Vocabulary","Grammar","Reading","Listening"].forEach(function(s){ if(secs[s]) cards+='<div class="exam-scard"><div class="sn">'+secs[s].ok+'/'+secs[s].n+'</div><div class="sl">'+s+'</div></div>'; });
+    ["文字・語彙","文法","読解","聴解"].forEach(function(s){ if(papers[s]) cards+='<div class="exam-scard"><div class="sn">'+papers[s].ok+'/'+papers[s].n+'</div><div class="sl">'+s+'</div></div>'; });
+    // and the per-大問 breakdown underneath, so a weak format is obvious
+    var rows="";
+    Object.keys(secs).forEach(function(s){
+      var p=Math.round(secs[s].ok/secs[s].n*100);
+      rows+='<tr><td>'+esc(s)+'</td><td>'+secs[s].ok+' / '+secs[s].n+'</td>'+
+            '<td><span class="mkbar"><i style="width:'+p+'%"></i></span></td></tr>';
+    });
+    var byMondai='<div class="exam-mondai"><h4>By 大問</h4><table>'+rows+'</table></div>';
     var pass=pct>=60;
     var verdict=pass
       ? '<div class="exam-verdict pass">On track — '+pct+'% overall<span class="vsub">Hold this across full-length practice and N5 is within reach.</span></div>'
       : '<div class="exam-verdict work">'+pct+'% overall — more practice needed<span class="vsub">Aim for 60%+ here to sit comfortably above the real pass mark.</span></div>';
     host.innerHTML =
       '<div class="qz-result"><div class="big">'+res.score+'<span class="of"> / '+res.total+'</span></div><div class="msg">'+pct+'% overall</div></div>'+
-      verdict+'<div class="exam-scoregrid">'+cards+'</div>'+
-      '<p class="exam-note">The official N5 pass mark is <b>80 / 180</b> (about 44%) with per-section minimums. This mock reports raw percentages, so treat 60%+ as comfortable.</p>'+
+      verdict+'<div class="exam-scoregrid">'+cards+'</div>'+byMondai+
+      '<p class="exam-note">The official N5 pass mark is <b>80 / 180</b> (about 44%), with minimums of <b>38/120</b> on 言語知識・読解 and <b>19/60</b> on 聴解 — you must clear both, not just the total. This mock reports raw percentages, so treat 60%+ as comfortable.</p>'+
       '<div class="qz-actions"><button class="btn btn-seal" id="mkAgain">New mock</button></div>';
     document.getElementById("mkAgain").onclick=mockIntro;
   }
@@ -3455,7 +4189,7 @@
       state.quiz.input = isTouchDevice ? "keyboard" : "keypad";
       Speech.stop(); lsOpen=null;
       save(); renderAll(); renderMilestones(); renderConfig(); renderFcConfig();
-      renderCountdown(); renderThemes(); grammarIntro(); readingIntro(); mockIntro(); renderExamBests();
+      renderCountdown(); renderThemes(); vocabIntro(); grammarIntro(); readingIntro(); listenIntro(); mockIntro(); renderExamBests();
       renderAudioCtl(); renderAudioWarn();
     }
   }
@@ -3463,7 +4197,7 @@
   document.getElementById("resetTop").onclick=doReset;
 
   renderAll(); renderMilestones(); renderResources(); renderConfig(); renderFcConfig(); renderKanaChart();
-  renderCountdown(); renderThemes(); grammarIntro(); readingIntro(); mockIntro(); renderExamBests();
+  renderCountdown(); renderThemes(); vocabIntro(); grammarIntro(); readingIntro(); listenIntro(); mockIntro(); renderExamBests();
 
   // Gentle scroll-reveal. Only ever hides a block when we can guarantee something
   // will reveal it — motion allowed and IntersectionObserver present — so content
@@ -3487,7 +4221,7 @@
     // A ja-voice arriving late unlocks tap-to-hear and the mock's listening
     // section, so redraw those — but never clobber a drill already in progress.
     renderThemes();
-    if(!examBusy) mockIntro();
+    if(!examBusy){ listenIntro(); mockIntro(); }
   }
   Speech.onReady(onAudioState);
   Speech.onVoiceChange(onAudioState);   // a phone may surface a ja voice late
