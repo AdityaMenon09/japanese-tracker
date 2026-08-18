@@ -6,13 +6,13 @@
 <title>My Japanese Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@400;500;700;900&family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@400;500;700;900&family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     /* shape + motion + type — shared across themes, mirrors the landing page */
     --card-radius:22px; --pill:999px;
     --ease:cubic-bezier(.22,1,.36,1);
-    --jp:"Zen Maru Gothic","M PLUS Rounded 1c","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --jp:"BIZ UDPGothic","Zen Maru Gothic","M PLUS Rounded 1c","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
     --display:"Mochiy Pop One","Zen Maru Gothic",sans-serif;
     --body:"Zen Maru Gothic","M PLUS Rounded 1c",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     --num:"Baloo 2","Zen Maru Gothic",sans-serif;
@@ -64,7 +64,7 @@
   }
   .top::after{ /* floating kana wash */
     content:"あ　ア　ん"; position:absolute; right:-6px; bottom:-22px; z-index:0;
-    font-family:var(--display); font-size:5.4rem; letter-spacing:.15em;
+    font-family:var(--jp); font-weight:700; font-size:5.4rem; letter-spacing:.15em;
     color:var(--seal); opacity:.06; pointer-events:none; white-space:nowrap;
   }
   .top > * { position:relative; z-index:1; }
@@ -75,7 +75,7 @@
   .seal-mark {
     flex:0 0 auto; width:74px; height:74px; border-radius:50%;
     display:grid; place-items:center; font-size:2rem; line-height:1; color:#fff;
-    font-family:var(--display); transform:rotate(-6deg);
+    font-family:var(--jp); font-weight:700; transform:rotate(-6deg);
     background:radial-gradient(circle at 35% 30%, #f08a72, var(--seal) 55%, var(--seal-deep));
     box-shadow:0 12px 26px -8px rgba(178,51,32,.6), inset 0 3px 0 rgba(255,255,255,.4);
     border:3px solid rgba(255,255,255,.4);
@@ -260,7 +260,7 @@
   footer { margin-top:48px; padding-top:18px; border-top:2px dashed var(--line); display:flex; justify-content:space-between; align-items:center; font-size:0.76rem; color:var(--ink-soft); }
   .reset { font:inherit; font-weight:700; font-size:0.76rem; background:var(--surface); border:1px solid var(--line); color:var(--ink-soft); border-radius:var(--pill); padding:6px 14px; cursor:pointer; transition:transform .15s var(--ease), color .15s, border-color .15s; }
   .reset:hover { border-color:var(--seal); color:var(--seal); transform:translateY(-2px); }
-  .stamp { font-family:var(--display); color:var(--seal); border:2px solid var(--seal); border-radius:10px; padding:4px 12px; transform:rotate(-3deg); }
+  .stamp { font-family:var(--jp); font-weight:700; color:var(--seal); border:2px solid var(--seal); border-radius:10px; padding:4px 12px; transform:rotate(-3deg); }
   .save-note { font-size:0.76rem; color:var(--ink-soft); margin-top:8px; }
 
   /* Audio */
