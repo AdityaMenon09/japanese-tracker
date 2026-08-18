@@ -152,6 +152,25 @@
   .btn:focus-visible { outline:3px solid var(--gold-soft); outline-offset:2px; }
   .qz-intro { font-size:0.86rem; color:var(--ink-soft); margin:0 0 16px; }
 
+  /* English → Japanese translator */
+  .tr .tr-in { width:100%; font:inherit; font-size:1.02rem; line-height:1.5; padding:13px 15px; border:1.5px solid var(--line);
+    border-radius:14px; background:var(--paper); color:var(--ink); resize:vertical; min-height:56px; }
+  .tr .tr-in:focus-visible { outline:2px solid var(--indigo); outline-offset:1px; }
+  .tr-row { display:flex; align-items:center; gap:16px; margin:12px 0 0; flex-wrap:wrap; }
+  .tr-toggle { font-size:0.8rem; color:var(--ink-soft); font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .tr-toggle input { accent-color:var(--seal); }
+  .tr-out { margin-top:18px; }
+  .tr-out:empty { display:none; }
+  .tr-jp-wrap { font-family:var(--jp); font-size:1.9rem; line-height:1.9; color:var(--ink); word-break:break-word; }
+  .tr-jp-wrap ruby rt { font-size:0.5em; color:var(--seal); font-weight:400; }
+  .tr-romaji { font-size:1.02rem; color:var(--ink-soft); margin-top:8px; letter-spacing:.01em; }
+  .tr-meta { font-size:0.74rem; color:var(--ink-soft); margin-top:12px; text-transform:uppercase; letter-spacing:.08em; }
+  .tr-say { font:inherit; font-size:0.74rem; text-transform:none; letter-spacing:0; background:none; border:none; color:var(--seal);
+    font-weight:700; cursor:pointer; padding:0; }
+  .tr-say:hover { text-decoration:underline; }
+  .tr-loading { color:var(--ink-soft); font-size:0.92rem; }
+  .tr-err { color:var(--bad); font-size:0.92rem; }
+
   .qz-topbar { display:flex; align-items:center; justify-content:space-between; font-size:0.74rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px; }
   .qz-progress-bar { height:5px; background:var(--sunken); border-radius:20px; overflow:hidden; margin-bottom:20px; }
   .qz-progress-bar > i { display:block; height:100%; background:var(--seal); border-radius:20px; transition:width .3s ease; }
@@ -695,6 +714,11 @@
   <section>
     <h2 class="eyebrow"><span class="g" aria-hidden="true">句</span>Sentence of the day<span class="sod-tog" id="sodTog"></span></h2>
     <div class="sod" id="sod"></div>
+  </section>
+
+  <section>
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">訳</span>English → Japanese<span class="hint">type a sentence · get Japanese + romaji</span></h2>
+    <div class="panel tr" id="translate"></div>
   </section>
 
   <div class="study-row">
@@ -4181,6 +4205,86 @@
 
   // renderSentence rides along so the pair rolls over on its own if the page
   // is left open across midnight.
+  /* ---- Japanese engine (lazy): furigana + romaji + tokens via kuroshiro / kuromoji.
+     Scripts and the ~few-MB dictionary load from CDN only the first time a feature
+     that needs them is used, so the app's initial load is untouched. ---- */
+  var JPEngine = (function(){
+    var ready=null;
+    function load(src){ return new Promise(function(res,rej){
+      var s=document.createElement("script"); s.src=src; s.async=true;
+      s.onload=res; s.onerror=function(){ rej(new Error("Could not load "+src)); };
+      document.head.appendChild(s);
+    }); }
+    function init(){
+      if(ready) return ready;
+      ready = load("https://cdn.jsdelivr.net/npm/kuroshiro@1.2.0/dist/kuroshiro.min.js")
+        .then(function(){ return load("https://cdn.jsdelivr.net/npm/kuroshiro-analyzer-kuromoji@1.1.0/dist/kuroshiro-analyzer-kuromoji.min.js"); })
+        .then(function(){
+          var K=(typeof Kuroshiro==="function")?Kuroshiro:(Kuroshiro&&Kuroshiro.default);
+          var A=(typeof KuromojiAnalyzer==="function")?KuromojiAnalyzer:(KuromojiAnalyzer&&KuromojiAnalyzer.default);
+          var ks=new K();
+          return ks.init(new A({dictPath:"https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/"})).then(function(){ return ks; });
+        });
+      return ready;
+    }
+    return {
+      init:init,
+      romaji:function(t){ return init().then(function(ks){ return ks.convert(t,{to:"romaji",mode:"spaced",romajiSystem:"hepburn"}); }); },
+      furigana:function(t){ return init().then(function(ks){ return ks.convert(t,{to:"hiragana",mode:"furigana"}); }); },
+      tokens:function(t){ return init().then(function(ks){ return ks._analyzer.parse(t); }); }
+    };
+  })();
+
+  /* ---- English → Japanese translator ---- */
+  function trTranslate(text){
+    // Prefer our serverless DeepL proxy; fall back to a free no-key service so the
+    // feature still works in local preview before the DeepL key is deployed.
+    return fetch("/api/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,target:"JA"})})
+      .then(function(r){ if(!r.ok) throw new Error("no api"); return r.json(); })
+      .then(function(d){ if(!d.translation) throw new Error("empty"); return {jp:d.translation, via:"DeepL"}; })
+      .catch(function(){
+        return fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair=en|ja")
+          .then(function(r){ return r.json(); })
+          .then(function(d){ return {jp:(d.responseData&&d.responseData.translatedText)||"", via:"free fallback"}; });
+      });
+  }
+  function renderTranslate(){
+    var host=document.getElementById("translate"); if(!host) return;
+    host.innerHTML=
+      '<textarea id="trIn" class="tr-in" rows="2" placeholder="Type an English sentence…  e.g. I study Japanese every day."></textarea>'+
+      '<div class="tr-row"><button class="btn btn-seal" id="trGo">Translate to Japanese</button>'+
+      '<label class="tr-toggle"><input type="checkbox" id="trFuri" checked> furigana</label>'+
+      '<span class="tr-toggle" style="cursor:default;color:var(--ink-soft)">Ctrl/⌘+Enter</span></div>'+
+      '<div class="tr-out" id="trOut"></div>';
+    var inp=document.getElementById("trIn"), out=document.getElementById("trOut"), furi=document.getElementById("trFuri");
+    var last=null;
+    function show(res){
+      last=res;
+      var body=furi.checked ? res.furigana : res.plain;
+      out.innerHTML=
+        '<div class="tr-jp-wrap">'+body+'</div>'+
+        '<div class="tr-romaji">'+res.romaji+'</div>'+
+        '<div class="tr-meta">via '+res.via+' · <button class="tr-say" id="trSay">🔊 hear it</button></div>';
+      var say=document.getElementById("trSay");
+      if(say) say.onclick=function(){ if(window.Speech&&Speech.say) Speech.say(res.plain); };
+    }
+    function esc(s){ return String(s).replace(/[&<>]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]; }); }
+    function go(){
+      var text=(inp.value||"").trim(); if(!text){ inp.focus(); return; }
+      out.innerHTML='<div class="tr-loading">translating…</div>';
+      trTranslate(text).then(function(t){
+        if(!t.jp){ out.innerHTML='<div class="tr-err">Couldn’t translate that — please try again.</div>'; return; }
+        out.innerHTML='<div class="tr-loading">reading the Japanese…</div>';
+        return Promise.all([JPEngine.furigana(t.jp), JPEngine.romaji(t.jp)]).then(function(a){
+          show({plain:esc(t.jp), furigana:a[0], romaji:esc(a[1]), via:t.via});
+        });
+      }).catch(function(e){ out.innerHTML='<div class="tr-err">Something went wrong: '+esc(e&&e.message||e)+'</div>'; });
+    }
+    document.getElementById("trGo").onclick=go;
+    inp.addEventListener("keydown",function(e){ if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){ e.preventDefault(); go(); } });
+    furi.onchange=function(){ if(last) show(last); };
+  }
+
   function renderAll(){ renderToday(); renderStats(); renderHeat(); renderSentence(); renderLessons(); }
 
   function doReset(){
@@ -4198,6 +4302,7 @@
 
   renderAll(); renderMilestones(); renderResources(); renderConfig(); renderFcConfig(); renderKanaChart();
   renderCountdown(); renderThemes(); vocabIntro(); grammarIntro(); readingIntro(); listenIntro(); mockIntro(); renderExamBests();
+  renderTranslate();
 
   // Gentle scroll-reveal. Only ever hides a block when we can guarantee something
   // will reveal it — motion allowed and IntersectionObserver present — so content
