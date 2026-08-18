@@ -4268,11 +4268,16 @@
   /* ---- English → Japanese translator ---- */
   function trTranslate(text){
     // Prefer our serverless DeepL proxy; fall back to a free no-key service so the
-    // feature still works in local preview before the DeepL key is deployed.
-    return fetch("/api/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,target:"JA"})})
+    // feature still works in local preview before the DeepL key is deployed. The
+    // proxy call is aborted after 6s so a stalled request doesn't hang the UI.
+    var ctrl = ("AbortController" in window) ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 6000) : null;
+    function done(){ if(timer){ clearTimeout(timer); timer=null; } }
+    return fetch("/api/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,target:"JA"}),signal:ctrl?ctrl.signal:undefined})
       .then(function(r){ if(!r.ok) throw new Error("no api"); return r.json(); })
-      .then(function(d){ if(!d.translation) throw new Error("empty"); return {jp:d.translation, via:"DeepL"}; })
+      .then(function(d){ done(); if(!d.translation) throw new Error("empty"); return {jp:d.translation, via:"DeepL"}; })
       .catch(function(){
+        done();
         return fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair=en|ja")
           .then(function(r){ return r.json(); })
           .then(function(d){ return {jp:(d.responseData&&d.responseData.translatedText)||"", via:"free fallback"}; });
@@ -4347,6 +4352,9 @@
     var tabs=document.querySelectorAll("#tabs .tab");
     for(var j=0;j<tabs.length;j++){ tabs[j].classList.toggle("active", tabs[j].getAttribute("data-view")===name); }
     try{ if(location.hash!=="#"+name) history.replaceState(null,"","#"+name); }catch(e){}
+    // Warm up the tokenizer dictionary as soon as the translator is opened, so the
+    // first translation doesn't pay the one-time load on top of the network call.
+    if(name==="translate" && typeof JPEngine!=="undefined"){ try{ JPEngine.init(); }catch(e){} }
     window.scrollTo(0,0);
   }
   (function(){
