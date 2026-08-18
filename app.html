@@ -4253,7 +4253,7 @@
           var K=(typeof Kuroshiro==="function")?Kuroshiro:(Kuroshiro&&Kuroshiro.default);
           var A=(typeof KuromojiAnalyzer==="function")?KuromojiAnalyzer:(KuromojiAnalyzer&&KuromojiAnalyzer.default);
           var ks=new K();
-          return ks.init(new A({dictPath:"https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/"})).then(function(){ return ks; });
+          return ks.init(new A({dictPath:"/dict/"})).then(function(){ return ks; });
         });
       // If the scripts or dictionary fail to load, drop the cached promise so a
       // later attempt can retry instead of being stuck on a broken load forever.
