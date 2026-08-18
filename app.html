@@ -4371,9 +4371,6 @@
     var tabs=document.querySelectorAll("#tabs .tab");
     for(var j=0;j<tabs.length;j++){ tabs[j].classList.toggle("active", tabs[j].getAttribute("data-view")===name); }
     try{ if(location.hash!=="#"+name) history.replaceState(null,"","#"+name); }catch(e){}
-    // Warm up the tokenizer dictionary as soon as the translator is opened, so the
-    // first translation doesn't pay the one-time load on top of the network call.
-    if(name==="translate" && typeof JPEngine!=="undefined"){ try{ JPEngine.init(); }catch(e){} }
     window.scrollTo(0,0);
   }
   (function(){
