@@ -6,13 +6,13 @@
 <title>My Japanese Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@400;500;700;900&family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@400;500;700;900&family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     /* shape + motion + type — shared across themes, mirrors the landing page */
     --card-radius:22px; --pill:999px;
     --ease:cubic-bezier(.22,1,.36,1);
-    --jp:"Zen Maru Gothic","M PLUS Rounded 1c","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --jp:"BIZ UDPGothic","Zen Maru Gothic","M PLUS Rounded 1c","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
     --display:"Mochiy Pop One","Zen Maru Gothic",sans-serif;
     --body:"Zen Maru Gothic","M PLUS Rounded 1c",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     --num:"Baloo 2","Zen Maru Gothic",sans-serif;
@@ -52,6 +52,25 @@
   .jp { font-family:var(--jp); }
   .wrap { max-width:1320px; margin:0 auto; padding:0 34px 72px; }
 
+  /* Section tabs — click to switch views instead of scrolling */
+  .tabs { position:sticky; top:0; z-index:20; display:flex; gap:7px; flex-wrap:wrap;
+    margin:0 0 22px; padding:12px 0 12px; background:var(--paper); }
+  .tabs .tab { font-family:var(--body); font-weight:700; font-size:0.86rem; color:var(--ink-soft);
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--pill);
+    padding:9px 19px; cursor:pointer; transition:transform .16s var(--ease), color .16s, border-color .16s, background .16s; }
+  .tabs .tab:hover { border-color:var(--seal); color:var(--seal); transform:translateY(-2px); }
+  .tabs .tab:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .tabs .tab.active { background:linear-gradient(180deg,#f08a72,var(--seal) 55%,var(--seal-deep)); color:#fff;
+    border-color:transparent; box-shadow:0 10px 20px -10px rgba(224,103,77,.7); }
+  [data-panel] { margin-top:0; }
+  @keyframes vwIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+  .vw-in { animation:vwIn .28s var(--ease) both; }
+  @media (max-width:600px){
+    .tabs { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .tabs::-webkit-scrollbar { display:none; }
+    .tabs .tab { white-space:nowrap; }
+  }
+
   /* ---- themed hero banner, echoing the landing page's sky ---- */
   .top {
     position:relative; overflow:hidden; display:flex; align-items:center; gap:22px;
@@ -64,7 +83,7 @@
   }
   .top::after{ /* floating kana wash */
     content:"あ　ア　ん"; position:absolute; right:-6px; bottom:-22px; z-index:0;
-    font-family:var(--display); font-size:5.4rem; letter-spacing:.15em;
+    font-family:var(--jp); font-weight:700; font-size:5.4rem; letter-spacing:.15em;
     color:var(--seal); opacity:.06; pointer-events:none; white-space:nowrap;
   }
   .top > * { position:relative; z-index:1; }
@@ -75,7 +94,7 @@
   .seal-mark {
     flex:0 0 auto; width:74px; height:74px; border-radius:50%;
     display:grid; place-items:center; font-size:2rem; line-height:1; color:#fff;
-    font-family:var(--display); transform:rotate(-6deg);
+    font-family:var(--jp); font-weight:700; transform:rotate(-6deg);
     background:radial-gradient(circle at 35% 30%, #f08a72, var(--seal) 55%, var(--seal-deep));
     box-shadow:0 12px 26px -8px rgba(178,51,32,.6), inset 0 3px 0 rgba(255,255,255,.4);
     border:3px solid rgba(255,255,255,.4);
@@ -151,6 +170,25 @@
   .btn-ghost:hover { border-color:var(--seal); color:var(--seal); transform:translateY(-2px); }
   .btn:focus-visible { outline:3px solid var(--gold-soft); outline-offset:2px; }
   .qz-intro { font-size:0.86rem; color:var(--ink-soft); margin:0 0 16px; }
+
+  /* English → Japanese translator */
+  .tr .tr-in { width:100%; font:inherit; font-size:1.02rem; line-height:1.5; padding:13px 15px; border:1.5px solid var(--line);
+    border-radius:14px; background:var(--paper); color:var(--ink); resize:vertical; min-height:56px; }
+  .tr .tr-in:focus-visible { outline:2px solid var(--indigo); outline-offset:1px; }
+  .tr-row { display:flex; align-items:center; gap:16px; margin:12px 0 0; flex-wrap:wrap; }
+  .tr-toggle { font-size:0.8rem; color:var(--ink-soft); font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .tr-toggle input { accent-color:var(--seal); }
+  .tr-out { margin-top:18px; }
+  .tr-out:empty { display:none; }
+  .tr-jp-wrap { font-family:var(--jp); font-size:1.9rem; line-height:1.9; color:var(--ink); word-break:break-word; }
+  .tr-jp-wrap ruby rt { font-size:0.5em; color:var(--seal); font-weight:400; }
+  .tr-romaji { font-size:1.02rem; color:var(--ink-soft); margin-top:8px; letter-spacing:.01em; }
+  .tr-meta { font-size:0.74rem; color:var(--ink-soft); margin-top:12px; text-transform:uppercase; letter-spacing:.08em; }
+  .tr-say { font:inherit; font-size:0.74rem; text-transform:none; letter-spacing:0; background:none; border:none; color:var(--seal);
+    font-weight:700; cursor:pointer; padding:0; }
+  .tr-say:hover { text-decoration:underline; }
+  .tr-loading { color:var(--ink-soft); font-size:0.92rem; }
+  .tr-err { color:var(--bad); font-size:0.92rem; }
 
   .qz-topbar { display:flex; align-items:center; justify-content:space-between; font-size:0.74rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px; }
   .qz-progress-bar { height:5px; background:var(--sunken); border-radius:20px; overflow:hidden; margin-bottom:20px; }
@@ -260,7 +298,7 @@
   footer { margin-top:48px; padding-top:18px; border-top:2px dashed var(--line); display:flex; justify-content:space-between; align-items:center; font-size:0.76rem; color:var(--ink-soft); }
   .reset { font:inherit; font-weight:700; font-size:0.76rem; background:var(--surface); border:1px solid var(--line); color:var(--ink-soft); border-radius:var(--pill); padding:6px 14px; cursor:pointer; transition:transform .15s var(--ease), color .15s, border-color .15s; }
   .reset:hover { border-color:var(--seal); color:var(--seal); transform:translateY(-2px); }
-  .stamp { font-family:var(--display); color:var(--seal); border:2px solid var(--seal); border-radius:10px; padding:4px 12px; transform:rotate(-3deg); }
+  .stamp { font-family:var(--jp); font-weight:700; color:var(--seal); border:2px solid var(--seal); border-radius:10px; padding:4px 12px; transform:rotate(-3deg); }
   .save-note { font-size:0.76rem; color:var(--ink-soft); margin-top:8px; }
 
   /* Audio */
@@ -663,7 +701,16 @@
   </header>
   <div id="audWarn"></div>
 
-  <div class="dash-top">
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button class="tab" data-view="home">Home</button>
+    <button class="tab" data-view="translate">Translate</button>
+    <button class="tab" data-view="study">Study</button>
+    <button class="tab" data-view="drills">Drills</button>
+    <button class="tab" data-view="reference">Reference</button>
+    <button class="tab" data-view="progress">Progress</button>
+  </nav>
+
+  <div class="dash-top" data-panel="home">
     <section>
       <h2 class="eyebrow"><span class="g" aria-hidden="true">今</span>Today<span class="hint" id="todayDate"></span></h2>
       <div class="today">
@@ -687,17 +734,22 @@
     </section>
   </div>
 
-  <section>
+  <section data-panel="home">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">試</span>JLPT N5 countdown<span class="hint">the December sitting</span></h2>
     <div class="cd" id="countdown"></div>
   </section>
 
-  <section>
+  <section data-panel="home">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">句</span>Sentence of the day<span class="sod-tog" id="sodTog"></span></h2>
     <div class="sod" id="sod"></div>
   </section>
 
-  <div class="study-row">
+  <section data-panel="translate">
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">訳</span>English → Japanese<span class="hint">type a sentence · get Japanese + romaji</span></h2>
+    <div class="panel tr" id="translate"></div>
+  </section>
+
+  <div class="study-row" data-panel="study">
     <section>
       <h2 class="eyebrow"><span class="g" aria-hidden="true">札</span>Flashcards<span class="hint" id="fcHint"></span></h2>
       <div class="quiz" id="flash"></div>
@@ -708,7 +760,7 @@
     </section>
   </div>
 
-  <div class="grid-two">
+  <div class="grid-two" data-panel="drills">
     <section>
       <h2 class="eyebrow"><span class="g" aria-hidden="true">文</span>Grammar drills<span class="hint" id="grBest"></span></h2>
       <div class="quiz" id="grammar"></div>
@@ -719,17 +771,17 @@
     </section>
   </div>
 
-  <section>
+  <section data-panel="reference">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">仮</span>Kana chart<span class="hint">tap a kana to hear it</span></h2>
     <div class="kana-chart" id="kanaChart"></div>
   </section>
 
-  <section>
+  <section data-panel="reference">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">語</span>Vocabulary by theme<span class="hint">tap a word to hear it</span></h2>
     <div class="kana-chart" id="themes"></div>
   </section>
 
-  <div class="grid-two">
+  <div class="grid-two" data-panel="drills">
     <section>
       <h2 class="eyebrow"><span class="g" aria-hidden="true">字</span>文字・語彙 drills<span class="hint" id="vdBest"></span></h2>
       <div class="quiz" id="vocabdrill"></div>
@@ -740,35 +792,36 @@
     </section>
   </div>
 
-  <section>
+  <section data-panel="study">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">課</span>Lessons<span class="hint" id="lsHint"></span></h2>
     <div class="bar" style="margin-bottom:10px"><i id="lsBar" style="width:0%"></i></div>
     <p class="ls-intro">The <b>みんなの日本語 初級I</b> grammar order, Lessons 1–25 — the standard N5 path. Tap a lesson to see what it covers and hear the examples. Tick it off when you’ve worked through it.</p>
     <div id="lessons"></div>
   </section>
 
-  <section>
+  <section data-panel="drills">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">模</span>Mock exam<span class="hint" id="mkBest"></span></h2>
     <div class="quiz" id="mock"></div>
   </section>
 
-  <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
-  <div class="heat" id="heat"></div>
-  <div class="legend">Less
-    <span class="hcell"></span><span class="hcell t1"></span><span class="hcell t2"></span><span class="hcell t3"></span><span class="hcell t4"></span>
-    More</div>
+  <section data-panel="progress">
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
+    <div class="heat" id="heat"></div>
+    <div class="legend">Less
+      <span class="hcell"></span><span class="hcell t1"></span><span class="hcell t2"></span><span class="hcell t3"></span><span class="hcell t4"></span>
+      More</div>
+  </section>
 
-  <div class="grid-two" style="margin-top:34px">
-    <section>
-      <h2 class="eyebrow"><span class="g" aria-hidden="true">道</span>Milestones<span class="hint" id="mPct">0% done</span></h2>
-      <div class="bar" style="margin-bottom:10px"><i id="mBar" style="width:0%"></i></div>
-      <div class="card-wrap" id="milestones"></div>
-    </section>
-    <section>
-      <h2 class="eyebrow"><span class="g" aria-hidden="true">具</span>Free study links</h2>
-      <div class="card-wrap" id="resources"></div>
-    </section>
-  </div>
+  <section data-panel="progress">
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">道</span>Milestones<span class="hint" id="mPct">0% done</span></h2>
+    <div class="bar" style="margin-bottom:10px"><i id="mBar" style="width:0%"></i></div>
+    <div class="card-wrap" id="milestones"></div>
+  </section>
+
+  <section data-panel="reference">
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">具</span>Free study links</h2>
+    <div class="card-wrap" id="resources"></div>
+  </section>
 
   <footer>
     <span>Progress saves automatically in this browser.</span>
@@ -3850,8 +3903,9 @@
   function startGrammar(n){
     grLesson=n;
     grammarIntro();
+    if(typeof showView==="function") showView("drills");
     var sec=document.getElementById("grammar");
-    if(sec && sec.scrollIntoView) sec.scrollIntoView({behavior:"smooth", block:"center"});
+    if(sec && sec.scrollIntoView) sec.scrollIntoView({behavior:"smooth", block:"start"});
   }
   function grammarDone(res){
     if(grScored){
@@ -4181,6 +4235,110 @@
 
   // renderSentence rides along so the pair rolls over on its own if the page
   // is left open across midnight.
+  /* ---- Japanese engine (lazy): furigana + romaji + tokens via kuroshiro / kuromoji.
+     Scripts and the ~few-MB dictionary load from CDN only the first time a feature
+     that needs them is used, so the app's initial load is untouched. ---- */
+  var JPEngine = (function(){
+    var ready=null;
+    function load(src){ return new Promise(function(res,rej){
+      var s=document.createElement("script"); s.src=src; s.async=true;
+      s.onload=res; s.onerror=function(){ rej(new Error("Could not load "+src)); };
+      document.head.appendChild(s);
+    }); }
+    function init(){
+      if(ready) return ready;
+      ready = load("https://cdn.jsdelivr.net/npm/kuroshiro@1.2.0/dist/kuroshiro.min.js")
+        .then(function(){ return load("https://cdn.jsdelivr.net/npm/kuroshiro-analyzer-kuromoji@1.1.0/dist/kuroshiro-analyzer-kuromoji.min.js"); })
+        .then(function(){
+          var K=(typeof Kuroshiro==="function")?Kuroshiro:(Kuroshiro&&Kuroshiro.default);
+          var A=(typeof KuromojiAnalyzer==="function")?KuromojiAnalyzer:(KuromojiAnalyzer&&KuromojiAnalyzer.default);
+          var ks=new K();
+          return ks.init(new A({dictPath:"/dict/"})).then(function(){ return ks; });
+        });
+      // If the scripts or dictionary fail to load, drop the cached promise so a
+      // later attempt can retry instead of being stuck on a broken load forever.
+      ready.catch(function(){ ready=null; });
+      return ready;
+    }
+    return {
+      init:init,
+      romaji:function(t){ return init().then(function(ks){ return ks.convert(t,{to:"romaji",mode:"spaced",romajiSystem:"hepburn"}); }); },
+      furigana:function(t){ return init().then(function(ks){ return ks.convert(t,{to:"hiragana",mode:"furigana"}); }); },
+      tokens:function(t){ return init().then(function(ks){ return ks._analyzer.parse(t); }); }
+    };
+  })();
+
+  /* ---- English → Japanese translator ---- */
+  function trTranslate(text){
+    // Prefer our serverless DeepL proxy; fall back to a free no-key service so the
+    // feature still works in local preview before the DeepL key is deployed. The
+    // proxy call is aborted after 6s so a stalled request doesn't hang the UI.
+    var ctrl = ("AbortController" in window) ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 6000) : null;
+    function done(){ if(timer){ clearTimeout(timer); timer=null; } }
+    return fetch("/api/translate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,target:"JA"}),signal:ctrl?ctrl.signal:undefined})
+      .then(function(r){ if(!r.ok) throw new Error("no api"); return r.json(); })
+      .then(function(d){ done(); if(!d.translation) throw new Error("empty"); return {jp:d.translation, via:"DeepL"}; })
+      .catch(function(){
+        done();
+        return fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair=en|ja")
+          .then(function(r){ return r.json(); })
+          .then(function(d){ return {jp:(d.responseData&&d.responseData.translatedText)||"", via:"free fallback"}; });
+      });
+  }
+  function renderTranslate(){
+    var host=document.getElementById("translate"); if(!host) return;
+    host.innerHTML=
+      '<textarea id="trIn" class="tr-in" rows="2" placeholder="Type an English sentence…  e.g. I study Japanese every day."></textarea>'+
+      '<div class="tr-row"><button class="btn btn-seal" id="trGo">Translate to Japanese</button>'+
+      '<label class="tr-toggle"><input type="checkbox" id="trFuri" checked> furigana</label>'+
+      '<span class="tr-toggle" style="cursor:default;color:var(--ink-soft)">Ctrl/⌘+Enter</span></div>'+
+      '<div class="tr-out" id="trOut"></div>';
+    var inp=document.getElementById("trIn"), out=document.getElementById("trOut"), furi=document.getElementById("trFuri");
+    var last=null;
+    function esc(s){ return String(s).replace(/[&<>]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]; }); }
+    function show(res){
+      last=res;
+      var jpBody = (furi.checked && res.furigana) ? res.furigana : res.plain;
+      var reading = res.romaji ? '<div class="tr-romaji">'+res.romaji+'</div>'
+        : res.pending ? '<div class="tr-romaji tr-loading">adding readings…</div>'
+        : res.noReadings ? '<div class="tr-romaji" style="opacity:.7">readings unavailable — check your connection</div>'
+        : '';
+      out.innerHTML=
+        '<div class="tr-jp-wrap">'+jpBody+'</div>'+
+        reading+
+        '<div class="tr-meta">via '+res.via+' · <button class="tr-say" id="trSay">🔊 hear it</button></div>';
+      var say=document.getElementById("trSay");
+      if(say) say.onclick=function(){ if(window.Speech&&Speech.say) Speech.say(res.plainText); };
+    }
+    // Resolve/reject a promise but never wait past `ms` — so a slow or blocked
+    // dictionary load can't leave the UI stuck on "adding readings…".
+    function withTimeout(p, ms){
+      return new Promise(function(resolve, reject){
+        var settled=false;
+        var t=setTimeout(function(){ if(!settled){ settled=true; reject(new Error("timeout")); } }, ms);
+        p.then(function(v){ if(!settled){ settled=true; clearTimeout(t); resolve(v); } },
+               function(e){ if(!settled){ settled=true; clearTimeout(t); reject(e); } });
+      });
+    }
+    function go(){
+      var text=(inp.value||"").trim(); if(!text){ inp.focus(); return; }
+      out.innerHTML='<div class="tr-loading">translating…</div>';
+      trTranslate(text).then(function(t){
+        if(!t.jp){ out.innerHTML='<div class="tr-err">Couldn’t translate that — please try again.</div>'; return; }
+        var jp=t.jp;
+        // Show the translation immediately; furigana + romaji are an enhancement.
+        show({plain:esc(jp), plainText:jp, furigana:null, romaji:null, via:t.via, pending:true});
+        withTimeout(Promise.all([JPEngine.furigana(jp), JPEngine.romaji(jp)]), 15000)
+          .then(function(a){ show({plain:esc(jp), plainText:jp, furigana:a[0], romaji:esc(a[1]), via:t.via}); })
+          .catch(function(){ show({plain:esc(jp), plainText:jp, furigana:null, romaji:null, via:t.via, noReadings:true}); });
+      }).catch(function(e){ out.innerHTML='<div class="tr-err">Something went wrong: '+esc(e&&e.message||e)+'</div>'; });
+    }
+    document.getElementById("trGo").onclick=go;
+    inp.addEventListener("keydown",function(e){ if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){ e.preventDefault(); go(); } });
+    furi.onchange=function(){ if(last) show(last); };
+  }
+
   function renderAll(){ renderToday(); renderStats(); renderHeat(); renderSentence(); renderLessons(); }
 
   function doReset(){
@@ -4198,18 +4356,31 @@
 
   renderAll(); renderMilestones(); renderResources(); renderConfig(); renderFcConfig(); renderKanaChart();
   renderCountdown(); renderThemes(); vocabIntro(); grammarIntro(); readingIntro(); listenIntro(); mockIntro(); renderExamBests();
+  renderTranslate();
 
-  // Gentle scroll-reveal. Only ever hides a block when we can guarantee something
-  // will reveal it — motion allowed and IntersectionObserver present — so content
-  // is never left invisible if either is missing.
+  // ---- Tabbed section navigation: show one group at a time ----
+  var VIEW_NAMES = ["home","translate","study","drills","reference","progress"];
+  function showView(name){
+    if(VIEW_NAMES.indexOf(name)<0) name="home";
+    var blocks=document.querySelectorAll("[data-panel]");
+    for(var i=0;i<blocks.length;i++){
+      var b=blocks[i], on=(b.getAttribute("data-panel")===name);
+      b.style.display = on ? "" : "none";
+      if(on){ b.classList.remove("vw-in"); void b.offsetWidth; b.classList.add("vw-in"); }
+    }
+    var tabs=document.querySelectorAll("#tabs .tab");
+    for(var j=0;j<tabs.length;j++){ tabs[j].classList.toggle("active", tabs[j].getAttribute("data-view")===name); }
+    try{ if(location.hash!=="#"+name) history.replaceState(null,"","#"+name); }catch(e){}
+    window.scrollTo(0,0);
+  }
   (function(){
-    var motionOk = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    if(!motionOk || !("IntersectionObserver" in window)) return;
-    var blocks = document.querySelectorAll(".wrap > section, .wrap > .dash-top, .wrap > .study-row, .wrap > .grid-two");
-    var io = new IntersectionObserver(function(ents){
-      ents.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
-    }, {threshold:0.08, rootMargin:"0px 0px -40px 0px"});
-    for(var i=0;i<blocks.length;i++){ blocks[i].classList.add("reveal"); io.observe(blocks[i]); }
+    var tabs=document.getElementById("tabs");
+    if(tabs) tabs.addEventListener("click", function(e){
+      var t=e.target; while(t && t!==tabs && !(t.classList && t.classList.contains("tab"))) t=t.parentNode;
+      if(t && t.classList && t.classList.contains("tab")) showView(t.getAttribute("data-view"));
+    });
+    window.addEventListener("hashchange", function(){ showView((location.hash||"").replace(/^#/,"")); });
+    showView((location.hash||"").replace(/^#/,"") || "home");
   })();
 
   // Voices arrive asynchronously in Chrome, so the audio controls and the
