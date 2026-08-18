@@ -4255,6 +4255,9 @@
           var ks=new K();
           return ks.init(new A({dictPath:"https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/"})).then(function(){ return ks; });
         });
+      // If the scripts or dictionary fail to load, drop the cached promise so a
+      // later attempt can retry instead of being stuck on a broken load forever.
+      ready.catch(function(){ ready=null; });
       return ready;
     }
     return {
@@ -4293,26 +4296,42 @@
       '<div class="tr-out" id="trOut"></div>';
     var inp=document.getElementById("trIn"), out=document.getElementById("trOut"), furi=document.getElementById("trFuri");
     var last=null;
+    function esc(s){ return String(s).replace(/[&<>]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]; }); }
     function show(res){
       last=res;
-      var body=furi.checked ? res.furigana : res.plain;
+      var jpBody = (furi.checked && res.furigana) ? res.furigana : res.plain;
+      var reading = res.romaji ? '<div class="tr-romaji">'+res.romaji+'</div>'
+        : res.pending ? '<div class="tr-romaji tr-loading">adding readings…</div>'
+        : res.noReadings ? '<div class="tr-romaji" style="opacity:.7">readings unavailable — check your connection</div>'
+        : '';
       out.innerHTML=
-        '<div class="tr-jp-wrap">'+body+'</div>'+
-        '<div class="tr-romaji">'+res.romaji+'</div>'+
+        '<div class="tr-jp-wrap">'+jpBody+'</div>'+
+        reading+
         '<div class="tr-meta">via '+res.via+' · <button class="tr-say" id="trSay">🔊 hear it</button></div>';
       var say=document.getElementById("trSay");
-      if(say) say.onclick=function(){ if(window.Speech&&Speech.say) Speech.say(res.plain); };
+      if(say) say.onclick=function(){ if(window.Speech&&Speech.say) Speech.say(res.plainText); };
     }
-    function esc(s){ return String(s).replace(/[&<>]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]; }); }
+    // Resolve/reject a promise but never wait past `ms` — so a slow or blocked
+    // dictionary load can't leave the UI stuck on "adding readings…".
+    function withTimeout(p, ms){
+      return new Promise(function(resolve, reject){
+        var settled=false;
+        var t=setTimeout(function(){ if(!settled){ settled=true; reject(new Error("timeout")); } }, ms);
+        p.then(function(v){ if(!settled){ settled=true; clearTimeout(t); resolve(v); } },
+               function(e){ if(!settled){ settled=true; clearTimeout(t); reject(e); } });
+      });
+    }
     function go(){
       var text=(inp.value||"").trim(); if(!text){ inp.focus(); return; }
       out.innerHTML='<div class="tr-loading">translating…</div>';
       trTranslate(text).then(function(t){
         if(!t.jp){ out.innerHTML='<div class="tr-err">Couldn’t translate that — please try again.</div>'; return; }
-        out.innerHTML='<div class="tr-loading">reading the Japanese…</div>';
-        return Promise.all([JPEngine.furigana(t.jp), JPEngine.romaji(t.jp)]).then(function(a){
-          show({plain:esc(t.jp), furigana:a[0], romaji:esc(a[1]), via:t.via});
-        });
+        var jp=t.jp;
+        // Show the translation immediately; furigana + romaji are an enhancement.
+        show({plain:esc(jp), plainText:jp, furigana:null, romaji:null, via:t.via, pending:true});
+        withTimeout(Promise.all([JPEngine.furigana(jp), JPEngine.romaji(jp)]), 15000)
+          .then(function(a){ show({plain:esc(jp), plainText:jp, furigana:a[0], romaji:esc(a[1]), via:t.via}); })
+          .catch(function(){ show({plain:esc(jp), plainText:jp, furigana:null, romaji:null, via:t.via, noReadings:true}); });
       }).catch(function(e){ out.innerHTML='<div class="tr-err">Something went wrong: '+esc(e&&e.message||e)+'</div>'; });
     }
     document.getElementById("trGo").onclick=go;
