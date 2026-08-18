@@ -52,6 +52,25 @@
   .jp { font-family:var(--jp); }
   .wrap { max-width:1320px; margin:0 auto; padding:0 34px 72px; }
 
+  /* Section tabs — click to switch views instead of scrolling */
+  .tabs { position:sticky; top:0; z-index:20; display:flex; gap:7px; flex-wrap:wrap;
+    margin:0 0 22px; padding:12px 0 12px; background:var(--paper); }
+  .tabs .tab { font-family:var(--body); font-weight:700; font-size:0.86rem; color:var(--ink-soft);
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--pill);
+    padding:9px 19px; cursor:pointer; transition:transform .16s var(--ease), color .16s, border-color .16s, background .16s; }
+  .tabs .tab:hover { border-color:var(--seal); color:var(--seal); transform:translateY(-2px); }
+  .tabs .tab:focus-visible { outline:2px solid var(--indigo); outline-offset:2px; }
+  .tabs .tab.active { background:linear-gradient(180deg,#f08a72,var(--seal) 55%,var(--seal-deep)); color:#fff;
+    border-color:transparent; box-shadow:0 10px 20px -10px rgba(224,103,77,.7); }
+  [data-panel] { margin-top:0; }
+  @keyframes vwIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+  .vw-in { animation:vwIn .28s var(--ease) both; }
+  @media (max-width:600px){
+    .tabs { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .tabs::-webkit-scrollbar { display:none; }
+    .tabs .tab { white-space:nowrap; }
+  }
+
   /* ---- themed hero banner, echoing the landing page's sky ---- */
   .top {
     position:relative; overflow:hidden; display:flex; align-items:center; gap:22px;
@@ -682,7 +701,16 @@
   </header>
   <div id="audWarn"></div>
 
-  <div class="dash-top">
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button class="tab" data-view="home">Home</button>
+    <button class="tab" data-view="translate">Translate</button>
+    <button class="tab" data-view="study">Study</button>
+    <button class="tab" data-view="drills">Drills</button>
+    <button class="tab" data-view="reference">Reference</button>
+    <button class="tab" data-view="progress">Progress</button>
+  </nav>
+
+  <div class="dash-top" data-panel="home">
     <section>
       <h2 class="eyebrow"><span class="g" aria-hidden="true">今</span>Today<span class="hint" id="todayDate"></span></h2>
       <div class="today">
@@ -706,22 +734,22 @@
     </section>
   </div>
 
-  <section>
+  <section data-panel="home">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">試</span>JLPT N5 countdown<span class="hint">the December sitting</span></h2>
     <div class="cd" id="countdown"></div>
   </section>
 
-  <section>
+  <section data-panel="home">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">句</span>Sentence of the day<span class="sod-tog" id="sodTog"></span></h2>
     <div class="sod" id="sod"></div>
   </section>
 
-  <section>
+  <section data-panel="translate">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">訳</span>English → Japanese<span class="hint">type a sentence · get Japanese + romaji</span></h2>
     <div class="panel tr" id="translate"></div>
   </section>
 
-  <div class="study-row">
+  <div class="study-row" data-panel="study">
     <section>
       <h2 class="eyebrow"><span class="g" aria-hidden="true">札</span>Flashcards<span class="hint" id="fcHint"></span></h2>
       <div class="quiz" id="flash"></div>
@@ -732,7 +760,7 @@
     </section>
   </div>
 
-  <div class="grid-two">
+  <div class="grid-two" data-panel="drills">
     <section>
       <h2 class="eyebrow"><span class="g" aria-hidden="true">文</span>Grammar drills<span class="hint" id="grBest"></span></h2>
       <div class="quiz" id="grammar"></div>
@@ -743,17 +771,17 @@
     </section>
   </div>
 
-  <section>
+  <section data-panel="reference">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">仮</span>Kana chart<span class="hint">tap a kana to hear it</span></h2>
     <div class="kana-chart" id="kanaChart"></div>
   </section>
 
-  <section>
+  <section data-panel="reference">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">語</span>Vocabulary by theme<span class="hint">tap a word to hear it</span></h2>
     <div class="kana-chart" id="themes"></div>
   </section>
 
-  <div class="grid-two">
+  <div class="grid-two" data-panel="drills">
     <section>
       <h2 class="eyebrow"><span class="g" aria-hidden="true">字</span>文字・語彙 drills<span class="hint" id="vdBest"></span></h2>
       <div class="quiz" id="vocabdrill"></div>
@@ -764,35 +792,36 @@
     </section>
   </div>
 
-  <section>
+  <section data-panel="study">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">課</span>Lessons<span class="hint" id="lsHint"></span></h2>
     <div class="bar" style="margin-bottom:10px"><i id="lsBar" style="width:0%"></i></div>
     <p class="ls-intro">The <b>みんなの日本語 初級I</b> grammar order, Lessons 1–25 — the standard N5 path. Tap a lesson to see what it covers and hear the examples. Tick it off when you’ve worked through it.</p>
     <div id="lessons"></div>
   </section>
 
-  <section>
+  <section data-panel="drills">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">模</span>Mock exam<span class="hint" id="mkBest"></span></h2>
     <div class="quiz" id="mock"></div>
   </section>
 
-  <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
-  <div class="heat" id="heat"></div>
-  <div class="legend">Less
-    <span class="hcell"></span><span class="hcell t1"></span><span class="hcell t2"></span><span class="hcell t3"></span><span class="hcell t4"></span>
-    More</div>
+  <section data-panel="progress">
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">暦</span>Last 12 weeks<span class="hint">darker = more minutes</span></h2>
+    <div class="heat" id="heat"></div>
+    <div class="legend">Less
+      <span class="hcell"></span><span class="hcell t1"></span><span class="hcell t2"></span><span class="hcell t3"></span><span class="hcell t4"></span>
+      More</div>
+  </section>
 
-  <div class="grid-two" style="margin-top:34px">
-    <section>
-      <h2 class="eyebrow"><span class="g" aria-hidden="true">道</span>Milestones<span class="hint" id="mPct">0% done</span></h2>
-      <div class="bar" style="margin-bottom:10px"><i id="mBar" style="width:0%"></i></div>
-      <div class="card-wrap" id="milestones"></div>
-    </section>
-    <section>
-      <h2 class="eyebrow"><span class="g" aria-hidden="true">具</span>Free study links</h2>
-      <div class="card-wrap" id="resources"></div>
-    </section>
-  </div>
+  <section data-panel="progress">
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">道</span>Milestones<span class="hint" id="mPct">0% done</span></h2>
+    <div class="bar" style="margin-bottom:10px"><i id="mBar" style="width:0%"></i></div>
+    <div class="card-wrap" id="milestones"></div>
+  </section>
+
+  <section data-panel="reference">
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">具</span>Free study links</h2>
+    <div class="card-wrap" id="resources"></div>
+  </section>
 
   <footer>
     <span>Progress saves automatically in this browser.</span>
@@ -3874,8 +3903,9 @@
   function startGrammar(n){
     grLesson=n;
     grammarIntro();
+    if(typeof showView==="function") showView("drills");
     var sec=document.getElementById("grammar");
-    if(sec && sec.scrollIntoView) sec.scrollIntoView({behavior:"smooth", block:"center"});
+    if(sec && sec.scrollIntoView) sec.scrollIntoView({behavior:"smooth", block:"start"});
   }
   function grammarDone(res){
     if(grScored){
@@ -4304,17 +4334,29 @@
   renderCountdown(); renderThemes(); vocabIntro(); grammarIntro(); readingIntro(); listenIntro(); mockIntro(); renderExamBests();
   renderTranslate();
 
-  // Gentle scroll-reveal. Only ever hides a block when we can guarantee something
-  // will reveal it — motion allowed and IntersectionObserver present — so content
-  // is never left invisible if either is missing.
+  // ---- Tabbed section navigation: show one group at a time ----
+  var VIEW_NAMES = ["home","translate","study","drills","reference","progress"];
+  function showView(name){
+    if(VIEW_NAMES.indexOf(name)<0) name="home";
+    var blocks=document.querySelectorAll("[data-panel]");
+    for(var i=0;i<blocks.length;i++){
+      var b=blocks[i], on=(b.getAttribute("data-panel")===name);
+      b.style.display = on ? "" : "none";
+      if(on){ b.classList.remove("vw-in"); void b.offsetWidth; b.classList.add("vw-in"); }
+    }
+    var tabs=document.querySelectorAll("#tabs .tab");
+    for(var j=0;j<tabs.length;j++){ tabs[j].classList.toggle("active", tabs[j].getAttribute("data-view")===name); }
+    try{ if(location.hash!=="#"+name) history.replaceState(null,"","#"+name); }catch(e){}
+    window.scrollTo(0,0);
+  }
   (function(){
-    var motionOk = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    if(!motionOk || !("IntersectionObserver" in window)) return;
-    var blocks = document.querySelectorAll(".wrap > section, .wrap > .dash-top, .wrap > .study-row, .wrap > .grid-two");
-    var io = new IntersectionObserver(function(ents){
-      ents.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
-    }, {threshold:0.08, rootMargin:"0px 0px -40px 0px"});
-    for(var i=0;i<blocks.length;i++){ blocks[i].classList.add("reveal"); io.observe(blocks[i]); }
+    var tabs=document.getElementById("tabs");
+    if(tabs) tabs.addEventListener("click", function(e){
+      var t=e.target; while(t && t!==tabs && !(t.classList && t.classList.contains("tab"))) t=t.parentNode;
+      if(t && t.classList && t.classList.contains("tab")) showView(t.getAttribute("data-view"));
+    });
+    window.addEventListener("hashchange", function(){ showView((location.hash||"").replace(/^#/,"")); });
+    showView((location.hash||"").replace(/^#/,"") || "home");
   })();
 
   // Voices arrive asynchronously in Chrome, so the audio controls and the
