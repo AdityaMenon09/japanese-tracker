@@ -426,6 +426,10 @@
   .ls-warn li { font-size:0.82rem; line-height:1.7; margin:3px 0; }
   .ls-warn em { font-style:normal; font-weight:700; }
   .ls-drill { margin-top:14px; width:100%; }
+  .ls-deeper { margin-top:14px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .ls-deeper .lbl { font-size:0.6rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; }
+  .ls-deeper a { font-size:0.84rem; font-weight:700; color:var(--indigo); text-decoration:none; }
+  .ls-deeper a:hover { text-decoration:underline; }
 
   .ls-ex { margin-top:12px; }
   .ls-row { display:flex; align-items:flex-start; gap:4px; padding:7px 0; border-bottom:1px dashed var(--line-soft); }
@@ -1964,11 +1968,20 @@
           ? '<div class="ls-warn"><span class="lbl">Watch out</span><ul>'+
             L.warn.map(function(w){ return '<li>'+w+'</li>'; }).join("")+'</ul></div>'
           : "";
+        // "Go deeper" — a site-scoped search of Tae Kim / Imabi for this lesson's
+        // grammar. We can't legally copy their text in, so we link straight to the
+        // matching page on each. Query is built from the lesson title + points.
+        var terms = ((L.t||"")+" "+(L.g||"").replace(/·/g," ")).replace(/<[^>]+>/g,"").trim()+" Japanese grammar N5";
+        var deeper = '<div class="ls-deeper"><span class="lbl">Go deeper</span>'+
+            '<a href="https://www.google.com/search?q='+encodeURIComponent("site:guidetojapanese.org "+terms)+'" target="_blank" rel="noopener">Tae Kim ↗</a>'+
+            '<a href="https://www.google.com/search?q='+encodeURIComponent("site:imabi.net "+terms)+'" target="_blank" rel="noopener">Imabi ↗</a>'+
+          '</div>';
         body='<div class="ls-body">'+
             '<p class="ls-g"><span class="lbl">Grammar</span>'+L.g+'</p>'+
             (pts?'<div class="ls-pts">'+pts+'</div>':"")+
             warn+
             '<div class="ls-ex"><span class="lbl">Examples</span>'+rows+'</div>'+
+            deeper+
             '<button type="button" class="btn btn-ghost ls-drill" data-drill="'+L.n+'">Drill lesson '+L.n+' →</button>'+
             mineBlock(L.n)+
           '</div>';
