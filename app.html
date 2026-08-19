@@ -188,6 +188,30 @@
     font-weight:700; cursor:pointer; padding:0; }
   .tr-say:hover { text-decoration:underline; }
   .tr-noaudio { font-size:0.72rem; text-transform:none; letter-spacing:0; color:var(--ink-soft); }
+
+  /* Song study */
+  .song-src { display:flex; gap:10px; flex-wrap:wrap; }
+  .song-src #ytUrl { flex:1 1 260px; }
+  .song-video { margin:14px 0; }
+  .song-video:empty { display:none; }
+  .song-video iframe { width:100%; aspect-ratio:16/9; border:0; border-radius:14px; background:#000; display:block; }
+  .song .tr-in { width:100%; margin-top:14px; }
+  .song-genius { font-size:0.8rem; font-weight:700; color:var(--indigo); text-decoration:none; }
+  .song-genius:hover { text-decoration:underline; }
+  .song-out { margin-top:18px; }
+  .song-out:empty { display:none; }
+  .ly-line { font-family:var(--jp); font-size:1.5rem; line-height:2.1; word-break:break-word; }
+  .ly-line ruby rt { font-size:0.5em; color:var(--seal); font-weight:400; }
+  .ly-rom { font-size:0.9rem; color:var(--ink-soft); margin:0 0 10px; }
+  .ly-blank { height:14px; }
+  .sw { cursor:pointer; border-radius:6px; padding:0 1px; transition:background .12s, color .12s; }
+  .sw:hover { background:var(--seal-wash); color:var(--seal-deep); }
+  .song-word { position:sticky; bottom:10px; margin-top:18px; background:var(--surface); border:1px solid var(--seal);
+    border-radius:14px; padding:14px 16px; box-shadow:var(--shadow-soft); }
+  .song-word .sw-head { font-family:var(--jp); font-size:1.3rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .song-word .sw-rom { font-family:var(--body); font-size:0.9rem; color:var(--ink-soft); font-weight:400; }
+  .song-word .sw-mean { margin-top:8px; font-size:0.98rem; line-height:1.5; }
+  .song-word .sw-mean > div { margin:2px 0; }
   .tr-loading { color:var(--ink-soft); font-size:0.92rem; }
   .tr-err { color:var(--bad); font-size:0.92rem; }
 
@@ -402,6 +426,10 @@
   .ls-warn li { font-size:0.82rem; line-height:1.7; margin:3px 0; }
   .ls-warn em { font-style:normal; font-weight:700; }
   .ls-drill { margin-top:14px; width:100%; }
+  .ls-deeper { margin-top:14px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .ls-deeper .lbl { font-size:0.6rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; }
+  .ls-deeper a { font-size:0.84rem; font-weight:700; color:var(--indigo); text-decoration:none; }
+  .ls-deeper a:hover { text-decoration:underline; }
 
   .ls-ex { margin-top:12px; }
   .ls-row { display:flex; align-items:flex-start; gap:4px; padding:7px 0; border-bottom:1px dashed var(--line-soft); }
@@ -705,6 +733,7 @@
   <nav class="tabs" id="tabs" aria-label="Sections">
     <button class="tab" data-view="home">Home</button>
     <button class="tab" data-view="translate">Translate</button>
+    <button class="tab" data-view="songs">Songs</button>
     <button class="tab" data-view="study">Study</button>
     <button class="tab" data-view="drills">Drills</button>
     <button class="tab" data-view="reference">Reference</button>
@@ -748,6 +777,11 @@
   <section data-panel="translate">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">訳</span>English → Japanese<span class="hint">type a sentence · get Japanese + romaji</span></h2>
     <div class="panel tr" id="translate"></div>
+  </section>
+
+  <section data-panel="songs">
+    <h2 class="eyebrow"><span class="g" aria-hidden="true">歌</span>Song study<span class="hint">play a song · paste lyrics · learn word by word</span></h2>
+    <div class="panel song" id="song"></div>
   </section>
 
   <div class="study-row" data-panel="study">
@@ -1934,11 +1968,20 @@
           ? '<div class="ls-warn"><span class="lbl">Watch out</span><ul>'+
             L.warn.map(function(w){ return '<li>'+w+'</li>'; }).join("")+'</ul></div>'
           : "";
+        // "Go deeper" — a site-scoped search of Tae Kim / Imabi for this lesson's
+        // grammar. We can't legally copy their text in, so we link straight to the
+        // matching page on each. Query is built from the lesson title + points.
+        var terms = ((L.t||"")+" "+(L.g||"").replace(/·/g," ")).replace(/<[^>]+>/g,"").trim()+" Japanese grammar N5";
+        var deeper = '<div class="ls-deeper"><span class="lbl">Go deeper</span>'+
+            '<a href="https://www.google.com/search?q='+encodeURIComponent("site:guidetojapanese.org "+terms)+'" target="_blank" rel="noopener">Tae Kim ↗</a>'+
+            '<a href="https://www.google.com/search?q='+encodeURIComponent("site:imabi.net "+terms)+'" target="_blank" rel="noopener">Imabi ↗</a>'+
+          '</div>';
         body='<div class="ls-body">'+
             '<p class="ls-g"><span class="lbl">Grammar</span>'+L.g+'</p>'+
             (pts?'<div class="ls-pts">'+pts+'</div>':"")+
             warn+
             '<div class="ls-ex"><span class="lbl">Examples</span>'+rows+'</div>'+
+            deeper+
             '<button type="button" class="btn btn-ghost ls-drill" data-drill="'+L.n+'">Drill lesson '+L.n+' →</button>'+
             mineBlock(L.n)+
           '</div>';
@@ -4349,6 +4392,124 @@
     if(Speech.onVoiceChange) Speech.onVoiceChange(function(){ if(last) show(last); });
   }
 
+  /* ---- Song study: YouTube embed + pasted lyrics broken down word by word ---- */
+  function ytId(url){
+    url=(url||"").trim();
+    if(/^[\w-]{11}$/.test(url)) return url;                       // a bare id
+    var m;
+    if((m=url.match(/[?&]v=([\w-]{11})/))) return m[1];
+    if((m=url.match(/youtu\.be\/([\w-]{11})/))) return m[1];
+    if((m=url.match(/\/(?:embed|shorts|live)\/([\w-]{11})/))) return m[1];
+    return "";
+  }
+  function kataToHira(s){
+    return String(s||"").replace(/[ァ-ヶ]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); });
+  }
+  function hasKanji(s){ return /[㐀-鿿々〆ヶ]/.test(s||""); }
+  function songTimeout(p, ms){
+    return new Promise(function(resolve, reject){
+      var settled=false, t=setTimeout(function(){ if(!settled){ settled=true; reject(new Error("timeout")); } }, ms);
+      p.then(function(v){ if(!settled){ settled=true; clearTimeout(t); resolve(v); } },
+             function(e){ if(!settled){ settled=true; clearTimeout(t); reject(e); } });
+    });
+  }
+  // English gloss via our jisho proxy — server-side, so the user's network can't
+  // block it, but it only exists on the deployed site (needs /api).
+  function defineWord(word){
+    return fetch("/api/define?word="+encodeURIComponent(word))
+      .then(function(r){ if(!r.ok) throw new Error("no api"); return r.json(); })
+      .then(function(d){ return (d && d.senses) ? d : null; });
+  }
+
+  function renderSongs(){
+    var host=document.getElementById("song"); if(!host) return;
+    host.innerHTML=
+      '<div class="song-src">'+
+        '<input id="ytUrl" class="tr-in" style="min-height:0" placeholder="Paste a YouTube link (a lyric video works great)…">'+
+        '<button class="btn btn-ghost" id="ytGo">Load video</button>'+
+      '</div>'+
+      '<div class="song-video" id="ytWrap"></div>'+
+      '<textarea id="lyIn" class="tr-in" rows="6" placeholder="Paste the song&#39;s Japanese lyrics here…"></textarea>'+
+      '<div class="tr-row">'+
+        '<button class="btn btn-seal" id="lyGo">Break it down</button>'+
+        '<label class="tr-toggle"><input type="checkbox" id="lyRomaji" checked> romaji</label>'+
+        '<a class="song-genius" id="lyGenius" href="https://genius.com" target="_blank" rel="noopener">Find lyrics on Genius ↗</a>'+
+      '</div>'+
+      '<div class="song-out" id="lyOut"></div>'+
+      '<div class="song-word" id="lyWord" hidden></div>';
+    var ytUrl=document.getElementById("ytUrl"), ytWrap=document.getElementById("ytWrap"),
+        lyIn=document.getElementById("lyIn"), lyOut=document.getElementById("lyOut"),
+        lyRomaji=document.getElementById("lyRomaji"), lyWord=document.getElementById("lyWord"),
+        lyGenius=document.getElementById("lyGenius");
+
+    document.getElementById("ytGo").onclick=function(){
+      var id=ytId(ytUrl.value);
+      if(!id){ ytWrap.innerHTML='<div class="tr-err">Couldn’t find a video id in that link.</div>'; return; }
+      ytWrap.innerHTML='<iframe src="https://www.youtube.com/embed/'+id+'" title="YouTube player" '+
+        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" '+
+        'allowfullscreen loading="lazy"></iframe>';
+    };
+
+    function updateGenius(){
+      var q=((lyIn.value||"").split("\n")[0].trim()) || (ytUrl.value||"").trim();
+      lyGenius.href="https://genius.com/search?q="+encodeURIComponent(q || "japanese lyrics");
+    }
+    lyIn.addEventListener("input", updateGenius); ytUrl.addEventListener("input", updateGenius); updateGenius();
+
+    function showWord(d){
+      lyWord.hidden=false;
+      var head=(d.s||"")+((d.r && hasKanji(d.s)) ? "  ("+d.r+")" : "");
+      lyWord.innerHTML='<div class="sw-head">'+esc(head)+' <span class="sw-rom" id="swRom">…</span>'+
+        (Speech.ok() ? ' <button class="tr-say" id="swSay">🔊</button>' : '')+'</div>'+
+        '<div class="sw-mean" id="swMean">looking up…</div>';
+      var swSay=document.getElementById("swSay");
+      if(swSay) swSay.onclick=function(){ Speech.say(d.s); };
+      JPEngine.romaji(d.s).then(function(r){ var el=document.getElementById("swRom"); if(el) el.textContent=r; }).catch(function(){});
+      defineWord(d.w||d.s).then(function(res){
+        var el=document.getElementById("swMean"); if(!el) return;
+        if(!res || !res.senses || !res.senses.length){ el.innerHTML='<span style="opacity:.7">No dictionary entry found.</span>'; return; }
+        el.innerHTML=res.senses.slice(0,3).map(function(s,i){ return '<div>'+(i+1)+'. '+esc(s.join("; "))+'</div>'; }).join("");
+      }).catch(function(){ var el=document.getElementById("swMean"); if(el) el.innerHTML='<span style="opacity:.7">Meanings load on the deployed site (needs the dictionary service).</span>'; });
+    }
+
+    function breakdown(){
+      var text=(lyIn.value||"").trim();
+      if(!text){ lyIn.focus(); return; }
+      lyWord.hidden=true;
+      lyOut.innerHTML='<div class="tr-loading">reading the lyrics…</div>';
+      var lines=text.split(/\r?\n/);
+      var jobs=lines.map(function(line){
+        if(!line.trim()) return Promise.resolve({line:line, tokens:[], romaji:""});
+        return songTimeout(Promise.all([JPEngine.tokens(line), lyRomaji.checked?JPEngine.romaji(line):Promise.resolve("")]), 15000)
+          .then(function(a){ return {line:line, tokens:a[0], romaji:a[1]}; })
+          .catch(function(){ return {line:line, tokens:null, romaji:""}; });
+      });
+      Promise.all(jobs).then(function(res){
+        lyOut.innerHTML=res.map(function(r){
+          if(!r.line.trim()) return '<div class="ly-blank"></div>';
+          if(!r.tokens) return '<div class="ly-line">'+esc(r.line)+'</div>';
+          var words=r.tokens.map(function(t){
+            var surf=t.surface_form||"";
+            if(t.pos==="記号") return esc(surf);
+            var rd=kataToHira(t.reading||"");
+            var inner=(hasKanji(surf)&&rd) ? '<ruby>'+esc(surf)+'<rt>'+esc(rd)+'</rt></ruby>' : esc(surf);
+            var base=(t.basic_form && t.basic_form!=="*") ? t.basic_form : surf;
+            return '<span class="sw" data-w="'+esc(base)+'" data-s="'+esc(surf)+'" data-r="'+esc(rd)+'">'+inner+'</span>';
+          }).join("");
+          var rom=(lyRomaji.checked && r.romaji) ? '<div class="ly-rom">'+esc(r.romaji)+'</div>' : '';
+          return '<div class="ly-line">'+words+'</div>'+rom;
+        }).join("");
+      });
+    }
+    document.getElementById("lyGo").onclick=breakdown;
+    lyRomaji.onchange=function(){ if(lyOut.querySelector(".ly-line")) breakdown(); };
+    lyOut.addEventListener("click", function(e){
+      var w=e.target && e.target.closest ? e.target.closest(".sw") : null;
+      if(!w) return;
+      showWord({ w:w.getAttribute("data-w"), s:w.getAttribute("data-s"), r:w.getAttribute("data-r") });
+    });
+  }
+
   function renderAll(){ renderToday(); renderStats(); renderHeat(); renderSentence(); renderLessons(); }
 
   function doReset(){
@@ -4367,9 +4528,10 @@
   renderAll(); renderMilestones(); renderResources(); renderConfig(); renderFcConfig(); renderKanaChart();
   renderCountdown(); renderThemes(); vocabIntro(); grammarIntro(); readingIntro(); listenIntro(); mockIntro(); renderExamBests();
   renderTranslate();
+  renderSongs();
 
   // ---- Tabbed section navigation: show one group at a time ----
-  var VIEW_NAMES = ["home","translate","study","drills","reference","progress"];
+  var VIEW_NAMES = ["home","translate","songs","study","drills","reference","progress"];
   function showView(name){
     if(VIEW_NAMES.indexOf(name)<0) name="home";
     var blocks=document.querySelectorAll("[data-panel]");
