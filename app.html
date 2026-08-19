@@ -187,6 +187,7 @@
   .tr-say { font:inherit; font-size:0.74rem; text-transform:none; letter-spacing:0; background:none; border:none; color:var(--seal);
     font-weight:700; cursor:pointer; padding:0; }
   .tr-say:hover { text-decoration:underline; }
+  .tr-noaudio { font-size:0.72rem; text-transform:none; letter-spacing:0; color:var(--ink-soft); }
   .tr-loading { color:var(--ink-soft); font-size:0.92rem; }
   .tr-err { color:var(--bad); font-size:0.92rem; }
 
@@ -4304,12 +4305,18 @@
         : res.pending ? '<div class="tr-romaji tr-loading">adding readings…</div>'
         : res.noReadings ? '<div class="tr-romaji" style="opacity:.7">readings unavailable — check your connection</div>'
         : '';
+      // Match the rest of the app: only offer audio when a Japanese voice exists.
+      // Everywhere else hides the speaker silently; here we say why, since the
+      // user just produced Japanese and will expect to be able to hear it.
+      var audio = Speech.ok()
+        ? '<button class="tr-say" id="trSay">🔊 hear it</button>'
+        : '<span class="tr-noaudio">🔇 no Japanese voice on this device — try Edge or your phone</span>';
       out.innerHTML=
         '<div class="tr-jp-wrap">'+jpBody+'</div>'+
         reading+
-        '<div class="tr-meta">via '+res.via+' · <button class="tr-say" id="trSay">🔊 hear it</button></div>';
+        '<div class="tr-meta">via '+res.via+' · '+audio+'</div>';
       var say=document.getElementById("trSay");
-      if(say) say.onclick=function(){ if(window.Speech&&Speech.say) Speech.say(res.plainText); };
+      if(say) say.onclick=function(){ Speech.say(res.plainText); };
     }
     // Resolve/reject a promise but never wait past `ms` — so a slow or blocked
     // dictionary load can't leave the UI stuck on "adding readings…".
@@ -4337,6 +4344,9 @@
     document.getElementById("trGo").onclick=go;
     inp.addEventListener("keydown",function(e){ if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){ e.preventDefault(); go(); } });
     furi.onchange=function(){ if(last) show(last); };
+    // A ja voice can arrive late (esp. on phones); re-render the result when it does
+    // so the audio button appears without needing another translation.
+    if(Speech.onVoiceChange) Speech.onVoiceChange(function(){ if(last) show(last); });
   }
 
   function renderAll(){ renderToday(); renderStats(); renderHeat(); renderSentence(); renderLessons(); }
