@@ -431,6 +431,26 @@
   .ls-deeper a { font-size:0.84rem; font-weight:700; color:var(--indigo); text-decoration:none; }
   .ls-deeper a:hover { text-decoration:underline; }
 
+  /* Glossed Japanese terms inside an opened lesson. Weight is inherited rather
+     than forced, so a fully-glossed example sentence still reads as a sentence
+     instead of turning into a wall of bold. The tooltip is a single element on
+     <body>: .ls-tw scrolls horizontally, and would clip a positioned child. */
+  .jt { color:var(--seal); font-family:var(--jp); cursor:help; padding:0 1px; border-radius:3px;
+    border-bottom:1px dotted color-mix(in srgb, var(--seal) 50%, transparent);
+    -webkit-tap-highlight-color:transparent; }
+  .jt:hover, .jt.on { background:color-mix(in srgb, var(--seal) 16%, transparent);
+    border-bottom-color:var(--seal); }
+  .jt:focus-visible { outline:2px solid var(--indigo); outline-offset:1px; }
+  #jtip { position:fixed; left:0; top:0; z-index:400; max-width:min(300px, calc(100vw - 16px));
+    padding:9px 12px; border-radius:10px; background:var(--surface); border:1px solid var(--line);
+    box-shadow:0 16px 34px -14px rgba(0,0,0,.5); pointer-events:none; opacity:0; transform:translateY(4px);
+    transition:opacity .13s var(--ease), transform .13s var(--ease); }
+  #jtip.on { opacity:1; transform:none; }
+  #jtip .t { font-family:var(--jp); font-size:1.05rem; font-weight:700; color:var(--ink); line-height:1.45; }
+  #jtip .r { font-size:0.78rem; font-weight:700; color:var(--seal); margin-top:1px; }
+  #jtip .m { font-size:0.82rem; color:var(--ink-soft); line-height:1.6; margin-top:5px; }
+  @media (prefers-reduced-motion:reduce){ #jtip { transition:none; } }
+
   .ls-ex { margin-top:12px; }
   .ls-row { display:flex; align-items:flex-start; gap:4px; padding:7px 0; border-bottom:1px dashed var(--line-soft); }
   .ls-row:last-child { border-bottom:none; }
@@ -735,6 +755,7 @@
     <button class="tab" data-view="translate">Translate</button>
     <button class="tab" data-view="songs">Songs</button>
     <button class="tab" data-view="study">Study</button>
+    <button class="tab" data-view="vocab">Vocabulary</button>
     <button class="tab" data-view="drills">Drills</button>
     <button class="tab" data-view="reference">Reference</button>
     <button class="tab" data-view="progress">Progress</button>
@@ -811,7 +832,7 @@
     <div class="kana-chart" id="kanaChart"></div>
   </section>
 
-  <section data-panel="reference">
+  <section data-panel="vocab">
     <h2 class="eyebrow"><span class="g" aria-hidden="true">語</span>Vocabulary by theme<span class="hint">tap a word to hear it</span></h2>
     <div class="kana-chart" id="themes"></div>
   </section>
@@ -1432,6 +1453,712 @@
       {k:"あめが ふっても、いきます。", j:"雨が降っても、行きます。", r:"ame ga futte mo, ikimasu.", m:"Even if it rains, I’ll go."}]}
   ];
 
+  // ---- Japanese term glosses ------------------------------------------------
+  // Every Japanese word appearing in a lesson's teaching text gets an entry, so
+  // hovering it shows rōmaji + English. Written by hand rather than machine
+  // translated: a bare particle like は has no sensible MT output, and the whole
+  // point of the gloss is to say what the particle *does*.
+  //
+  // Kana and kanji are separate keys (がくせい / 学生) because both spellings
+  // appear. Compounds are deliberately left out so 「ですか」splits into です + か
+  // — two hovers that each teach something beats one that teaches less.
+  var GLOSS = {
+    "あ":["a","The “over there” column of the こそあど grid."],
+    "い":["i","The ending that marks an い-adjective."],
+    "う":["u","A dictionary-form ending. In group I it takes って, and わない in the negative."],
+    "か":["ka","Question marker. Added at the end; the word order never changes."],
+    "が":["ga","Marks the subject — and the thing you like, want or are good at."],
+    "く":["ku","A dictionary-form ending — takes いて in the て-form."],
+    "ぐ":["gu","A dictionary-form ending — takes いで in the て-form."],
+    "こ":["ko","The “near me” column of the こそあど grid."],
+    "じ":["ji","The o'clock counter."],
+    "す":["su","A dictionary-form ending — takes して in the て-form."],
+    "せ":["se","Height, or one’s back — 「せが たかい」= tall."],
+    "そ":["so","The “near you” column of the こそあど grid."],
+    "た":["ta","The plain past ending — the た-form."],
+    "だ":["da","The plain form of です. Dropped in casual questions."],
+    "つ":["tsu","The native general counter — ひとつ, ふたつ, みっつ…"],
+    "て":["te","The て-form ending — it joins on to whatever follows."],
+    "で":["de","Where an action happens, or the means/tool it happens by."],
+    "と":["to","“With (someone)”, “and” joining a full list, or quoting a thought."],
+    "ど":["do","The “which?” column of the こそあど grid."],
+    "な":["na","The ending a な-adjective needs in order to attach to a noun."],
+    "に":["ni","Point in time, destination, where something exists, or the recipient."],
+    "ぬ":["nu","A dictionary-form ending — takes んで in the て-form."],
+    "の":["no","Links two nouns, owner or describer first — わたしの かさ = my umbrella."],
+    "は":["wa","Topic marker — “as for …”. Written ha, but always pronounced wa."],
+    "ぶ":["bu","A dictionary-form ending — takes んで in the て-form."],
+    "へ":["e","Marks the direction travelled. Written he, pronounced e."],
+    "む":["mu","A dictionary-form ending — takes んで in the て-form."],
+    "も":["mo","“Too / also.” It replaces は rather than stacking on top of it."],
+    "や":["ya","“And” for a partial list — these examples among others."],
+    "ら":["ra","Added to the た-form to build the たら conditional."],
+    "る":["ru","A dictionary-form ending. Group II drops it; group I takes って."],
+    "を":["o","Marks the direct object — the thing the verb acts on. Typed wo."],
+    "上":["ue","On, above."],
+    "人":["nin / hito","Person — also the counter for people."],
+    "今":["ima","Now."],
+    "傘":["kasa","Umbrella."],
+    "分":["fun","Minute."],
+    "前":["mae","Before / in front of."],
+    "半":["han","Half past."],
+    "回":["kai","The counter for times."],
+    "彼":["kare","He / him."],
+    "時":["toki","Time — “when …” after a plain clause."],
+    "暇":["hima","Free, not busy."],
+    "朝":["asa","Morning."],
+    "本":["hon","Book."],
+    "机":["tsukue","Desk."],
+    "枚":["mai","The counter for flat, thin things."],
+    "私":["watashi","I / me."],
+    "箸":["hashi","Chopsticks."],
+    "車":["kuruma","Car."],
+    "雨":["ame","Rain."],
+    "頭":["atama","Head."],
+    "顔":["kao","Face."],
+    "あう":["au","“meet” — dictionary form."],
+    "あさ":["asa","Morning."],
+    "あの":["ano","“That … over there”, before a noun."],
+    "あめ":["ame","Rain."],
+    "ある":["aru","“There is / to exist” — for inanimate things. Its negative is ない."],
+    "あれ":["are","“That (one) over there” — away from us both."],
+    "いい":["ii","the ます-stem of “say”."],
+    "いう":["iu","“say” — dictionary form."],
+    "いく":["iku","“go” — dictionary form."],
+    "いつ":["itsu","“When”. Takes no に."],
+    "いて":["ite","The て-form ending for verbs in く."],
+    "いで":["ide","The て-form ending for verbs in ぐ."],
+    "いま":["ima","Now."],
+    "いる":["iru","“be, exist (animate)” — dictionary form."],
+    "うえ":["ue","“On / above”."],
+    "うち":["uchi","Home, one’s own house."],
+    "えき":["eki","Station."],
+    "おす":["osu","“push, press” — dictionary form."],
+    "かい":["kai","The counter for times / occurrences."],
+    "かう":["kau","“buy” — dictionary form."],
+    "かお":["kao","Face."],
+    "かく":["kaku","“write” — dictionary form."],
+    "かさ":["kasa","Umbrella."],
+    "から":["kara","“From”, or “because” placed after the reason."],
+    "かれ":["kare","He / him."],
+    "きて":["kite","“come” — て-form, joins to whatever follows."],
+    "きる":["kiru","“cut” — dictionary form."],
+    "くじ":["kuji","Nine o’clock."],
+    "くる":["kuru","“come” — dictionary form."],
+    "ここ":["koko","“Here” — this place."],
+    "こと":["koto","Turns a whole clause into a noun."],
+    "この":["kono","“This …” — must be followed by a noun."],
+    "これ":["kore","“This (one)” — near me. Stands alone."],
+    "ご飯":["gohan","A meal, cooked rice."],
+    "さい":["sai","The counter for years of age."],
+    "さつ":["satsu","The counter for books and magazines."],
+    "さん":["san","3"],
+    "した":["shita","“Under / below”."],
+    "して":["shite","The て-form ending for verbs in す — and the て-form of する."],
+    "しる":["shiru","“know” — dictionary form."],
+    "じゃ":["ja","A contraction of では, used to build the polite negative."],
+    "すき":["suki","“liked” — a な-adjective."],
+    "すむ":["sumu","“live, reside” — dictionary form."],
+    "する":["suru","“do” — dictionary form."],
+    "ぜひ":["zehi","“By all means / do please” — strengthens an invitation."],
+    "そこ":["soko","“There” — near the listener."],
+    "そと":["soto","“Outside”."],
+    "その":["sono","“That …” — near the listener, before a noun."],
+    "それ":["sore","“That (one)” — near you."],
+    "たい":["tai","“Want to …”. Behaves as an い-adjective."],
+    "たら":["tara","“If / when” — the flexible conditional, built on the た-form."],
+    "たり":["tari","Lists two representative activities; closes with します."],
+    "だれ":["dare","“Who”."],
+    "って":["tte","The て-form ending for verbs in う, つ and る."],
+    "ても":["te mo","“Even if …” — the outcome doesn’t change."],
+    "です":["desu","“Is / am / are” — closes a noun sentence politely."],
+    "では":["de wa","The full form of じゃ, used in writing and formal speech."],
+    "とき":["toki","“When …”. Just a noun meaning “time”."],
+    "とる":["toru","“take” — dictionary form."],
+    "どう":["dou","how"],
+    "どこ":["doko","“Where”."],
+    "どの":["dono","“Which …” — before a noun."],
+    "どれ":["dore","“Which one” — of three or more."],
+    "ない":["nai","The plain “not”."],
+    "なか":["naka","“Inside”."],
+    "なぜ":["naze","“Why”."],
+    "なな":["nana","7"],
+    "なに":["nani","“What”."],
+    "にく":["niku","Meat."],
+    "にん":["nin","The counter for people."],
+    "ねた":["neta","“sleep, go to bed” — plain past."],
+    "ねる":["neru","“sleep, go to bed” — dictionary form."],
+    "のみ":["nomi","the ます-stem of “drink”."],
+    "のむ":["nomu","“drink” — dictionary form."],
+    "はい":["hai","“Yes”."],
+    "はし":["hashi","Chopsticks; also bridge."],
+    "はん":["han","“Half past”."],
+    "ひき":["hiki","The counter for small animals."],
+    "ひと":["hito","Person."],
+    "ひま":["hima","“free, not busy” — a な-adjective."],
+    "ふん":["fun","The minutes counter."],
+    "ぷん":["pun","The minutes counter after certain numbers."],
+    "へた":["heta","“bad at” — a な-adjective."],
+    "へや":["heya","Room."],
+    "ほん":["hon","The counter for long, thin things — also “book”."],
+    "まい":["mai","The counter for flat, thin things."],
+    "まえ":["mae","“In front of / before”."],
+    "ます":["masu","The polite verb ending — now, habit, or future."],
+    "まだ":["mada","“Not yet”. 「まだです」is the natural answer."],
+    "まち":["machi","the ます-stem of “wait”."],
+    "まつ":["matsu","“wait” — dictionary form."],
+    "まで":["made","“Until” — the action continues right up to that point."],
+    "みず":["mizu","Water."],
+    "みる":["miru","“see / watch” — dictionary form."],
+    "もう":["mou","“Already”, with a past verb."],
+    "もし":["moshi","Flags the sentence as hypothetical, paired with たら."],
+    "よこ":["yoko","“Beside”."],
+    "よじ":["yoji","Four o’clock."],
+    "よむ":["yomu","“read” — dictionary form."],
+    "より":["yori","“Than”. It attaches to the thing being beaten."],
+    "んで":["nde","The て-form ending for verbs in む, ぶ and ぬ."],
+    "バス":["basu","Bus."],
+    "一番":["ichiban","Number one — the most."],
+    "七時":["shichi-ji","Seven o’clock."],
+    "三つ":["mittsu","Three — general counter."],
+    "上手":["jouzu","Good at."],
+    "九時":["ku-ji","Nine o’clock — never きゅうじ."],
+    "五枚":["go-mai","Five flat things."],
+    "今日":["kyou","Today."],
+    "仕事":["shigoto","Work, a job."],
+    "会社":["kaisha","Company, the office."],
+    "先生":["sensei","Teacher."],
+    "公園":["kouen","Park."],
+    "六時":["roku-ji","Six o’clock."],
+    "写真":["shashin","Photograph."],
+    "切手":["kitte","Postage stamp."],
+    "切符":["kippu","Ticket."],
+    "友達":["tomodachi","Friend."],
+    "四時":["yoji","Four o’clock — never よんじ."],
+    "好き":["suki","Liked — takes が."],
+    "子供":["kodomo","Child."],
+    "学生":["gakusei","Student."],
+    "寒く":["samuku","Cold — the く form of 寒い."],
+    "寝る":["neru","“sleep, go to bed” — dictionary form."],
+    "押す":["osu","“push, press” — dictionary form."],
+    "旅行":["ryokou","A trip, travel."],
+    "日本":["nihon","Japan."],
+    "早く":["hayaku","Early — the く form of 早い."],
+    "明日":["ashita","Tomorrow."],
+    "映画":["eiga","Film / movie."],
+    "昨日":["kinou","Yesterday."],
+    "時間":["jikan","Time, an hour."],
+    "東京":["Toukyou","Tokyo."],
+    "毎日":["mainichi","Every day."],
+    "毎朝":["maiasa","Every morning."],
+    "用事":["youji","An errand, something to attend to."],
+    "痛い":["itai","Painful, sore."],
+    "約束":["yakusoku","A promise, an arrangement."],
+    "行く":["iku","“go” — dictionary form."],
+    "話す":["hanasu","“speak” — dictionary form."],
+    "趣味":["shumi","Hobby."],
+    "速い":["hayai","Fast."],
+    "電車":["densha","Train."],
+    "あいだ":["aida","“Between”."],
+    "あした":["ashita","Tomorrow."],
+    "あそこ":["asoko","“Over there”."],
+    "あそぶ":["asobu","“play, enjoy oneself” — dictionary form."],
+    "あたま":["atama","Head."],
+    "あちら":["achira","“Over there” — polite."],
+    "あない":["anai","Wrong — verbs ending in う take わない, not あない."],
+    "あまり":["amari","“Not very” — it must be followed by a negative."],
+    "いいえ":["iie","“No”."],
+    "いいて":["iite","Not a real form — いく is irregular, so the て-form is いって."],
+    "いくて":["ikute","Not a form — いい joins as よくて."],
+    "いくら":["ikura","“No matter how much”, paired with 〜ても."],
+    "いたい":["itai","“want to be, exist (animate)”."],
+    "いった":["itta","“go” — plain past."],
+    "いって":["itte","“go” — て-form, joins to whatever follows."],
+    "います":["imasu","“There is” — for people and animals, or an action in progress."],
+    "うしろ":["ushiro","“Behind”."],
+    "えいが":["eiga","Film / movie."],
+    "えいご":["eigo","The English language."],
+    "おきて":["okite","“get up” — て-form, joins to whatever follows."],
+    "おきる":["okiru","“get up” — dictionary form."],
+    "およぐ":["oyogu","“swim” — dictionary form."],
+    "かいた":["kaita","“write” — plain past."],
+    "かいて":["kaite","“write” — て-form, joins to whatever follows."],
+    "かえて":["kaete","Not a real form — かえる is group I, so the て-form is かえって."],
+    "かえる":["kaeru","“return home” — dictionary form."],
+    "かった":["katta","“buy” — plain past."],
+    "かって":["katte","“buy” — て-form, joins to whatever follows."],
+    "かばん":["kaban","Bag."],
+    "きって":["kitte","“cut” — て-form, joins to whatever follows."],
+    "きっぷ":["kippu","Ticket."],
+    "きのう":["kinou","Yesterday."],
+    "きます":["kimasu","“come” — polite form."],
+    "きょう":["kyou","Today."],
+    "きらい":["kirai","“disliked” — a な-adjective."],
+    "きれい":["kirei","“pretty, clean” — a な-adjective."],
+    "くるま":["kuruma","Car."],
+    "こちら":["kochira","“This way / here” — the polite form."],
+    "こども":["kodomo","Child."],
+    "こない":["konai","“not come” — plain negative."],
+    "ごはん":["gohan","A meal, cooked rice."],
+    "ごまい":["go-mai","Five flat things."],
+    "さかな":["sakana","Fish."],
+    "さむい":["samui","“cold” — an い-adjective."],
+    "さむく":["samuku","“cold” — the く form, before なります or ない."],
+    "しごと":["shigoto","Work, a job."],
+    "しずか":["shizuka","“quiet” — a な-adjective."],
+    "しちじ":["shichi-ji","Seven o’clock."],
+    "しない":["shinai","“not do” — plain negative."],
+    "します":["shimasu","“do” — polite form."],
+    "しゅみ":["shumi","“Hobby”."],
+    "じかん":["jikan","“Time”, or a period of it."],
+    "すきで":["suki de","“liked and …” — the joining form."],
+    "すって":["sutte","“smoke, inhale” — て-form, joins to whatever follows."],
+    "すんで":["sunde","“live, reside” — て-form, joins to whatever follows."],
+    "そちら":["sochira","“That way” — polite."],
+    "たかい":["takai","“expensive, tall” — an い-adjective."],
+    "たばこ":["tabako","Tobacco, a cigarette."],
+    "たべた":["tabeta","“eat” — plain past."],
+    "たべて":["tabete","“eat” — て-form, joins to whatever follows."],
+    "たべる":["taberu","“eat” — dictionary form."],
+    "だった":["datta","“Was” — the plain past of だ."],
+    "ちかく":["chikaku","“Near”."],
+    "つくえ":["tsukue","Desk."],
+    "てから":["te kara","“After doing …” — what comes before から happens first."],
+    "でした":["deshita","“Was / were” — the past of です."],
+    "でます":["demasu","“leave, go out” — polite form."],
+    "とった":["totta","“take” — plain past."],
+    "とって":["totte","“take” — て-form, joins to whatever follows."],
+    "とても":["totemo","“Very”. Pairs with a positive."],
+    "となり":["tonari","“Next to”."],
+    "どうぞ":["douzo","“Please, go ahead” — granting permission."],
+    "どちら":["dochira","Polite “where”, and “which of two”."],
+    "どんな":["donna","“What kind of …” — asks for a description."],
+    "にかい":["ni-kai","Twice."],
+    "にさつ":["ni-satsu","Two books."],
+    "ににん":["ni-nin","Does not exist — two people is ふたり."],
+    "にひき":["ni-hiki","Two small animals."],
+    "にほん":["nihon","Two long things."],
+    "にまい":["ni-mai","Two flat things."],
+    "のんだ":["nonda","“drink” — plain past."],
+    "のんで":["nonde","“drink” — て-form, joins to whatever follows."],
+    "はいる":["hairu","“enter” — dictionary form."],
+    "はしる":["hashiru","“run” — dictionary form."],
+    "はなす":["hanasu","“speak” — dictionary form."],
+    "はやい":["hayai","“fast, early” — an い-adjective."],
+    "はやく":["hayaku","“fast, early” — the く form, before なります or ない."],
+    "ひとつ":["hitotsu","“One” — general counter."],
+    "ひとり":["hitori","“One person” — irregular."],
+    "ひまだ":["hima da","“free, not busy” — plain form."],
+    "ひまな":["hima na","“free, not busy” — な-adj attaching to a noun."],
+    "ふたつ":["futatsu","“Two” — general counter."],
+    "ふたり":["futari","“Two people” — irregular."],
+    "ふって":["futte","“fall (rain, snow)” — て-form, joins to whatever follows."],
+    "ほしい":["hoshii","“Want (a thing)”. The thing wanted takes が."],
+    "まえに":["mae ni","“Before doing …” — always takes the dictionary form."],
+    "ました":["mashita","Polite past — “did …”."],
+    "ません":["masen","Polite negative — “doesn’t / won’t …”."],
+    "まって":["matte","“wait” — て-form, joins to whatever follows."],
+    "までに":["made ni","“By” a deadline — different from まで, which is “until”."],
+    "みたり":["mitari","“see / watch and the like” — the たり form."],
+    "みっつ":["mittsu","“Three” — general counter."],
+    "みます":["mimasu","“see / watch” — polite form."],
+    "ようじ":["youji","“Something to attend to / an errand”."],
+    "よくて":["yokute","“good and …” — the joining form of いい."],
+    "よんじ":["yon-ji","Wrong — four o’clock is よじ."],
+    "りんご":["ringo","Apple."],
+    "ろくじ":["roku-ji","Six o’clock."],
+    "わたし":["watashi","I / me."],
+    "わない":["wanai","The plain negative ending for verbs in う — かう → かわない."],
+    "タバコ":["tabako","Tobacco, a cigarette."],
+    "テニス":["tenisu","Tennis."],
+    "トイレ":["toire","Toilet."],
+    "ノート":["nooto","Notebook."],
+    "ボタン":["botan","Button."],
+    "メール":["meeru","Email."],
+    "一緒に":["issho ni","Together."],
+    "出ます":["demasu","“leave, go out” — polite form."],
+    "勤めて":["tsutomete","“be employed” — て-form, joins to whatever follows."],
+    "吸って":["sutte","“smoke, inhale” — て-form, joins to whatever follows."],
+    "待って":["matte","“wait” — て-form, joins to whatever follows."],
+    "撮った":["totta","“take (a photo)” — plain past."],
+    "撮って":["totte","“take (a photo)” — て-form, joins to whatever follows."],
+    "教えて":["oshiete","“teach” — て-form, joins to whatever follows."],
+    "新しい":["atarashii","New."],
+    "日本語":["nihongo","The Japanese language."],
+    "欲しい":["hoshii","Wanted — the thing takes が."],
+    "洗って":["aratte","“wash” — て-form, joins to whatever follows."],
+    "疑問詞":["gimonshi","A question word."],
+    "行った":["itta","“go” — plain past."],
+    "買った":["katta","“buy” — plain past."],
+    "起きて":["okite","“get up” — て-form, joins to whatever follows."],
+    "降って":["futte","“fall (rain, snow)” — て-form, joins to whatever follows."],
+    "面白い":["omoshiroi","Interesting, funny."],
+    "食べた":["tabeta","“eat” — plain past."],
+    "食べて":["tabete","“eat” — て-form, joins to whatever follows."],
+    "あげます":["agemasu","“give (away)” — polite form."],
+    "あそんで":["asonde","“play, enjoy oneself” — て-form, joins to whatever follows."],
+    "あらって":["aratte","“wash” — て-form, joins to whatever follows."],
+    "あらない":["aranai","Not a word — the negative of ある is simply ない."],
+    "あります":["arimasu","“There is / to have” — for inanimate things."],
+    "あるいて":["aruite","“walk” — て-form, joins to whatever follows."],
+    "あわない":["awanai","“not meet” — plain negative."],
+    "いいます":["iimasu","“Say”. Quotes take と."],
+    "いかない":["ikanai","“not go” — plain negative."],
+    "いきたい":["ikitai","“want to go”."],
+    "いきたく":["ikitaku","“want to go” — the く form, before ない."],
+    "いきます":["ikimasu","“go” — polite form."],
+    "いちにん":["ichi-nin","Does not exist — one person is ひとり."],
+    "いちばん":["ichiban","“Number one / the most” — the superlative."],
+    "いちまい":["ichi-mai","One flat thing."],
+    "いっかい":["ikkai","Once."],
+    "いっさつ":["issatsu","One book."],
+    "いっぴき":["ippiki","One small animal — sound change."],
+    "いっぽん":["ippon","One long thing — note the sound change."],
+    "いります":["irimasu","“Need / require”. It takes が."],
+    "いわない":["iwanai","“not say” — plain negative."],
+    "うんてん":["unten","Driving."],
+    "おいしい":["oishii","“delicious” — an い-adjective."],
+    "おきます":["okimasu","“get up” — polite form."],
+    "おしえて":["oshiete","“teach” — て-form, joins to whatever follows."],
+    "おもって":["omotte","“Think” — て-form, as in 〜と おもって います."],
+    "およいで":["oyoide","“swim” — て-form, joins to whatever follows."],
+    "おわって":["owatte","“finish, end” — て-form, joins to whatever follows."],
+    "かいしゃ":["kaisha","Company, the office."],
+    "かいます":["kaimasu","“buy” — polite form."],
+    "かいもの":["kaimono","Shopping."],
+    "かえって":["kaette","“return home” — て-form, joins to whatever follows."],
+    "かかない":["kakanai","“not write” — plain negative."],
+    "かきます":["kakimasu","“write” — polite form."],
+    "かったら":["kattara","“if / when (you) buy” — the たら conditional."],
+    "かわない":["kawanai","“not buy” — plain negative."],
+    "がくせい":["gakusei","Student."],
+    "きました":["kimashita","“come” — polite past."],
+    "きゅうじ":["kyuu-ji","Wrong — nine o’clock is くじ."],
+    "きれいで":["kirei de","“pretty, clean and …” — the joining form."],
+    "きれいな":["kirei na","“pretty, clean” — な-adj attaching to a noun."],
+    "きれいに":["kirei ni","“pretty, clean” — before なります."],
+    "ぎんこう":["ginkou","Bank."],
+    "ください":["kudasai","“Please (do)” — attaches to a て-form."],
+    "くだもの":["kudamono","Fruit."],
+    "くれます":["kuremasu","“give (to me)” — polite form."],
+    "こうえん":["kouen","Park."],
+    "こそあど":["ko-so-a-do","The name for the whole この/その/あの/どの grid."],
+    "ことです":["koto desu","“…-ing is” — nominalises the clause before it."],
+    "こんばん":["konban","This evening."],
+    "さんかい":["san-kai","Three times."],
+    "さんさつ":["san-satsu","Three books."],
+    "さんにん":["san-nin","“Three people”."],
+    "さんびき":["sanbiki","Three small animals — sound change."],
+    "さんぼん":["sanbon","Three long things — sound change."],
+    "さんまい":["san-mai","Three flat things."],
+    "しずかだ":["shizuka da","“quiet” — plain form."],
+    "しずかで":["shizuka de","“quiet and …” — the joining form."],
+    "しずかな":["shizuka na","“quiet” — な-adj attaching to a noun."],
+    "しました":["shimashita","“do” — polite past."],
+    "しゃしん":["shashin","Photograph."],
+    "しょくじ":["shokuji","A meal."],
+    "じょうず":["jouzu","“good at” — a な-adjective."],
+    "せいかつ":["seikatsu","Life, daily living."],
+    "せんせい":["sensei","Teacher."],
+    "そうです":["sou desu","“That’s right” — agreeing about a noun."],
+    "たがって":["tagatte","Used for what *someone else* wants — N4 material."],
+    "たべたい":["tabetai","“want to eat”."],
+    "たべたく":["tabetaku","“want to eat” — the く form, before ない."],
+    "たべない":["tabenai","“not eat” — plain negative."],
+    "たべます":["tabemasu","“eat” — polite form."],
+    "だったら":["dattara","“If it was” — the たら form of だ."],
+    "ちょっと":["chotto","“A little”. Trailing off with it is how Japanese declines."],
+    "つとめて":["tsutomete","“be employed” — て-form, joins to whatever follows."],
+    "ています":["te imasu","An action in progress, or the state it left behind."],
+    "できます":["dekimasu","“be able to” — polite form."],
+    "でしょう":["deshou","“…, right?” — invites the listener to agree."],
+    "でんしゃ":["densha","Train."],
+    "とめない":["tomenai","“not stop, park” — plain negative."],
+    "ともだち":["tomodachi","Friend."],
+    "どうして":["doushite","“Why”. The answer usually ends in 〜からです."],
+    "なければ":["nakereba","“If (you) don’t …” — the first half of なければ なりません."],
+    "なります":["narimasu","“Become”. い-adj takes く, な-adj and nouns take に."],
+    "なんかい":["nankai","“How many times”."],
+    "について":["ni tsuite","“About / concerning” — the topic you are discussing."],
+    "にほんご":["nihongo","The Japanese language."],
+    "のほうが":["no hou ga","“The … one is more …” — the answer to a どちら question."],
+    "のまない":["nomanai","“not drink” — plain negative."],
+    "のみたい":["nomitai","“want to drink”."],
+    "のみたく":["nomitaku","“want to drink” — the く form, before ない."],
+    "のみます":["nomimasu","“drink” — polite form."],
+    "のんだら":["nondara","“if / when (you) drink” — the たら conditional."],
+    "はっぽん":["happon","Eight long things — sound change."],
+    "はなして":["hanashite","“speak” — て-form, joins to whatever follows."],
+    "ひとりで":["hitori de","“By oneself / alone”."],
+    "ふったら":["futtara","“if / when (you) fall (rain, snow)” — the たら conditional."],
+    "まいあさ":["maiasa","Every morning."],
+    "まいにち":["mainichi","Every day."],
+    "ましょう":["mashou","“Let’s …” — a suggestion you’ve both agreed on."],
+    "ませんか":["masen ka","“Won’t you …?” — a polite invitation."],
+    "まちます":["machimasu","“wait” — polite form."],
+    "みません":["mimasen","“not see / watch” — polite negative."],
+    "やくそく":["yakusoku","“A promise / an arrangement”."],
+    "やすくて":["yasukute","“cheap and …” — the joining form."],
+    "ゆうめい":["yuumei","“famous” — a な-adjective."],
+    "よかった":["yokatta","“was good” — the past of いい."],
+    "よくない":["yokunai","“not good” — the negative of いい."],
+    "よみます":["yomimasu","“read” — polite form."],
+    "よんだり":["yondari","“read and the like” — the たり form."],
+    "りょこう":["ryokou","A trip, travel."],
+    "ろっぽん":["roppon","Six long things — sound change."],
+    "デパート":["depaato","Department store."],
+    "パソコン":["pasokon","Personal computer."],
+    "ラーメン":["raamen","Ramen."],
+    "帰ります":["kaerimasu","“return home” — polite form."],
+    "思います":["omoimasu","“think” — polite form."],
+    "手伝って":["tetsudatte","“help, lend a hand” — て-form, joins to whatever follows."],
+    "止めない":["tomenai","“not stop, park” — plain negative."],
+    "終わって":["owatte","“finish, end” — て-form, joins to whatever follows."],
+    "行きたい":["ikitai","“want to go”."],
+    "行きます":["ikimasu","“go” — polite form."],
+    "要ります":["irimasu","“need” — polite form."],
+    "見ません":["mimasen","“not see / watch” — polite negative."],
+    "言います":["iimasu","“say” — polite form."],
+    "読みます":["yomimasu","“read” — polite form."],
+    "起きます":["okimasu","“get up” — polite form."],
+    "降ったら":["futtara","“if / when (you) fall (rain, snow)” — the たら conditional."],
+    "食べます":["tabemasu","“eat” — polite form."],
+    "あげました":["agemashita","“give (away)” — polite past."],
+    "あそびます":["asobimasu","“play, enjoy oneself” — polite form."],
+    "あたらしい":["atarashii","“new” — an い-adjective."],
+    "ありません":["arimasen","“Is not / there isn’t” — the polite negative."],
+    "いいました":["iimashita","“Said”."],
+    "いきました":["ikimashita","“go” — polite past."],
+    "いきません":["ikimasen","“not go” — polite negative."],
+    "いけません":["ikemasen","“Won’t do” — the prohibiting half of てはいけません."],
+    "いっしょに":["issho ni","“Together”."],
+    "おきました":["okimashita","“get up” — polite past."],
+    "おきません":["okimasen","“not get up” — polite negative."],
+    "おくります":["okurimasu","“send” — polite form."],
+    "おもいます":["omoimasu","“Think”."],
+    "おもしろい":["omoshiroi","“interesting” — an い-adjective."],
+    "かいました":["kaimashita","“buy” — polite past."],
+    "かえります":["kaerimasu","“return home” — polite form."],
+    "くれました":["kuremashita","“give (to me)” — polite past."],
+    "こなくても":["konakutemo","“don’t have to come” — feeds なくても いいです."],
+    "じょうずで":["jouzu de","“good at and …” — the joining form."],
+    "すみません":["sumimasen","“Excuse me / sorry”."],
+    "たかかった":["takakatta","“was expensive, tall” — い-adj past."],
+    "たかくても":["takakutemo","“even if it is expensive, tall”."],
+    "たかくない":["takakunai","“not expensive, tall” — い-adj negative."],
+    "たべました":["tabemashita","“eat” — polite past."],
+    "たべまして":["tabemashite","Wrong — only the last verb in a て-chain carries ます."],
+    "ちがいます":["chigaimasu","“That’s not it” — disagreeing about a noun."],
+    "つとめます":["tsutomemasu","“be employed” — polite form."],
+    "てください":["te kudasai","“Please do …”."],
+    "てつだって":["tetsudatte","“help, lend a hand” — て-form, joins to whatever follows."],
+    "とうきょう":["Toukyou","Tokyo."],
+    "どうやって":["dou yatte","“How / by what route”."],
+    "どのくらい":["dono kurai","“How long / how much”."],
+    "なりました":["narimashita","“become” — polite past."],
+    "なりません":["narimasen","“It won’t do” — the second half of なければ なりません."],
+    "にちようび":["nichiyoubi","Sunday."],
+    "のみました":["nomimashita","“drink” — polite past."],
+    "はたらいて":["hataraite","“work” — て-form, joins to whatever follows."],
+    "はなします":["hanashimasu","“speak” — polite form."],
+    "ひるごはん":["hirugohan","Lunch."],
+    "ほしかった":["hoshikatta","“was wanted” — い-adj past."],
+    "ほしくない":["hoshikunai","“not wanted” — い-adj negative."],
+    "ましょうか":["mashou ka","“Shall I …?” — offering to do it for them."],
+    "もらいます":["moraimasu","“receive” — polite form."],
+    "よみました":["yomimashita","“read” — polite past."],
+    "わかります":["wakarimasu","“Understand”. It takes が, never を."],
+    "わたります":["watarimasu","“cross” — polite form."],
+    "パスポート":["pasupooto","Passport."],
+    "プレゼント":["purezento","A present."],
+    "レストラン":["resutoran","Restaurant."],
+    "行きません":["ikimasen","“not go” — polite negative."],
+    "読みました":["yomimashita","“read” — polite past."],
+    "買いました":["kaimashita","“buy” — polite past."],
+    "いかったです":["ikatta desu","Not a form — the past of いい is よかったです."],
+    "いかなかった":["ikanakatta","“didn’t go” — plain negative past."],
+    "うんてんしゅ":["untenshu","A driver."],
+    "おきなければ":["okinakereba","“if (you) don’t get up” — feeds なければ なりません."],
+    "けっこんして":["kekkonshite","“get married” — て-form, joins to whatever follows."],
+    "けっこんする":["kekkonsuru","“get married” — dictionary form."],
+    "さんぽします":["sanposhimasu","“take a walk” — polite form."],
+    "たかかったら":["takakattara","“if it is expensive, tall” — the たら conditional."],
+    "たべましょう":["tabemashou","“let’s eat”."],
+    "てもいいです":["te mo ii desu","“You may …”. As a question, it asks permission."],
+    "はたらきます":["hatarakimasu","“work” — polite form."],
+    "ませんでした":["masen deshita","Polite negative past — “didn’t …”."],
+    "もらいました":["moraimashita","“receive” — polite past."],
+    "よくなかった":["yokunakatta","“wasn’t good”."],
+    "エレベーター":["erebeetaa","Lift, elevator."],
+    "起きなければ":["okinakereba","“if (you) don’t get up” — feeds なければ なりません."],
+    "ことがあります":["koto ga arimasu","“Have done before” — experience, not past tense."],
+    "ことができます":["koto ga dekimasu","“Can / is able to” — takes the dictionary form."],
+    "じゃありません":["ja arimasen","“Is not” — the polite negative of です."],
+    "たかくなかった":["takakunakatta","“wasn’t expensive, tall” — い-adj negative past."],
+    "てはいけません":["te wa ikemasen","“You mustn’t …” — a firm prohibition."],
+    "ないでください":["naide kudasai","“Please don’t …”."],
+    "べんきょうする":["benkyousuru","“study” — dictionary form."],
+    "ありませんでした":["arimasen deshita","“Was not / there wasn’t”."],
+    "いきませんでした":["ikimasendeshita","“didn’t go” — polite negative past."],
+    "おきませんでした":["okimasendeshita","“didn’t get up” — polite negative past."],
+    "たべませんでした":["tabemasendeshita","“didn’t eat” — polite negative past."],
+    "てつだいましょう":["tetsudaimashou","“let’s help, lend a hand”."],
+    "なくてもいいです":["nakute mo ii desu","“You don’t have to …”."],
+    "なければなりません":["nakereba narimasen","“Must / have to” — literally “if you don’t, it won’t do”."],
+    "べんきょうしました":["benkyoushimashita","“study” — polite past."]
+  };
+
+  // GLOSS covers every Japanese term in all 25 lessons; verified by a
+  // segmentation pass over the lesson data, so there is no per-lesson gate.
+
+  // Hiragana, katakana and kanji. The range stops at ヺ and resumes at ー so that
+  // ・ (U+30FB) — the list separator in tables like 「う・つ・る」— is not treated as
+  // Japanese and never gets highlighted. 。「」〜、？ fall outside it already.
+  var JP_CH = /[々぀-ヺー-ヿ一-鿿]/;
+  // Never gloss inside these: <code> holds keyboard spellings, and rewriting a
+  // form element's text node would corrupt the value the user typed.
+  var JT_SKIP = { CODE:1, TEXTAREA:1, INPUT:1, SELECT:1, OPTION:1, SCRIPT:1, STYLE:1 };
+  // Nor inside .mine — that block is the user's own practice sentences plus a
+  // typing hint, so its Japanese is arbitrary and would only ever gloss in part.
+  var JT_SKIP_CLASS = "mine";
+
+  var GLOSS_MAX = 0;
+  function glossMax(){
+    if(!GLOSS_MAX){ for(var k in GLOSS){ if(k.length > GLOSS_MAX) GLOSS_MAX = k.length; } }
+    return GLOSS_MAX;
+  }
+
+  // Splits a string into glossed / not-glossed pieces, choosing the segmentation
+  // that leaves the fewest characters unglossed (then the fewest pieces).
+  //
+  // Plain longest-match-first is not good enough: in 「吸ってはいけません」it takes
+  // はい ("yes") and strands the け of いけません. Working backwards with the cost
+  // of the remainder in hand picks は + いけません instead.
+  function segment(s){
+    var n = s.length, max = glossMax(), best = new Array(n + 1), i, len;
+    best[n] = { cost:0, parts:0, adv:0, gl:false };
+    for(i = n - 1; i >= 0; i--){
+      var b = null, nx;
+      if(JP_CH.test(s.charAt(i))){
+        for(len = Math.min(max, n - i); len > 0; len--){
+          if(!GLOSS[s.substr(i, len)]) continue;
+          nx = best[i + len];
+          var c = { cost:nx.cost, parts:nx.parts + 1, adv:len, gl:true };
+          if(!b || c.cost < b.cost || (c.cost === b.cost && c.parts < b.parts)) b = c;
+        }
+      }
+      nx = best[i + 1];                       // or leave this character alone
+      var u = { cost:nx.cost + 1, parts:nx.parts + 1, adv:1, gl:false };
+      if(!b || u.cost < b.cost || (u.cost === b.cost && u.parts < b.parts)) b = u;
+      best[i] = b;
+    }
+    var out = [];
+    for(i = 0; i < n; ){
+      var step = best[i];
+      out.push({ t:s.substr(i, step.adv), gl:step.gl });
+      i += step.adv;
+    }
+    return out;
+  }
+
+  // Rewrites one text node as a mix of plain text and .jt spans. Built from DOM
+  // nodes rather than innerHTML, so the surrounding markup — and any stray & or
+  // < in the lesson text — is left exactly as it was.
+  function annotateNode(node){
+    var s = node.nodeValue;
+    if(!s) return;
+    var parts = segment(s), hit = false, k;
+    for(k = 0; k < parts.length; k++){ if(parts[k].gl){ hit = true; break; } }
+    if(!hit) return;          // nothing matched — leave the original node alone
+    var frag = document.createDocumentFragment(), buf = "";
+    function flush(){ if(buf){ frag.appendChild(document.createTextNode(buf)); buf = ""; } }
+    for(k = 0; k < parts.length; k++){
+      var p = parts[k];
+      if(!p.gl){ buf += p.t; continue; }
+      flush();
+      var g = GLOSS[p.t], sp = document.createElement("span");
+      sp.className = "jt";
+      sp.tabIndex = 0;
+      sp.setAttribute("data-r", g[0]);
+      sp.setAttribute("data-m", g[1]);
+      sp.textContent = p.t;
+      frag.appendChild(sp);
+    }
+    flush();
+    node.parentNode.replaceChild(frag, node);
+  }
+
+  function annotateJP(root){
+    if(!root) return;
+    var walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(n){
+        if(!JP_CH.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
+        for(var p = n.parentNode; p && p !== root; p = p.parentNode){
+          if(JT_SKIP[p.nodeName]) return NodeFilter.FILTER_REJECT;
+          if(p.classList && (p.classList.contains("jt") || p.classList.contains(JT_SKIP_CLASS)))
+            return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var list = [], n;
+    while((n = walk.nextNode())) list.push(n);   // collect first — annotateNode mutates the tree
+    list.forEach(annotateNode);
+  }
+
+  // ---- the gloss tooltip ----
+  // Hover or keyboard focus on desktop; tap toggles on touch, where there is no
+  // hover to speak of. Flips below the term when there is no room above.
+  var jtip = null, jtipFor = null;
+  function jtipEl(){
+    if(!jtip){
+      jtip = document.createElement("div");
+      jtip.id = "jtip";
+      jtip.setAttribute("role", "tooltip");
+      document.body.appendChild(jtip);
+    }
+    return jtip;
+  }
+  function showTip(el){
+    var t = jtipEl();
+    t.innerHTML = '<div class="t">'+esc(el.textContent)+'</div>'+
+      '<div class="r">'+esc(el.getAttribute("data-r"))+'</div>'+
+      '<div class="m">'+esc(el.getAttribute("data-m"))+'</div>';
+    t.style.left = "0px"; t.style.top = "0px";      // measure before placing
+    t.classList.add("on");
+    var r = el.getBoundingClientRect(), b = t.getBoundingClientRect();
+    var x = Math.max(8, Math.min(r.left + r.width/2 - b.width/2, window.innerWidth - b.width - 8));
+    var y = r.top - b.height - 9;
+    if(y < 8) y = r.bottom + 9;
+    t.style.left = Math.round(x)+"px";
+    t.style.top  = Math.round(y)+"px";
+    if(jtipFor && jtipFor !== el) jtipFor.classList.remove("on");
+    el.classList.add("on");
+    jtipFor = el;
+  }
+  function hideTip(){
+    if(jtip) jtip.classList.remove("on");
+    if(jtipFor){ jtipFor.classList.remove("on"); jtipFor = null; }
+  }
+  function wireGloss(root){
+    root.querySelectorAll(".jt").forEach(function(el){
+      el.onmouseenter = function(){ showTip(el); };
+      el.onmouseleave = hideTip;
+      el.onfocus      = function(){ showTip(el); };
+      el.onblur       = hideTip;
+      el.onclick      = function(e){
+        e.stopPropagation();
+        if(jtipFor === el) hideTip(); else showTip(el);
+      };
+    });
+  }
+  window.addEventListener("scroll", hideTip, true);   // capture: catches inner scrollers too
+  window.addEventListener("resize", hideTip);
+  document.addEventListener("click", function(e){
+    if(jtipFor && !(e.target.closest && e.target.closest(".jt"))) hideTip();
+  });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") hideTip(); });
+
   // ---- Sentence of the day ----
   // Two a day: one written purely in hiragana, one built around katakana
   // loanwords. An all-katakana sentence is not a thing in real Japanese —
@@ -1997,6 +2724,7 @@
         '</div>'+ body +
       '</div>';
     });
+    hideTip();   // the nodes any open tooltip was anchored to are about to go away
     host.innerHTML='<div class="ls-list">'+html+'</div>';
 
     document.getElementById("lsHint").textContent = done+" / "+LESSONS.length+" done";
@@ -2024,6 +2752,11 @@
         startGrammar(+b.getAttribute("data-drill"));
       };
     });
+    // Gloss the Japanese in whichever lesson is open — all 25 are covered.
+    if(lsOpen){
+      var openBody = host.querySelector('.ls-item[data-n="'+lsOpen+'"] .ls-body');
+      if(openBody){ annotateJP(openBody); wireGloss(openBody); }
+    }
     wireMine(host);
   }
 
@@ -3245,7 +3978,233 @@
     {L:25, q:"くすりを ◻、よく なりました。 (took it and then)",a:"のんだら",d:["のみたら","のむたら","のんでら"],e:"のむ → のんだ → のんだら."},
     {L:25, q:"やすみだっ◻、うみへ いきます。 (if it’s a holiday)",a:"たら",d:["ても","ら","ると"],e:"Nouns: 〜だったら."},
     {L:25, q:"たか◻、かいません。 (if it’s expensive)",a:"かったら",d:["くたら","いたら","かたら"],e:"い-adjectives: たかい → たかかった → たかかったら."},
-    {L:25, q:"あした あめが ふったら、うちに ◻。",a:"います",d:["あります","いきます","なります"],e:"With たら the second half may be a plan, a request or a wish."}
+    {L:25, q:"あした あめが ふったら、うちに ◻。",a:"います",d:["あります","いきます","なります"],e:"With たら the second half may be a plan, a request or a wish."},
+
+    // ---- second set: 8 more per lesson, same 文法形式の判断 shape ----
+    {L:1, q:"わたしは かいしゃいん◻ ありません。",a:"じゃ",d:["は","が","を"],e:"Noun negative = 〜じゃ ありません.「じゃ」is a contraction of では."},
+    {L:1, q:"たなかさん◻ せんせいですか。",a:"は",d:["を","へ","で"],e:"は marks the topic, in a question just as in a statement."},
+    {L:1, q:"これは だれ◻ かばんですか。",a:"の",d:["は","が","を"],e:"「だれの」= whose. の links the two nouns."},
+    {L:1, q:"やまださんも がくせい◻。",a:"です",d:["します","います","あります"],e:"A noun sentence closes with です, never います."},
+    {L:1, q:"わたしは にほんじんじゃ ◻。",a:"ありません",d:["いません","ないでした","でした"],e:"The polite negative of a noun is 〜じゃ ありません."},
+    {L:1, q:"リンさんは ちゅうごくじんです◻。",a:"か",d:["を","に","で"],e:"か at the end turns it into a question."},
+    {L:1, q:"わたし◻ なまえは やまだです。",a:"の",d:["は","も","が"],e:"「わたしの なまえ」— の joins owner to thing."},
+    {L:1, q:"かのじょは いしゃ◻ ありません。",a:"じゃ",d:["に","で","と"],e:"〜じゃ ありません is the noun negative."},
+
+    {L:2, q:"◻は わたしの ほんです。 (that one, near you)",a:"それ",d:["その","あれ","どれ"],e:"Near the listener and standing alone → それ."},
+    {L:2, q:"◻ かさは だれのですか。 (this umbrella)",a:"この",d:["これ","ここ","こちら"],e:"Before a noun, use この."},
+    {L:2, q:"「それは じしょですか。」「はい、◻。」",a:"そうです",d:["ちがいます","わかります","しません"],e:"Agreeing about a noun → そうです."},
+    {L:2, q:"あの ノートは たなかさん◻です。",a:"の",d:["は","が","を"],e:"The noun after の is dropped: たなかさんの = Tanaka’s one."},
+    {L:2, q:"「これは あなたの かばんですか。」「いいえ、◻。」",a:"ちがいます",d:["そうです","わかります","あります"],e:"Disagreeing about a noun → ちがいます."},
+    {L:2, q:"◻は なんですか。 (that thing over there)",a:"あれ",d:["あの","あそこ","あちら"],e:"Away from us both and standing alone → あれ."},
+    {L:2, q:"◻ ひとは わたしの ともだちです。 (that person, near you)",a:"その",d:["それ","そこ","そちら"],e:"Before a noun the そ-word is その."},
+    {L:2, q:"これは にほん◻ くるまです。",a:"の",d:["で","に","を"],e:"N1のN2 — a Japanese car."},
+
+    {L:3, q:"じむしょは ◻ ですか。",a:"どこ",d:["どれ","どの","どう"],e:"どこ asks where."},
+    {L:3, q:"ゆうびんきょくは ◻ です。 (here)",a:"ここ",d:["これ","この","どこ"],e:"ここ = this place."},
+    {L:3, q:"「かいだんは どちらですか。」「◻ です。」 (polite “over there”)",a:"あちら",d:["あれ","あの","あっち"],e:"こちら・そちら・あちら are the polite place words."},
+    {L:3, q:"この とけいは ◻ の ですか。 (where from)",a:"どこ",d:["だれ","なに","いつ"],e:"「どこの N」asks the maker or country of origin."},
+    {L:3, q:"◻ は しょくどうです。 (there, near you)",a:"そこ",d:["それ","その","どこ"],e:"Near the listener → そこ."},
+    {L:3, q:"ごしゅっしんは ◻ ですか。 (polite)",a:"どちら",d:["どれ","どの","どんな"],e:"どちら is the polite “where”, used when asking where someone is from."},
+    {L:3, q:"エスカレーターは ◻ です。 (over there)",a:"あそこ",d:["あれ","あの","あちらの"],e:"Place word for “over there” = あそこ."},
+    {L:3, q:"どうぞ、◻ へ。 (this way, polite)",a:"こちら",d:["ここ","これ","この"],e:"こちら doubles as the polite “this way”."},
+
+    {L:4, q:"まいばん 11じ◻ ねます。",a:"に",d:["を","で","へ"],e:"A clock time takes に."},
+    {L:4, q:"きのうは やすみ◻。 (was)",a:"でした",d:["です","ました","ません"],e:"The past of a noun is でした."},
+    {L:4, q:"あさ なんじに ◻ か。 (get up)",a:"おきます",d:["おきました","おきません","おきて"],e:"Non-past polite = 〜ます."},
+    {L:4, q:"しごとは 9じから 6じ◻ です。",a:"まで",d:["から","より","に"],e:"から〜まで = from … until …."},
+    {L:4, q:"せんしゅう にほんごを べんきょう◻。",a:"しました",d:["します","しません","して"],e:"Past polite = 〜ました."},
+    {L:4, q:"あしたは べんきょう ◻。 (won’t do)",a:"しません",d:["しました","します","して"],e:"Negative non-past = 〜ません."},
+    {L:4, q:"いま ◻ です。 (7 o’clock)",a:"しちじ",d:["ななじ","しじ","しちいじ"],e:"七時 is read しちじ — なな is avoided here."},
+    {L:4, q:"◻ おきますか。 (what time)",a:"なんじに",d:["なんじ","いつに","なんで"],e:"なんじ asks the hour and still takes に."},
+
+    {L:5, q:"らいしゅう おおさか◻ いきます。",a:"へ",d:["を","で","が"],e:"へ marks the destination."},
+    {L:5, q:"バス◻ がっこうへ いきます。",a:"で",d:["に","を","と"],e:"で marks the vehicle."},
+    {L:5, q:"かぞく◻ にほんへ きました。",a:"と",d:["を","へ","が"],e:"と = with (someone)."},
+    {L:5, q:"◻ うちへ かえりますか。",a:"いつ",d:["どこ","なに","どれ"],e:"いつ asks when, and takes no に."},
+    {L:5, q:"ひこうき◻ きました。",a:"で",d:["を","に","へ"],e:"The means of travel takes で."},
+    {L:5, q:"あねは ◻ りょこうします。 (alone)",a:"ひとりで",d:["ひとりと","ひとりに","ひとりを"],e:"「ひとりで」= by oneself."},
+    {L:5, q:"こうえんまで ◻ いきました。 (on foot)",a:"あるいて",d:["あるいてで","あるきで","あるくで"],e:"Walking takes no で — it is not a vehicle."},
+    {L:5, q:"ともだちは くに◻ かえりました。",a:"へ",d:["で","を","と"],e:"かえります also takes へ for the destination."},
+
+    {L:6, q:"あさ パン◻ たべます。",a:"を",d:["が","は","に"],e:"を marks the direct object."},
+    {L:6, q:"こうえん◻ しゃしんを とります。",a:"で",d:["に","へ","を"],e:"で marks where the action happens."},
+    {L:6, q:"いっしょに コーヒーを ◻。 (let’s drink)",a:"のみましょう",d:["のみます","のんで","のみたい"],e:"Suggestion = 〜ましょう."},
+    {L:6, q:"あした えいがを み◻。 (won’t you?)",a:"ませんか",d:["ましたか","ましょうか","ますか"],e:"〜ませんか politely invites."},
+    {L:6, q:"きっさてん◻ べんきょうします。",a:"で",d:["に","へ","が"],e:"Action location → で."},
+    {L:6, q:"まいばん テレビ◻ みます。",a:"を",d:["が","で","に"],e:"The thing watched is the object → を."},
+    {L:6, q:"いっしょに ケーキを ◻。 (let’s eat)",a:"たべましょう",d:["たべます","たべて","たべました"],e:"〜ましょう = let’s."},
+    {L:6, q:"こうえんで しゃしん◻ とります。",a:"を",d:["が","で","に"],e:"The thing photographed is the object → を."},
+
+    {L:7, q:"えんぴつ◻ かきます。",a:"で",d:["を","に","が"],e:"で marks the tool."},
+    {L:7, q:"いもうと◻ ほんを あげました。",a:"に",d:["を","が","で"],e:"The receiver takes に with あげます."},
+    {L:7, q:"ちち◻ とけいを もらいました。",a:"に",d:["を","が","へ"],e:"With もらいます the giver takes に — から also works."},
+    {L:7, q:"えいご◻ てがみを かきました。",a:"で",d:["を","に","が"],e:"The language used is a means → で."},
+    {L:7, q:"「もう きっぷを かいましたか。」「いいえ、◻。」",a:"まだです",d:["かいませんでした","もうです","まだでした"],e:"The natural “not yet” answer is まだです."},
+    {L:7, q:"◻ ひるごはんを たべましたか。 (already)",a:"もう",d:["まだ","ずっと","よく"],e:"もう + past = already."},
+    {L:7, q:"でんわ◻ はなします。",a:"で",d:["を","に","へ"],e:"The medium is a means → で."},
+    {L:7, q:"ははに はなを ◻。 (gave)",a:"あげました",d:["もらいました","くれました","いました"],e:"I give away → あげます."},
+
+    {L:8, q:"この かばんは ◻。 (is not cheap)",a:"やすくないです",d:["やすじゃないです","やすくじゃないです","やすいじゃないです"],e:"い-adjective negative: drop い → 〜くないです."},
+    {L:8, q:"ここは ◻ こうえんです。 (a famous park)",a:"ゆうめいな",d:["ゆうめい","ゆうめいで","ゆうめいに"],e:"A な-adjective before a noun takes な."},
+    {L:8, q:"この きょうしつは ◻。 (is not quiet)",a:"しずかじゃ ありません",d:["しずかくないです","しずくないです","しずかいです"],e:"な-adjective negative = 〜じゃ ありません."},
+    {L:8, q:"きょうは ◻ あつくないです。 (not very)",a:"あまり",d:["とても","たいへん","よく"],e:"あまり must be followed by a negative."},
+    {L:8, q:"◻ ひとですか。 (what kind of)",a:"どんな",d:["どの","どれ","なんの"],e:"どんな asks for a description."},
+    {L:8, q:"これは ◻ とけいです。 (an expensive watch)",a:"たかい",d:["たかいな","たかくて","たかく"],e:"い-adjectives attach to a noun unchanged — no な."},
+    {L:8, q:"あの ひとは ◻ です。 (kind)",a:"しんせつ",d:["しんせつい","しんせつな","しんせつくて"],e:"As the predicate a な-adjective just takes です — the な is only used before a noun."},
+    {L:8, q:"この りょうりは ◻ おいしいです。 (very)",a:"とても",d:["あまり","ぜんぜん","すこしも"],e:"とても pairs with a positive; あまり needs a negative behind it."},
+
+    {L:9, q:"わたしは やさい◻ すきです。",a:"が",d:["を","は","に"],e:"すき takes が, not を."},
+    {L:9, q:"かれは りょうり◻ じょうずです。",a:"が",d:["を","に","で"],e:"じょうず takes が."},
+    {L:9, q:"さむいです◻、まどを しめます。",a:"から",d:["まで","より","でも"],e:"から attaches to the end of the reason."},
+    {L:9, q:"◻ にほんごを べんきょうしますか。",a:"どうして",d:["どこ","なに","いつ"],e:"どうして asks why; the answer usually ends 〜からです."},
+    {L:9, q:"わたしは ちゅうごくご◻ わかりません。",a:"が",d:["を","は","に"],e:"わかります takes が, never を."},
+    {L:9, q:"あしたは やすみです◻、どこかへ いきます。",a:"から",d:["まで","より","でも"],e:"から = because, placed after the reason."},
+    {L:9, q:"いもうとは うた◻ へたです。",a:"が",d:["を","に","で"],e:"へた takes が, just like じょうず."},
+    {L:9, q:"きょうは じかん◻ ありません。",a:"が",d:["を","へ","と"],e:"あります takes が for the thing that exists."},
+
+    {L:10, q:"へやに ねこが ◻。",a:"います",d:["あります","です","ありました"],e:"います is for living things that move by themselves."},
+    {L:10, q:"いすの したに かばんが ◻。",a:"あります",d:["います","です","いました"],e:"あります for everything not alive."},
+    {L:10, q:"きょうしつ◻ せんせいが います。",a:"に",d:["で","を","へ"],e:"に marks where something exists."},
+    {L:10, q:"つくえの ◻ に ねこが います。 (on)",a:"うえ",d:["した","なか","そと"],e:"うえ = on / above."},
+    {L:10, q:"はこの なかに ペン◻ けしゴムが あります。",a:"や",d:["と","も","が"],e:"や lists examples out of more; と lists everything."},
+    {L:10, q:"ぎんこうは えきの ◻ です。 (next to)",a:"となり",d:["うえ","なか","した"],e:"となり = next to."},
+    {L:10, q:"だいどころ◻ りょうりを します。",a:"で",d:["に","を","へ"],e:"An action happens there → で; に would mark mere existence."},
+    {L:10, q:"にわに き◻ あります。",a:"が",d:["を","は","に"],e:"The thing that exists takes が."},
+
+    {L:11, q:"えんぴつを ◻ ください。 (four)",a:"よっつ",d:["よんつ","よにん","よまい"],e:"General counter: ひとつ、ふたつ、みっつ、よっつ."},
+    {L:11, q:"かみを ◻ ください。 (ten sheets)",a:"じゅうまい",d:["とおまい","じゅうつ","じゅうにん"],e:"Flat, thin things take 〜まい."},
+    {L:11, q:"いぬが ◻ います。 (three small animals)",a:"さんびき",d:["さんひき","さんつ","さんにん"],e:"〜ひき becomes さんびき after さん."},
+    {L:11, q:"えいがを ◻ みました。 (three times)",a:"さんかい",d:["みっつ","さんまい","さんにん"],e:"Occurrences take 〜かい."},
+    {L:11, q:"りんごを ◻ かいました。 (two)",a:"ふたつ",d:["につ","ふたり","にまい"],e:"General counter: ひとつ、ふたつ、みっつ."},
+    {L:11, q:"きってを ◻ ください。 (three, flat)",a:"さんまい",d:["みっつ","さんぼん","さんにん"],e:"Flat, thin things take 〜まい."},
+    {L:11, q:"かぞくは ◻ です。 (four people)",a:"よにん",d:["よんにん","しにん","よっつ"],e:"四人 is read よにん."},
+    {L:11, q:"◻ にほんへ いきましたか。 (how many times)",a:"なんかい",d:["どのくらい","なんにん","いくつ"],e:"なんかい asks how many times."},
+
+    {L:12, q:"せんしゅうの てんきは ◻。 (was bad)",a:"わるかったです",d:["わるいでした","わるでした","わるくでした"],e:"い-adjective past = 〜かったです."},
+    {L:12, q:"せんしゅうの にちようびは ◻。 (was a holiday)",a:"やすみでした",d:["やすみかったです","やすみくないです","やすみました"],e:"A noun takes でした in the past."},
+    {L:12, q:"この ほんは あの ほん◻ おもしろいです。",a:"より",d:["から","まで","ほど"],e:"より = than, attached to the thing being beaten."},
+    {L:12, q:"コーヒーと おちゃと ◻ が すきですか。",a:"どちら",d:["どれ","どこ","なに"],e:"With exactly two options Japanese uses どちら."},
+    {L:12, q:"スポーツの なかで ◻ が いちばん すきですか。",a:"なに",d:["どちら","どこ","だれ"],e:"Three or more → なにが いちばん."},
+    {L:12, q:"きのうは あまり ◻。 (wasn’t hot)",a:"あつくなかったです",d:["あつくないでした","あついでした","あつじゃなかったです"],e:"い-adjective negative past = 〜くなかったです."},
+    {L:12, q:"りょこうは ◻。 (was good)",a:"よかったです",d:["いかったです","いいでした","よくでした"],e:"いい is irregular — the past is よかったです."},
+    {L:12, q:"へやは しずか◻。 (wasn’t quiet)",a:"じゃ ありませんでした",d:["くなかったです","じゃないでした","でわなかったです"],e:"な-adjective negative past = 〜じゃ ありませんでした."},
+
+    {L:13, q:"らいねん くるまを ◻ です。 (want to buy)",a:"かいたい",d:["かうたい","かいほしい","かいます"],e:"Drop ます from かいます, then add たい."},
+    {L:13, q:"ゆうびんきょくへ きってを ◻ いきます。 (go to buy)",a:"かいに",d:["かうに","かいますに","かってに"],e:"ます-stem + に いきます = go in order to do."},
+    {L:13, q:"きょうは どこへも ◻ です。 (don’t want to go)",a:"いきたくない",d:["いきたいない","いかたくない","いきほしくない"],e:"たい conjugates as an い-adjective → いきたくない."},
+    {L:13, q:"にちようびに うみへ ◻ いきませんか。 (to swim)",a:"およぎに",d:["およぐに","およぎますに","およいでに"],e:"ます-stem + に marks the purpose."},
+    {L:13, q:"もっと おおきい いえ◻ ほしいです。",a:"が",d:["を","は","に"],e:"The thing wanted takes が, not を."},
+    {L:13, q:"あたらしい じてんしゃが ◻。 (don’t want)",a:"ほしくないです",d:["ほしいないです","ほしじゃないです","ほしくです"],e:"ほしい is an い-adjective → ほしくないです."},
+    {L:13, q:"つめたい ビールが ◻ です。 (want to drink)",a:"のみたい",d:["のむたい","のみほしい","のみます"],e:"Drop ます, add たい."},
+    {L:13, q:"えいがを ◻ いきます。 (go to see)",a:"みに",d:["みるに","みますに","みてに"],e:"Use the ます-stem plus に."},
+
+    {L:14, q:"すこし ◻ ください。 (hurry — いそぐ)",a:"いそいで",d:["いそぎて","いそぐて","いそんで"],e:"いそぐ is Group I: ぐ → いで."},
+    {L:14, q:"まどを ◻ ください。 (close — しめる)",a:"しめて",d:["しめって","しめるて","しめんで"],e:"しめる is Group II: drop る, add て."},
+    {L:14, q:"いま ほんを ◻ います。 (reading)",a:"よんで",d:["よみて","よむて","よみで"],e:"よむ is Group I: む → んで."},
+    {L:14, q:"にほんごを ◻ います。 (studying)",a:"べんきょうして",d:["べんきょうって","べんきょうしって","べんきょうきて"],e:"する → して."},
+    {L:14, q:"うちへ ◻ ください。 (come)",a:"きて",d:["くて","くるて","こて"],e:"くる → きて."},
+    {L:14, q:"かれは おおさかに ◻ います。 (lives)",a:"すんで",d:["すみて","すむで","すんて"],e:"すむ → すんで; て います here is a resulting state."},
+    {L:14, q:"がっこうへ ◻ ください。 (go)",a:"いって",d:["いきて","いくて","いいて"],e:"いく is the one irregular in Group I → いって."},
+    {L:14, q:"あついですね。まどを ◻。 (shall I open?)",a:"あけましょうか",d:["あけましょう","あけますか","あけてください"],e:"ましょうか offers to do it for them; ましょう alone is “let’s”."},
+
+    {L:15, q:"ここに ◻ いいですか。 (may I sit)",a:"すわっても",d:["すわっては","すわらなくても","すわりても"],e:"て-form + も いいですか asks permission."},
+    {L:15, q:"ここで しゃしんを ◻ いけません。",a:"とっては",d:["とっても","とりては","とらなくては"],e:"て-form + は いけません prohibits."},
+    {L:15, q:"へやに ◻ もいいですか。 (may I enter — はいる)",a:"はいって",d:["はいりて","はいっても","はいるて"],e:"はいる is Group I → はいって, then もいいですか."},
+    {L:15, q:"「たばこを すっても いいですか。」「すみません、◻…」",a:"ちょっと",d:["いけません","だめだ","はい"],e:"Japanese refuses by trailing off with ちょっと."},
+    {L:15, q:"じゅぎょうちゅうに ◻ は いけません。 (talk — はなす)",a:"はなして",d:["はなしって","はなしては","はなすて"],e:"はなす → はなして, then はいけません."},
+    {L:15, q:"ろうかを ◻ いけません。 (mustn’t run)",a:"はしっては",d:["はしっても","はしりては","はしらなくては"],e:"はしる is Group I → はしって, then はいけません."},
+    {L:15, q:"びょういんでは でんわを ◻ は いけません。 (use — つかう)",a:"つかって",d:["つかいて","つかっては","つかうて"],e:"つかう is Group I: う → って."},
+    {L:15, q:"この ざっしを ◻ いいですか。 (may I borrow)",a:"かりても",d:["かりては","かりなくても","かります"],e:"て-form + も いいです asks permission."},
+
+    {L:16, q:"あさ おきて、かおを ◻、がっこうへ いきます。",a:"あらって",d:["あらいて","あらうて","あらった"],e:"あらう is Group I: う → って."},
+    {L:16, q:"この みせは ◻ おいしいです。 (cheap and)",a:"やすくて",d:["やすいで","やすくで","やすで"],e:"い-adjectives join with 〜くて."},
+    {L:16, q:"この まちは ◻ きれいです。 (quiet and)",a:"しずかで",d:["しずかくて","しずかて","しずかに"],e:"な-adjectives join with 〜で."},
+    {L:16, q:"しごとが ◻、かえります。 (after it finishes)",a:"おわってから",d:["おわりてから","おわるから","おわってまで"],e:"てから = after doing; what precedes から happens first."},
+    {L:16, q:"この ケーキは ◻ おいしいです。 (sweet and — あまい)",a:"あまくて",d:["あまいで","あまくで","あまで"],e:"い-adjectives join with 〜くて."},
+    {L:16, q:"かれは がくせい◻、22さいです。",a:"で",d:["くて","と","に"],e:"A noun joins with 〜で."},
+    {L:16, q:"ばんごはんを ◻、テレビを みました。",a:"たべて",d:["たべまして","たべるて","たべた"],e:"Only the last verb in a て-chain carries the tense."},
+    {L:16, q:"この ほんは ◻ やすいです。 (good and)",a:"よくて",d:["いくて","いいで","よいで"],e:"いい joins as よくて, never いくて."},
+
+    {L:17, q:"しんぶんを ◻ ください。 (don’t read — よむ)",a:"よまないで",d:["よみないで","よむないで","よまなくて"],e:"よむ → よまない → よまないで ください."},
+    {L:17, q:"レポートを ◻ なりません。 (must write — かく)",a:"かかなければ",d:["かきなければ","かくなければ","かかなくても"],e:"かく → かかない → かかなければ なりません."},
+    {L:17, q:"レポートは きんようび◻ だして ください。 (by Friday)",a:"までに",d:["まで","から","に"],e:"までに = by a deadline."},
+    {L:17, q:"かう → ◻ (ない-form)",a:"かわない",d:["かあない","かない","かわらない"],e:"Verbs ending in う take わない, never あない."},
+    {L:17, q:"この へやに ◻ ください。 (don’t enter)",a:"はいらないで",d:["はいらなくて","はいりないで","はいなないで"],e:"はいる is Group I → はいらない."},
+    {L:17, q:"きょうは ◻ もいいです。 (don’t have to work)",a:"はたらかなくて",d:["はたらきなくて","はたらかないで","はたらくなくて"],e:"はたらく → はたらかない → はたらかなくても いいです."},
+    {L:17, q:"しばふに ◻ ください。 (don’t enter — はいる is used above, here: 立つ／たつ)",a:"たたないで",d:["たちないで","たつないで","たたなくて"],e:"たつ → たたない → たたないで ください."},
+    {L:17, q:"5じ◻ まちます。 (until five)",a:"まで",d:["までに","から","ごろに"],e:"まで = until, continuous. までに = by, a deadline."},
+
+    {L:18, q:"わたしは ピアノを ひく ◻ できます。",a:"ことが",d:["のが","ことを","のを"],e:"Vる + ことが できます."},
+    {L:18, q:"ねる ◻、はを みがきます。 (before)",a:"まえに",d:["あとで","てから","まえで"],e:"まえに takes the dictionary form."},
+    {L:18, q:"しゅみは えを ◻ ことです。",a:"かく",d:["かきます","かいて","かいた"],e:"こと takes the dictionary form."},
+    {L:18, q:"たべます → ◻ (dictionary form)",a:"たべる",d:["たべく","たべう","たべります"],e:"Group II: drop ます, add る."},
+    {L:18, q:"かえります → ◻ (dictionary form)",a:"かえる",d:["かえりる","かえう","かえます"],e:"Group I: the final い sound shifts to the う row."},
+    {L:18, q:"ここで しゃしんを とる ことが ◻。 (cannot)",a:"できません",d:["ありません","しません","わかりません"],e:"The negative of ことが できます is ことが できません."},
+    {L:18, q:"にほんごで てがみを かく ことが ◻。",a:"できます",d:["あります","します","わかります"],e:"ことが できます = can."},
+    {L:18, q:"でかける ◻、かぎを かけます。 (before going out)",a:"まえに",d:["あとで","てから","まえで"],e:"まえに always takes the dictionary form."},
+
+    {L:19, q:"にほんの えいがを ◻ ことが あります。",a:"みた",d:["みる","みて","みます"],e:"たことがあります takes the た-form."},
+    {L:19, q:"にちようびは ほんを よんだり、おんがくを ◻ します。",a:"きいたり",d:["きいて","ききたり","きくたり"],e:"たり is built on the た-form."},
+    {L:19, q:"はるに なって、◻ なりました。 (warm)",a:"あたたかく",d:["あたたかに","あたたかくて","あたたかい"],e:"い-adjective + く なります."},
+    {L:19, q:"へやが ◻ なりました。 (clean)",a:"きれいに",d:["きれいく","きれいで","きれいな"],e:"な-adjective + に なります."},
+    {L:19, q:"かれは いしゃ◻ なりました。",a:"に",d:["く","で","が"],e:"A noun takes に with なります."},
+    {L:19, q:"のむ → ◻ (た-form)",a:"のんだ",d:["のみた","のむた","のんた"],e:"The た-form copies the て-form: のんで → のんだ."},
+    {L:19, q:"ふじさんに ◻ ことが ありますか。",a:"のぼった",d:["のぼる","のぼって","のぼります"],e:"Experience = た-form + ことが あります."},
+    {L:19, q:"おかしを ◻ ことが ありますか。 (have you made)",a:"つくった",d:["つくる","つくって","つくります"],e:"Experience = た-form + ことが あります."},
+
+    {L:20, q:"あした がっこうへ ◻。 (plain)",a:"いく",d:["いきる","いくだ","いきます"],e:"The plain non-past is simply the dictionary form."},
+    {L:20, q:"きのう えいがを ◻。 (plain past)",a:"みた",d:["みるた","みました","みてた"],e:"Plain past = the た-form."},
+    {L:20, q:"あの ひとは がくせい◻。 (plain)",a:"だ",d:["です","でだ","い"],e:"です becomes だ in plain style."},
+    {L:20, q:"わたしは まいあさ コーヒーを ◻。 (plain: drink)",a:"のむ",d:["のみる","のむだ","のみます"],e:"The plain non-past is the dictionary form."},
+    {L:20, q:"あの えいがは ◻。 (plain: wasn’t interesting)",a:"おもしろくなかった",d:["おもしろくないだった","おもしろいなかった","おもしろじゃなかった"],e:"い-adjective plain negative past = 〜くなかった."},
+    {L:20, q:"かれは がくせい◻。 (plain: isn’t a student)",a:"じゃ ない",d:["じゃ ないだ","くない","ではないだ"],e:"The plain negative of a noun is 〜じゃ ない."},
+    {L:20, q:"きのうは いそがしく ◻。 (plain negative past)",a:"なかった",d:["ありませんでした","ないでした","なくた"],e:"い-adjective plain negative past = 〜くなかった."},
+    {L:20, q:"「かれは こない。」を ていねいに → 「かれは ◻。」",a:"きません",d:["こないです","きます","こません"],e:"こない is the plain negative of くる → きません."},
+
+    {L:21, q:"あした あめが ◻ と おもいます。",a:"ふる",d:["ふります","ふって","ふりましょう"],e:"The clause before と must be plain, however polite the rest is."},
+    {L:21, q:"あしたは やすみ◻ と おもいます。",a:"だ",d:["です","である","の"],e:"A noun needs だ before と."},
+    {L:21, q:"この みせは しずか◻ と おもいます。",a:"だ",d:["な","で","です"],e:"な-adjectives also take だ before と."},
+    {L:21, q:"ともだちは あした こない◻ おもいます。",a:"と",d:["を","が","は"],e:"The plain negative goes straight before と."},
+    {L:21, q:"あの ひとは だれだと ◻ か。 (do you think)",a:"おもいます",d:["いいます","はなします","わかります"],e:"「だれだと おもいますか」= who do you think it is?"},
+    {L:21, q:"あしたは いい てんき◻？",a:"でしょう",d:["ますか","だろか","ましょう"],e:"〜でしょう？ invites the listener to agree."},
+    {L:21, q:"かれは たかい ◻ おもいます。",a:"と",d:["を","が","は"],e:"と marks the quoted thought."},
+    {L:21, q:"「あした いきます」と ◻。 (said)",a:"いいました",d:["おもいました","はなしました","よびました"],e:"「〜」と いいます quotes speech directly."},
+
+    {L:22, q:"わたしが ◻ ケーキを たべませんか。 (made)",a:"つくった",d:["つくりました","つくって","つくる"],e:"A modifying clause is always plain."},
+    {L:22, q:"きのう ◻ ほんは おもしろいです。 (bought)",a:"かった",d:["かいました","かって","かう"],e:"Plain form directly before the noun."},
+    {L:22, q:"にほんごを おしえて いる ◻ は たなかさんです。",a:"ひと",d:["こと","もの","ところ"],e:"The clause describes ひと — the person who teaches."},
+    {L:22, q:"あに◻ すんで いる まちは とても しずかです。",a:"が",d:["は","を","に"],e:"Inside a modifying clause the subject takes が, never は."},
+    {L:22, q:"べんきょうする ◻ が ありません。 (time)",a:"じかん",d:["やくそく","ようじ","ところ"],e:"Vる + じかん = time to do something."},
+    {L:22, q:"せが ◻ ひとは だれですか。 (tall)",a:"たかい",d:["たかいな","たかくて","たかいの"],e:"い-adjectives modify a noun directly."},
+    {L:22, q:"きのう ともだちに ◻ ほんを かえしました。 (borrowed)",a:"かりた",d:["かりました","かりて","かりる"],e:"The plain た-form goes before the noun."},
+    {L:22, q:"あそこで ◻ ひとは わたしの あねです。 (waiting)",a:"まって いる",d:["まちます","まって います","まつ"],e:"て いる in plain form modifies the noun."},
+
+    {L:23, q:"うちへ ◻ とき、「ただいま」と いいます。 (return)",a:"かえった",d:["かえる","かえります","かえって"],e:"た-form — you say it after getting home."},
+    {L:23, q:"わかい ◻、よく りょこうしました。 (when I was young)",a:"とき",d:["ところ","こと","もの"],e:"とき = when; an い-adjective attaches to it directly."},
+    {L:23, q:"この レバーを ◻、みずが でます。",a:"ひくと",d:["ひきと","ひいてと","ひくとに"],e:"Vる + と states an automatic result."},
+    {L:23, q:"まいにち この みち◻ とおります。",a:"を",d:["に","で","へ"],e:"Passing through a space takes を."},
+    {L:23, q:"この みちを まっすぐ ◻、えきが あります。",a:"いくと",d:["いくとに","いきと","いってと"],e:"Vる + と states an automatic result."},
+    {L:23, q:"きょうしつを ◻ とき、でんきを けします。 (leave — でる)",a:"でる",d:["でた","でます","でて"],e:"Dictionary form: the switching off happens as you leave."},
+    {L:23, q:"はし◻ わたります。",a:"を",d:["に","で","へ"],e:"わたります takes を for the thing crossed."},
+    {L:23, q:"がくせい◻ とき、アルバイトを しました。",a:"の",d:["な","だ","が"],e:"A noun before とき needs の."},
+
+    {L:24, q:"はは◻ セーターを おくって くれました。",a:"が",d:["に","を","へ"],e:"With くれます the giver is the subject → が."},
+    {L:24, q:"わたしは せんせい◻ にほんごを おしえて もらいました。",a:"に",d:["が","を","へ"],e:"With もらいます the other person takes に."},
+    {L:24, q:"◻ いちばん はやいですか。",a:"どれが",d:["どれは","どれを","どれに"],e:"A question word as the subject always takes が."},
+    {L:24, q:"せんせいが しゅくだいを みて ◻。 (looked at it for me)",a:"くれました",d:["あげました","もらいました","いました"],e:"Towards me → くれます."},
+    {L:24, q:"わたしは いもうとに ほんを ◻。 (gave)",a:"あげました",d:["くれました","もらいました","ありました"],e:"Away from me → あげます."},
+    {L:24, q:"はこを ◻ あげましょうか。 (carry for you)",a:"もって",d:["もちて","もつて","もった"],e:"て-form + あげます marks the action as a favour."},
+    {L:24, q:"ともだちに にもつを もって ◻。 (had them carry it)",a:"もらいました",d:["くれました","あげました","いました"],e:"て-form + もらいます = had someone do it for me."},
+    {L:24, q:"ともだちに しゃしんを ◻ もらいました。 (had them take it)",a:"とって",d:["とりて","とる","とった"],e:"て-form + もらいます needs the て-form in front."},
+
+    {L:25, q:"てんきが ◻、こうえんへ いきます。 (if it’s good)",a:"よかったら",d:["いかったら","よくたら","いいたら"],e:"いい is irregular: よかったら."},
+    {L:25, q:"えきに ◻、でんわして ください。 (when you arrive — つく)",a:"ついたら",d:["つくと","ついても","ついて"],e:"Use たら, not と, whenever the second half is a request."},
+    {L:25, q:"やすく ◻、かいません。 (even if it’s cheap)",a:"ても",d:["たら","ては","だら"],e:"い-adjectives use 〜くても."},
+    {L:25, q:"◻ おかねが あったら、なにを かいますか。",a:"もし",d:["いくら","とても","もう"],e:"もし at the head flags the sentence as hypothetical."},
+    {L:25, q:"いくら ◻、わかりません。 (no matter how much I read)",a:"よんでも",d:["よんだら","よむと","よんで"],e:"いくら 〜ても = no matter how much."},
+    {L:25, q:"のむ → ◻ (たら-form)",a:"のんだら",d:["のみたら","のむたら","のんたら"],e:"たら is built on the た-form: のんだ → のんだら."},
+    {L:25, q:"じかんが ◻、てつだって ください。 (if you have time)",a:"あったら",d:["あると","あっても","あって"],e:"Use たら, not と, when the second half is a request."},
+    {L:25, q:"やすみ◻、どこかへ いきたいです。 (if it’s a day off)",a:"だったら",d:["でも","だと","で"],e:"A noun takes だったら in the たら conditional."},
   ];
 
   // ---- Reading passages (short passages + one information-finding notice) ----
@@ -3446,7 +4405,38 @@
     {s:"ここに ◆ を かいて ください。", w:"名前", a:"なまえ", d:["めいぜん","なまへ","なぜん"]},
     {s:"つくえの ◆ に ほんが あります。", w:"上", a:"うえ", d:["じょう","うへ","のぼ"]},
     {s:"この まちには ◆ が おおいです。", w:"外国人", a:"がいこくじん", d:["そとこくじん","がいこくにん","げこくじん"]},
-    {s:"◆ に でんわを しました。", w:"母", a:"はは", d:["ぼ","かあ","はわ"]}
+    {s:"◆ に でんわを しました。", w:"母", a:"はは", d:["ぼ","かあ","はわ"]},
+
+    {s:"◆ は かいしゃいんです。", w:"父", a:"ちち", d:["はは","ちぢ","じち"]},
+    {s:"◆ は だいがくせいです。", w:"兄", a:"あに", d:["あね","あんに","きょう"]},
+    {s:"◆ は こうこうせいです。", w:"姉", a:"あね", d:["あに","しまい","ねい"]},
+    {s:"◆ と こうえんで あそびました。", w:"弟", a:"おとうと", d:["おとと","いもうと","おとおと"]},
+    {s:"◆ は まだ ちいさいです。", w:"妹", a:"いもうと", d:["おとうと","いもと","まいと"]},
+    {s:"あそこに ◆ の ひとが います。", w:"男", a:"おとこ", d:["おんな","おとご","だんこ"]},
+    {s:"◆ の ひとが きました。", w:"女", a:"おんな", d:["おとこ","おんあ","じょな"]},
+    {s:"わたしは ◆ が すきです。", w:"犬", a:"いぬ", d:["ねこ","いね","けん"]},
+    {s:"にわに ◆ が さいて います。", w:"花", a:"はな", d:["はなび","ばな","かな"]},
+    {s:"きょうの ◆ は あおいです。", w:"空", a:"そら", d:["から","そう","くら"]},
+    {s:"きのうは ◆ でした。", w:"雨", a:"あめ", d:["ゆき","あま","うめ"]},
+    {s:"ふゆは ◆ が ふります。", w:"雪", a:"ゆき", d:["あめ","ゆぎ","せつ"]},
+    {s:"ばんごはんに ◆ を たべます。", w:"魚", a:"さかな", d:["にく","さがな","ぎょな"]},
+    {s:"わたしは ◆ が すきじゃ ありません。", w:"肉", a:"にく", d:["さかな","にぐ","じく"]},
+    {s:"つめたい ◆ を のみます。", w:"水", a:"みず", d:["おゆ","みづ","すいず"]},
+    {s:"にわに おおきい ◆ が あります。", w:"木", a:"き", d:["もく","ぎ","こう"]},
+    {s:"◆ が ありませんから、かえません。", w:"お金", a:"おかね", d:["おきん","おがね","おかれ"]},
+    {s:"◆ に がっこうへ いきます。", w:"月曜日", a:"げつようび", d:["がつようび","つきようび","げっようび"]},
+    {s:"◆ は やすみです。", w:"日曜日", a:"にちようび", d:["ひようび","にちよび","じつようび"]},
+    {s:"◆ で にほんごを ならいます。", w:"学校", a:"がっこう", d:["がくこう","かっこう","がっごう"]},
+    {s:"◆ に せんせいが います。", w:"教室", a:"きょうしつ", d:["きょしつ","こうしつ","きょうしゃ"]},
+    {s:"◆ で でんしゃに のります。", w:"駅", a:"えき", d:["いき","えぎ","やく"]},
+    {s:"でんわ◆ を おしえて ください。", w:"番号", a:"ばんごう", d:["ばんこう","はんごう","ばんごお"]},
+    {s:"◆ は あちらです。", w:"出口", a:"でぐち", d:["いりぐち","でくち","だしぐち"]},
+    {s:"つぎの かどを ◆ へ まがって ください。", w:"右", a:"みぎ", d:["ひだり","みき","ゆう"]},
+    {s:"◆ の てで かきます。", w:"左", a:"ひだり", d:["みぎ","ひたり","さり"]},
+    {s:"らいねん ◆ へ いきたいです。", w:"外国", a:"がいこく", d:["そとくに","かいこく","がいごく"]},
+    {s:"この みちは ◆ です。", w:"長い", a:"ながい", d:["みじかい","なかい","ちょうい"]},
+    {s:"◆ ごはんを たべませんでした。", w:"朝", a:"あさ", d:["ひる","あざ","ちょう"]},
+    {s:"◆ は うちに いました。", w:"昨日", a:"きのう", d:["きょう","さくじつ","きのお"]}
   ];
 
   // ---- 表記 — the word is written in kana; pick how it is written in kanji. ----
@@ -3480,7 +4470,28 @@
     {s:"わたしの ◆ は インドです。", k:"くに", a:"国", d:["園","図","回"]},
     {s:"◆ を あらって ください。", k:"て", a:"手", d:["毛","千","午"]},
     {s:"◆ が いたいです。", k:"め", a:"目", d:["日","且","自"]},
-    {s:"◆ に でんわを しました。", k:"はは", a:"母", d:["毎","海","父"]}
+    {s:"◆ に でんわを しました。", k:"はは", a:"母", d:["毎","海","父"]},
+
+    {s:"◆ は かいしゃいんです。", k:"ちち", a:"父", d:["母","兄","文"]},
+    {s:"きのうから ◆ が ふって います。", k:"あめ", a:"雨", d:["雪","雲","両"]},
+    {s:"つめたい ◆ を のみます。", k:"みず", a:"水", d:["氷","永","米"]},
+    {s:"ばんごはんに ◆ を たべます。", k:"さかな", a:"魚", d:["肉","鳥","漁"]},
+    {s:"◆ で ともだちに あいます。", k:"えき", a:"駅", d:["馬","駐","験"]},
+    {s:"◆ が ありませんから、かえません。", k:"おかね", a:"お金", d:["お全","お余","お会"]},
+    {s:"あそこに ◆ の ひとが います。", k:"おとこ", a:"男", d:["女","田","力"]},
+    {s:"◆ の ひとが きました。", k:"おんな", a:"女", d:["男","安","好"]},
+    {s:"きょうの ◆ は あおいです。", k:"そら", a:"空", d:["究","突","室"]},
+    {s:"らいねん ◆ へ いきたいです。", k:"がいこく", a:"外国", d:["外園","処国","外因"]},
+    {s:"◆ が いたいですから、かえります。", k:"あたま", a:"頭", d:["顔","願","類"]},
+    {s:"あさ ◆ を あらいます。", k:"かお", a:"顔", d:["頭","願","顎"]},
+    {s:"はやく ◆ へ かえりたいです。", k:"うち", a:"家", d:["宅","室","客"]},
+    {s:"よる ◆ を よみます。", k:"ほん", a:"本", d:["木","休","体"]},
+    {s:"だいがくで ◆ を ならいました。", k:"えいご", a:"英語", d:["英話","映語","英詩"]},
+    {s:"あたまが いたいですから、◆ へ いきます。", k:"びょういん", a:"病院", d:["病員","痛院","病完"]},
+    {s:"◆ に かえります。", k:"ごご", a:"午後", d:["牛後","午復","牛前"]},
+    {s:"にわに ◆ が さいて います。", k:"はな", a:"花", d:["草","茶","化"]},
+    {s:"つぎの かどを ◆ へ まがります。", k:"みぎ", a:"右", d:["左","石","有"]},
+    {s:"◆ に がっこうへ いきます。", k:"げつようび", a:"月曜日", d:["月曜目","日曜日","月躍日"]}
   ];
 
   // ---- 文脈規定 — which word fits the context. ----
@@ -3519,7 +4530,33 @@
     {q:"あたらしい ことばを ◻ に かきます。",a:"ノート",d:["テレビ","ラジオ","カメラ"],e:"You write in a notebook."},
     {q:"さむいですから、◻ を きます。",a:"コート",d:["ぼうし","くつ","めがね"],e:"きます (wear) goes with a coat; a hat is かぶります."},
     {q:"きょうは にちようびですから、かいしゃは ◻ です。",a:"やすみ",d:["いそがしい","しごと","あさ"],e:"Sunday means the company is closed."},
-    {q:"えいがは 7じに ◻、9じに おわりました。",a:"はじまって",d:["おわって","あけて","でて"],e:"It started at 7 and finished at 9."}
+    {q:"えいがは 7じに ◻、9じに おわりました。",a:"はじまって",d:["おわって","あけて","でて"],e:"It started at 7 and finished at 9."},
+
+    {q:"えいがを みに ◻ へ いきます。",a:"えいがかん",d:["びょういん","ぎんこう","やおや"],e:"映画館 is where you watch films."},
+    {q:"おかねを おろしに ◻ へ いきます。",a:"ぎんこう",d:["こうえん","がっこう","ゆうびんきょく"],e:"You withdraw money at the 銀行."},
+    {q:"さむいですから、まどを ◻ ください。",a:"しめて",d:["あけて","つけて","けして"],e:"しめます = to close."},
+    {q:"もう ねますから、でんきを ◻ ください。",a:"けして",d:["つけて","あけて","かけて"],e:"けします = to switch off."},
+    {q:"さむい ひは セーターを ◻。",a:"きます",d:["はきます","かぶります","かけます"],e:"Clothing for the upper body takes きます."},
+    {q:"あした テストが ◻ から、べんきょうします。",a:"あります",d:["います","なります","します"],e:"あります is used for an event taking place."},
+    {q:"この もんだいは ◻ です。 (easy)",a:"かんたん",d:["むずかしい","たいへん","じょうず"],e:"かんたん = simple, easy."},
+    {q:"れんしゅうして、にほんごが ◻ に なりました。",a:"じょうず",d:["へた","きらい","たいへん"],e:"じょうず = good at."},
+    {q:"きょうは かぜが ◻ です。",a:"つよい",d:["よわい","たかい","ながい"],e:"つよい = strong."},
+    {q:"でんわ◻ を おしえて ください。",a:"ばんごう",d:["なまえ","じかん","ばしょ"],e:"でんわばんごう = telephone number."},
+    {q:"あさ おきて、はを ◻。",a:"みがきます",d:["あらいます","けします","つけます"],e:"はを みがきます = to brush your teeth."},
+    {q:"へやが きたないですから、◻。",a:"そうじします",d:["せんたくします","りょうりします","べんきょうします"],e:"そうじ = cleaning a room."},
+    {q:"よごれた ふくを ◻。",a:"せんたくします",d:["そうじします","りょうりします","かいものします"],e:"せんたく = doing the laundry."},
+    {q:"まいばん じぶんで ばんごはんを ◻。",a:"つくります",d:["します","かいます","あけます"],e:"つくります = to make."},
+    {q:"ともだちに てがみを ◻。",a:"かきます",d:["よみます","ききます","はなします"],e:"A letter is something you write."},
+    {q:"わからない ときは、せんせいに しつもんを ◻。",a:"します",d:["いいます","はなします","よみます"],e:"しつもんを します = to ask a question."},
+    {q:"あしたは しけんですから、こんばんは はやく ◻。",a:"ねます",d:["おきます","いきます","きます"],e:"ねます = to go to bed."},
+    {q:"えきの まどぐちで きっぷを ◻。",a:"かいます",d:["うります","かします","もらいます"],e:"You buy a ticket."},
+    {q:"つぎの かどを みぎへ ◻ ください。",a:"まがって",d:["わたって","とおって","のぼって"],e:"まがります = to turn a corner."},
+    {q:"「はじめまして。どうぞ ◻。」",a:"よろしく",d:["ごめんなさい","おやすみ","さようなら"],e:"「どうぞ よろしく」is said on first meeting."},
+    {q:"ごはんを たべた あとで、「◻」と いいます。",a:"ごちそうさま",d:["いただきます","おやすみなさい","いってきます"],e:"ごちそうさま after eating; いただきます before."},
+    {q:"やおやで ◻ を かいます。",a:"やさい",d:["にく","さかな","くすり"],e:"八百屋 sells vegetables."},
+    {q:"あしたの てんきは ◻ でしょう。",a:"はれ",d:["そら","かぜ","くも"],e:"はれ = fine, clear weather."},
+    {q:"この にもつは ◻ ですから、もてません。",a:"おもい",d:["かるい","たかい","ながい"],e:"おもい = heavy."},
+    {q:"この かばんは ◻ ですから、べんりです。",a:"かるい",d:["おもい","たかい","みじかい"],e:"かるい = light."}
   ];
 
   // ---- 言い換え類義 — pick the sentence closest in meaning. ----
@@ -3548,7 +4585,23 @@
     {q:"この しごとは ぜんぶ おわりました。",a:"この しごとは もう ありません。",d:["この しごとは まだ あります。","この しごとは はじまりました。","この しごとは たいへんです。"],e:"All finished, so none is left."},
     {q:"あの ひとは にほんごが じょうずです。",a:"あの ひとは にほんごを じょうずに はなします。",d:["あの ひとは にほんごが へたです。","あの ひとは にほんごが わかりません。","あの ひとは にほんじんです。"],e:"Being good at Japanese is not the same as being Japanese."},
     {q:"けさ なにも たべませんでした。",a:"きょうの あさごはんを たべませんでした。",d:["きのうの あさごはんを たべませんでした。","けさ ぜんぶ たべました。","けさ すこし たべました。"],e:"けさ = this morning."},
-    {q:"きょうは 12月31にちです。",a:"あしたから あたらしい としです。",d:["きょうから あたらしい としです。","きのうは おしょうがつでした。","らいげつは 1がつでは ありません。"],e:"31 December — the new year starts tomorrow."}
+    {q:"きょうは 12月31にちです。",a:"あしたから あたらしい としです。",d:["きょうから あたらしい としです。","きのうは おしょうがつでした。","らいげつは 1がつでは ありません。"],e:"31 December — the new year starts tomorrow."},
+
+    {q:"この もんだいは やさしくないです。",a:"この もんだいは むずかしいです。",d:["この もんだいは かんたんです。","この もんだいは おもしろいです。","この もんだいは あたらしいです。"],e:"やさしくない = not easy = むずかしい."},
+    {q:"きょうは いい てんきです。",a:"きょうは はれです。",d:["きょうは あめです。","きょうは ゆきです。","きょうは くもりです。"],e:"いい てんき = clear weather = はれ."},
+    {q:"この みせは たかくないです。",a:"この みせは やすいです。",d:["この みせは おおきいです。","この みせは ちかいです。","この みせは あたらしいです。"],e:"たかくない = not expensive = やすい."},
+    {q:"あには だいがくで べんきょうして います。",a:"あには だいがくせいです。",d:["あには せんせいです。","あには かいしゃいんです。","あには いしゃです。"],e:"Studying at university = being a 大学生."},
+    {q:"わたしは まいにち にほんごを ならって います。",a:"わたしは まいにち にほんごを べんきょうして います。",d:["わたしは まいにち にほんごを おしえて います。","わたしは まいにち にほんごを はなして います。","わたしは まいにち にほんごを よんで います。"],e:"ならう = to learn = べんきょうする."},
+    {q:"へやが きたないです。",a:"へやが きれいじゃ ありません。",d:["へやが ひろいです。","へやが しずかです。","へやが あかるいです。"],e:"きたない = the opposite of きれい."},
+    {q:"ちちは いま うちに いません。",a:"ちちは いま でかけて います。",d:["ちちは いま ねて います。","ちちは いま たべて います。","ちちは いま おきて います。"],e:"Not at home = out."},
+    {q:"この くつは おおきすぎます。",a:"この くつは ちいさくないです。",d:["この くつは ちいさいです。","この くつは たかいです。","この くつは やすいです。"],e:"Too big is certainly not small."},
+    {q:"あの ひとは わたしの ちちの おとうとです。",a:"あの ひとは わたしの おじです。",d:["あの ひとは わたしの あにです。","あの ひとは わたしの おとうとです。","あの ひとは わたしの そふです。"],e:"Your father’s younger brother is your おじ."},
+    {q:"きのうは がっこうを やすみました。",a:"きのうは がっこうへ いきませんでした。",d:["きのうは がっこうへ いきました。","きのうは がっこうで べんきょうしました。","きのうは がっこうに いました。"],e:"やすむ = to be absent."},
+    {q:"しごとは 5じに おわります。",a:"5じまで しごとを します。",d:["5じから しごとを します。","5じに しごとを はじめます。","5じまでに しごとへ いきます。"],e:"Finishing at five = working until five."},
+    {q:"わたしは にくが きらいです。",a:"わたしは にくを たべません。",d:["わたしは にくを たべます。","わたしは にくが すきです。","わたしは にくを かいます。"],e:"きらい = dislike, so you don’t eat it."},
+    {q:"この へやは しずかじゃ ありません。",a:"この へやは うるさいです。",d:["この へやは しずかです。","この へやは ひろいです。","この へやは くらいです。"],e:"Not quiet = noisy."},
+    {q:"まいばん 12じに ねます。",a:"よる おそく ねます。",d:["よる はやく ねます。","あさ はやく おきます。","あさ おそく おきます。"],e:"Midnight is late to go to bed."},
+    {q:"ゆうびんきょくは この ちかくです。",a:"ゆうびんきょくは とおくないです。",d:["ゆうびんきょくは とおいです。","ゆうびんきょくは おおきいです。","ゆうびんきょくは あたらしいです。"],e:"ちかく = near = not far."}
   ];
 
   // ---- 文の組み立て — order the four fragments, then say which lands on ★. ----
@@ -4531,7 +5584,7 @@
   renderSongs();
 
   // ---- Tabbed section navigation: show one group at a time ----
-  var VIEW_NAMES = ["home","translate","songs","study","drills","reference","progress"];
+  var VIEW_NAMES = ["home","translate","songs","study","vocab","drills","reference","progress"];
   function showView(name){
     if(VIEW_NAMES.indexOf(name)<0) name="home";
     var blocks=document.querySelectorAll("[data-panel]");
