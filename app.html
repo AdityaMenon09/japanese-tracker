@@ -212,6 +212,42 @@
   .song-word .sw-rom { font-family:var(--body); font-size:0.9rem; color:var(--ink-soft); font-weight:400; }
   .song-word .sw-mean { margin-top:8px; font-size:0.98rem; line-height:1.5; }
   .song-word .sw-mean > div { margin:2px 0; }
+  .ly-group { position:relative; margin-bottom:6px; border-radius:10px; transition:background .18s ease; }
+  .ly-group .ly-rom { margin-bottom:2px; }
+  .ly-group.now { background:var(--seal-wash); box-shadow:0 0 0 8px var(--seal-wash); }
+  .ly-group.next { box-shadow:inset 3px 0 0 var(--indigo); }
+  #lyOut.timed .ly-group { padding-left:3.4rem; }
+  .ly-t { position:absolute; left:0; top:0.6rem; font:inherit; font-size:0.68rem; font-variant-numeric:tabular-nums;
+    background:none; border:none; padding:0; color:var(--ink-soft); cursor:pointer; letter-spacing:.02em; }
+  .ly-t:hover { color:var(--seal); text-decoration:underline; }
+  .ly-en { font-size:0.92rem; color:var(--indigo); margin:0 0 12px; line-height:1.45; }
+  .ly-en:empty { display:none; }
+  .ly-find { margin:12px 0 4px; }
+  .ly-find-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .ly-find-row #lfQ { flex:1 1 220px; min-height:0; }
+  .ly-find-msg { font-size:0.82rem; color:var(--ink-soft); flex-basis:100%; line-height:1.45; }
+  .ly-find-msg:empty { display:none; }
+  .ly-find-msg.bad { color:var(--bad); }
+  .ly-find-msg b { color:var(--ink); font-weight:700; }
+  .ly-find-list { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .ly-find-list[hidden] { display:none; }
+  .ly-cand { font:inherit; text-align:left; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:9px 13px; cursor:pointer; color:var(--ink); }
+  .ly-cand:hover { border-color:var(--seal); }
+  .ly-cand span { color:var(--ink-soft); font-size:0.8rem; }
+  .ly-sync { margin-top:14px; }
+  .ly-sync[hidden] { display:none; }
+  .ly-sync.live { position:sticky; top:66px; z-index:15; background:var(--surface); border:1px solid var(--seal);
+    border-radius:14px; padding:12px 14px; box-shadow:var(--shadow-soft); }
+  .ly-sync-live { font-size:0.9rem; margin-bottom:10px; }
+  .ly-sync-note { font-size:0.78rem; color:var(--ink-soft); }
+  .ly-msg { margin-top:10px; font-size:0.85rem; color:var(--ink-soft); }
+  .ly-msg[hidden] { display:none; }
+  .ly-msg.bad { color:var(--bad); }
+  @media (max-width:600px){
+    #lyOut.timed .ly-group { padding-left:2.8rem; }
+    .ly-sync.live { top:58px; }
+  }
   .tr-loading { color:var(--ink-soft); font-size:0.92rem; }
   .tr-err { color:var(--bad); font-size:0.92rem; }
 
@@ -5445,7 +5481,7 @@
     if(Speech.onVoiceChange) Speech.onVoiceChange(function(){ if(last) show(last); });
   }
 
-  /* ---- Song study: YouTube embed + pasted lyrics broken down word by word ---- */
+  /* ---- Song study: YouTube player + pasted lyrics broken down word by word ---- */
   function ytId(url){
     url=(url||"").trim();
     if(/^[\w-]{11}$/.test(url)) return url;                       // a bare id
@@ -5474,6 +5510,253 @@
       .then(function(d){ return (d && d.senses) ? d : null; });
   }
 
+  // The YouTube IFrame Player API, fetched on first use. Only the line
+  // highlighting needs it, so a failure here falls back to the plain embed
+  // instead of breaking the tab.
+  var YTApi = (function(){
+    var ready=null;
+    function load(){
+      if(ready) return ready;
+      ready=new Promise(function(resolve, reject){
+        if(window.YT && window.YT.Player){ resolve(window.YT); return; }
+        if(!document.getElementById("ytApiJs")){
+          var s=document.createElement("script");
+          s.id="ytApiJs"; s.src="https://www.youtube.com/iframe_api";
+          s.onerror=function(){ reject(new Error("couldn't reach the YouTube player")); };
+          document.head.appendChild(s);
+        }
+        // Poll rather than hook onYouTubeIframeAPIReady: that global fires once,
+        // so a retry after a timeout would wait on a callback already spent.
+        var waited=0, iv=setInterval(function(){
+          if(window.YT && window.YT.Player){ clearInterval(iv); resolve(window.YT); return; }
+          waited+=200;
+          if(waited>=12000){ clearInterval(iv); reject(new Error("the YouTube player timed out")); }
+        }, 200);
+      });
+      ready.catch(function(){ ready=null; });
+      return ready;
+    }
+    return { load:load };
+  })();
+
+  // Lyrics pasted as LRC: one or more [mm:ss.xx] tags per line, a repeated
+  // chorus written once with several tags. Returns null when there are no
+  // timestamps at all, so ordinary pasted lyrics fall through to tap-to-sync.
+  function parseLRC(text){
+    var raw=String(text||"").split(/\r?\n/), out=[], offset=0, i, m;
+    var META=/^\s*\[(ar|ti|al|au|by|re|ve|length|offset)\s*:([^\]]*)\]\s*$/i;
+    var TAG=/^\s*\[(\d{1,3}):(\d{1,2}(?:[.:]\d{1,3})?)\]/;
+    for(i=0;i<raw.length;i++){
+      var line=raw[i];
+      if((m=line.match(META))){
+        if(m[1].toLowerCase()==="offset"){ var o=parseFloat(m[2]); if(!isNaN(o)) offset=o/1000; }
+        continue;
+      }
+      var tags=[], rest=line, t;
+      while((t=rest.match(TAG))){
+        tags.push(parseInt(t[1],10)*60 + parseFloat(t[2].replace(":", ".")));
+        rest=rest.slice(t[0].length);
+      }
+      // Untimed lines in an LRC file are headers or padding — drop them, the way
+      // any LRC player does, so the line indices stay aligned with the timings.
+      for(var k=0;k<tags.length;k++) out.push({ t:tags[k], text:rest.trim() });
+    }
+    if(!out.length) return null;
+    out.sort(function(a,b){ return a.t-b.t; });
+    // [offset:] is milliseconds; a positive value means show the lyrics earlier.
+    if(offset) for(i=0;i<out.length;i++) out[i].t=Math.max(0, out[i].t-offset);
+    return out;
+  }
+
+  /* ---- Finding timed lyrics automatically -------------------------------
+     YouTube's oEmbed endpoint and LRCLIB are both keyless and send permissive
+     CORS headers, so they are called straight from the browser: no proxy, no
+     env var, nothing to configure. Neither is load-bearing — if either is
+     blocked or down, the tab falls back to pasting lyrics by hand.          */
+  function ytOEmbed(id){
+    var u="https://www.youtube.com/oembed?url="+
+      encodeURIComponent("https://www.youtube.com/watch?v="+id)+"&format=json";
+    return fetch(u).then(function(r){
+      if(!r.ok) throw new Error("YouTube wouldn’t say what this video is");
+      return r.json();
+    }).then(function(d){ return { title:(d&&d.title)||"", author:(d&&d.author_name)||"" }; });
+  }
+  function lrcSearch(q){
+    return fetch("https://lrclib.net/api/search?q="+encodeURIComponent(q))
+      .then(function(r){
+        if(r.status===429) throw new Error("it is rate-limiting us, so try again in a moment");
+        if(!r.ok) throw new Error("it returned "+r.status);
+        return r.json();
+      })
+      .then(function(d){ return Array.isArray(d) ? d : []; });
+  }
+
+  // Video titles are not song titles: "YOASOBI「アイドル」 Official Music Video".
+  // Strip the furniture, and pull the track out of the 「」 quotes Japanese
+  // uploads almost always use.
+  var LRC_JUNK=/(official\s*(music\s*)?(video|audio|lyric\s*video|mv)|music\s*video|lyric\s*video|\bmv\b|\bpv\b|music\s*clip|full\s*ver\.?|short\s*ver\.?|\bhd\b|\b4k\b|公式|ミュージックビデオ|歌詞付き|tv\s*サイズ)/gi;
+  var LRC_JUNK_ONE=new RegExp(LRC_JUNK.source, "i");
+  function lrcClean(t){
+    return String(t||"")
+      .replace(/[【】［］\[\]()]/g, " ")
+      .replace(LRC_JUNK, " ")
+      .replace(/[※｜|\/]+/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/^[\s\-–—・]+|[\s\-–—・]+$/g, "");
+  }
+  function lrcTrack(t){
+    var m=String(t||"").match(/[「『]([^」』]+)[」』]/);
+    return m ? m[1].trim() : "";
+  }
+  function lrcNorm(s){
+    return String(s||"").toLowerCase().replace(/[^0-9a-z぀-ヿ一-鿿]/g, "");
+  }
+  // Containment similarity — crude, but all that's needed to choose between
+  // candidates that came back from the same search.
+  function lrcSim(a, b){
+    a=lrcNorm(a); b=lrcNorm(b);
+    if(!a || !b) return 0;
+    if(a===b) return 1;
+    if(a.indexOf(b)>=0 || b.indexOf(a)>=0) return 0.85*Math.min(a.length,b.length)/Math.max(a.length,b.length)+0.15;
+    var seen={}, common=0, uniq=0, i;
+    for(i=0;i<a.length;i++){ if(!seen[a[i]]){ seen[a[i]]=1; uniq++; if(b.indexOf(a[i])>=0) common++; } }
+    return uniq ? 0.5*common/uniq : 0;
+  }
+  function lrcQueries(title, author){
+    author=String(author||"").replace(/\s*-\s*Topic$/,"").trim();
+    var c=lrcClean(title), bt=lrcTrack(title), qs=[];
+    if(bt) qs.push((author+" "+bt).trim());              // most specific first
+    if(c){
+      qs.push(c);
+      if(author && lrcNorm(c).indexOf(lrcNorm(author))<0) qs.push(author+" "+c);
+    }
+    if(bt) qs.push(bt);                                   // least specific last
+    var seen={}, out=[];
+    for(var i=0;i<qs.length && out.length<3;i++){
+      var q=qs[i].trim(), k=q.toLowerCase();
+      if(q && !seen[k]){ seen[k]=1; out.push(q); }
+    }
+    return out;
+  }
+  // Rank by how well the candidate fits the video, with the run time doing most
+  // of the work: it's what separates the real track from TV-size cuts, live
+  // versions and the truncated junk entries that searches also return.
+  function lrcRank(cands, title, author, vdur){
+    var want=lrcTrack(title)||lrcClean(title), out=[], seen={};
+    for(var i=0;i<cands.length;i++){
+      var c=cands[i];
+      if(!c || !c.syncedLyrics || c.instrumental) continue;
+      var dur=c.duration||0, ds;
+      if(vdur && dur){
+        var off=Math.abs(dur-vdur);
+        if(off>30) continue;                              // a different cut of the song
+        ds=Math.max(0, 1-off/15);
+      } else { ds=0.3; }
+      var art=Math.max(lrcSim(c.artistName, author), lrcSim(c.artistName, title));
+      var trk=Math.max(lrcSim(c.trackName, want), lrcSim(c.trackName, title));
+      // Searches return the same song several times over; keep the best copy.
+      // Entries scraped from a video title repeat the whole title in both
+      // fields. Their lyrics are fine, but when a properly tagged copy of the
+      // same song exists, prefer it — the names end up on screen.
+      var pen=(LRC_JUNK_ONE.test(c.trackName||"") ? 0.6 : 0)+
+              (lrcNorm(c.artistName)===lrcNorm(c.trackName) ? 0.6 : 0);
+      var key=lrcNorm(c.artistName)+"|"+lrcNorm(c.trackName)+"|"+Math.round(dur);
+      var score=3*ds+2*art+trk-pen;
+      if(seen[key]!==undefined){
+        if(score>out[seen[key]].score) out[seen[key]]={ c:c, score:score, ds:ds, art:art };
+        continue;
+      }
+      seen[key]=out.length;
+      out.push({ c:c, score:score, ds:ds, art:art });
+    }
+    out.sort(function(a,b){ return b.score-a.score; });
+    // Only good enough to apply unprompted when the run time lines up AND the
+    // artist matches; anything less is offered as a list to choose from.
+    for(var k=0;k<out.length;k++) out[k].confident=(out[k].ds>0.6 && out[k].art>0.5);
+    return out;
+  }
+  // Runs the queries in turn and pools the results. One query failing is fine;
+  // only a total washout is reported as an error.
+  function lrcLookup(title, author, vdur){
+    var qs=lrcQueries(title, author), merged=[], seen={}, firstErr=null;
+    var chain=Promise.resolve();
+    qs.forEach(function(q){
+      chain=chain.then(function(){
+        return lrcSearch(q).then(function(res){
+          res.forEach(function(c){ if(c && c.id && !seen[c.id]){ seen[c.id]=1; merged.push(c); } });
+        }, function(e){ if(!firstErr) firstErr=e; });
+      });
+    });
+    return chain.then(function(){
+      if(!merged.length && firstErr) throw firstErr;
+      return lrcRank(merged, title, author, vdur);
+    });
+  }
+
+  // Tap-sync timings, one entry per video id. Kept out of the study state so a
+  // "reset everything" doesn't throw away work that isn't progress data.
+  var SONG_SYNC_KEY="jtSongSync";
+  function loadSync(id){
+    if(!id) return null;
+    try{
+      var all=JSON.parse(localStorage.getItem(SONG_SYNC_KEY)||"{}"), e=all[id];
+      return (e && e.t && e.t.length) ? e.t : null;
+    }catch(err){ return null; }
+  }
+  function saveSync(id, times){
+    if(!id) return;
+    try{
+      var all=JSON.parse(localStorage.getItem(SONG_SYNC_KEY)||"{}");
+      var any=times && times.some(function(t){ return typeof t==="number"; });
+      if(any){
+        all[id]={ t:times.map(function(t){ return typeof t==="number" ? Math.round(t*100)/100 : null; }), at:Date.now() };
+      } else { delete all[id]; }
+      var ids=Object.keys(all);
+      if(ids.length>40){                                   // keep the 40 newest songs
+        ids.sort(function(a,b){ return (all[b].at||0)-(all[a].at||0); });
+        ids.slice(40).forEach(function(k){ delete all[k]; });
+      }
+      localStorage.setItem(SONG_SYNC_KEY, JSON.stringify(all));
+    }catch(err){}
+  }
+
+  // Japanese to English for lyric lines. DeepL takes many texts per request, so
+  // the lines go up in batches; results are memoised per line so re-running the
+  // breakdown (or flipping the romaji toggle) doesn't spend the quota twice.
+  var songEnCache=Object.create(null);
+  function songTranslate(lines){
+    var need=[], queued=Object.create(null);
+    lines.forEach(function(l){
+      var k=(l||"").trim();
+      if(!k || (k in songEnCache) || queued[k]) return;
+      queued[k]=1; need.push(k);
+    });
+    var chunks=[], i;
+    for(i=0;i<need.length;i+=40) chunks.push(need.slice(i,i+40));
+    // Sequential, not parallel: DeepL rate-limits bursts and a song is rarely
+    // more than a couple of chunks anyway.
+    var chain=Promise.resolve();
+    chunks.forEach(function(chunk){
+      chain=chain.then(function(){
+        return fetch("/api/translate",{
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({ text:chunk, source:"JA", target:"EN" })
+        }).then(function(r){
+          if(r.ok) return r.json();
+          return r.json().then(
+            function(d){ throw new Error((d && d.error) || "translation failed"); },
+            function(){ throw new Error("translation failed"); });
+        }).then(function(d){
+          var got=(d && d.translations) || [];
+          chunk.forEach(function(k, n){ songEnCache[k]=got[n]||""; });
+        });
+      });
+    });
+    return chain.then(function(){
+      return lines.map(function(l){ var k=(l||"").trim(); return k ? (songEnCache[k]||"") : ""; });
+    });
+  }
+
   function renderSongs(){
     var host=document.getElementById("song"); if(!host) return;
     host.innerHTML=
@@ -5482,26 +5765,381 @@
         '<button class="btn btn-ghost" id="ytGo">Load video</button>'+
       '</div>'+
       '<div class="song-video" id="ytWrap"></div>'+
-      '<textarea id="lyIn" class="tr-in" rows="6" placeholder="Paste the song&#39;s Japanese lyrics here…"></textarea>'+
+      '<div class="ly-find" id="lyFind">'+
+        '<div class="ly-find-row">'+
+          '<button class="btn btn-ghost" id="lfGo">🔎 Find timed lyrics</button>'+
+          '<input id="lfQ" class="tr-in" style="min-height:0" placeholder="artist and song title…">'+
+          '<span class="ly-find-msg" id="lfMsg"></span>'+
+        '</div>'+
+        '<div class="ly-find-list" id="lfList" hidden></div>'+
+      '</div>'+
+      '<textarea id="lyIn" class="tr-in" rows="6" placeholder="Paste the song&#39;s Japanese lyrics here…  An .lrc file with [00:12.34] timings works too."></textarea>'+
       '<div class="tr-row">'+
         '<button class="btn btn-seal" id="lyGo">Break it down</button>'+
         '<label class="tr-toggle"><input type="checkbox" id="lyRomaji" checked> romaji</label>'+
+        '<label class="tr-toggle"><input type="checkbox" id="lyEn" checked> English</label>'+
         '<a class="song-genius" id="lyGenius" href="https://genius.com" target="_blank" rel="noopener">Find lyrics on Genius ↗</a>'+
       '</div>'+
+      '<div class="ly-sync" id="lySync" hidden></div>'+
+      '<div class="ly-msg" id="lyMsg" hidden></div>'+
+      '<div class="ly-msg" id="lyEnMsg" hidden></div>'+
       '<div class="song-out" id="lyOut"></div>'+
       '<div class="song-word" id="lyWord" hidden></div>';
     var ytUrl=document.getElementById("ytUrl"), ytWrap=document.getElementById("ytWrap"),
         lyIn=document.getElementById("lyIn"), lyOut=document.getElementById("lyOut"),
-        lyRomaji=document.getElementById("lyRomaji"), lyWord=document.getElementById("lyWord"),
-        lyGenius=document.getElementById("lyGenius");
+        lyRomaji=document.getElementById("lyRomaji"), lyEn=document.getElementById("lyEn"),
+        lyWord=document.getElementById("lyWord"), lyGenius=document.getElementById("lyGenius"),
+        lySync=document.getElementById("lySync"), lyMsg=document.getElementById("lyMsg"),
+        lyEnMsg=document.getElementById("lyEnMsg"),
+        lfQ=document.getElementById("lfQ"), lfMsg=document.getElementById("lfMsg"),
+        lfList=document.getElementById("lfList");
 
+    // Playback
+    var player=null, playerReady=false, playerId="", ticker=null;
+    // Lyrics: lines[i], times[i] and .ly-group[data-i="i"] all share one index
+    var lines=[], times=[], cues=[], curIdx=-1, syncSource="";
+    // Tap-to-sync
+    var syncing=false, syncAt=-1, syncHist=[], follow=true;
+    // Automatic lyric lookup
+    var videoDur=0, lrcCands=[], finding=false;
+
+    function note(el, text, bad){
+      if(!text){ el.hidden=true; el.textContent=""; return; }
+      el.hidden=false; el.className="ly-msg"+(bad?" bad":""); el.textContent=text;
+    }
+    function msg(text, bad){ note(lyMsg, text, bad); }        // the lyrics and the player
+    function enMsg(text, bad){ note(lyEnMsg, text, bad); }    // the translation only
+    function fmt(t){
+      if(typeof t!=="number") return "–";
+      var m=Math.floor(t/60), s=t-m*60;
+      return m+":"+(s<10?"0":"")+s.toFixed(1);
+    }
+    function timedCount(){
+      var n=0;
+      for(var i=0;i<times.length;i++) if(typeof times[i]==="number" && (lines[i]||"").trim()) n++;
+      return n;
+    }
+    function nonBlankCount(){
+      var n=0; for(var i=0;i<lines.length;i++) if((lines[i]||"").trim()) n++;
+      return n;
+    }
+    function nextLine(from){
+      for(var i=Math.max(0,from);i<lines.length;i++) if((lines[i]||"").trim()) return i;
+      return -1;
+    }
+
+    /* ---- the player ---- */
+    function now(){
+      try{ return (player && player.getCurrentTime) ? player.getCurrentTime() : 0; }catch(e){ return 0; }
+    }
+    function seekTo(t){
+      if(typeof t!=="number" || !player || !player.seekTo) return;
+      try{ player.seekTo(t, true); player.playVideo(); }catch(e){}
+    }
+    function startTicker(){ if(!ticker) ticker=setInterval(tick, 150); }
+    function stopTicker(){ if(ticker){ clearInterval(ticker); ticker=null; } }
+    function plainEmbed(id){
+      ytWrap.innerHTML='<iframe src="https://www.youtube.com/embed/'+esc(id)+'" title="YouTube player" '+
+        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" '+
+        'allowfullscreen loading="lazy"></iframe>';
+    }
+    function setVideo(id){
+      playerId=id; curIdx=-1; stopTicker();
+      YTApi.load().then(function(YT){
+        if(player && playerReady && player.loadVideoById){ player.loadVideoById(id); }
+        else {
+          if(player && player.destroy){ try{ player.destroy(); }catch(e){} }
+          player=null; playerReady=false;
+          ytWrap.innerHTML='<div id="ytPlayer"></div>';
+          player=new YT.Player("ytPlayer", {
+            videoId:id,
+            playerVars:{ playsinline:1, rel:0 },
+            events:{
+              onReady:function(){ playerReady=true; },
+              onStateChange:function(e){
+                if(e.data===YT.PlayerState.PLAYING) startTicker();
+                else if(e.data!==YT.PlayerState.BUFFERING) stopTicker();
+              }
+            }
+          });
+        }
+      }).catch(function(){
+        player=null; playerReady=false;
+        plainEmbed(id);
+        msg("The YouTube player script didn’t load, so line-following is off — the breakdown still works.", true);
+      });
+      adoptSaved();
+      renderSyncBar();
+      videoDur=0; lrcCands=[]; lfList.hidden=true; lfQ.value="";
+      findMsg("reading the video details…");
+      whenDuration(function(d){
+        if(playerId!==id) return;
+        videoDur=d;
+        findLyrics(true, null);
+      });
+    }
     document.getElementById("ytGo").onclick=function(){
       var id=ytId(ytUrl.value);
       if(!id){ ytWrap.innerHTML='<div class="tr-err">Couldn’t find a video id in that link.</div>'; return; }
-      ytWrap.innerHTML='<iframe src="https://www.youtube.com/embed/'+id+'" title="YouTube player" '+
-        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" '+
-        'allowfullscreen loading="lazy"></iframe>';
+      msg("");
+      setVideo(id);
     };
+
+    /* ---- finding the lyrics ---- */
+    function findMsg(html, bad){
+      lfMsg.className="ly-find-msg"+(bad?" bad":"");
+      lfMsg.innerHTML=html||"";
+    }
+    function mmss(s){
+      s=Math.round(s||0);
+      return Math.floor(s/60)+":"+(s%60<10?"0":"")+(s%60);
+    }
+    // The run time is what makes the ranking work, and it isn't known until the
+    // player has the video's metadata.
+    function whenDuration(fn){
+      // Deadline by wall clock, not by counting ticks: a backgrounded tab
+      // throttles setInterval to about a second and the count runs slow.
+      var until=Date.now()+10000, iv=setInterval(function(){
+        var d=0;
+        try{ d=(player && player.getDuration) ? player.getDuration() : 0; }catch(e){ d=0; }
+        if(d>0){ clearInterval(iv); fn(d); return; }
+        if(Date.now()>=until){ clearInterval(iv); fn(0); }
+      }, 250);
+    }
+    function renderCands(){
+      if(!lrcCands.length){ lfList.hidden=true; lfList.innerHTML=""; return; }
+      lfList.hidden=false;
+      lfList.innerHTML=lrcCands.slice(0,6).map(function(r, n){
+        var c=r.c;
+        return '<button class="ly-cand" type="button" data-n="'+n+'">'+
+          esc(c.trackName||"(untitled)")+' — '+esc(c.artistName||"?")+
+          ' <span>'+mmss(c.duration)+(c.albumName?' · '+esc(c.albumName):'')+'</span></button>';
+      }).join("");
+    }
+    function useCand(n){
+      var r=lrcCands[n]; if(!r) return;
+      lfList.hidden=true;
+      lyIn.value=r.c.syncedLyrics;
+      updateGenius();
+      breakdown();
+      findMsg('Timed lyrics for <b>'+esc(r.c.trackName||"?")+'</b> — '+esc(r.c.artistName||"?")+
+              ', from LRCLIB. <a href="#" id="lfOther">not this song?</a>');
+    }
+    function findLyrics(auto, manualQ){
+      if(finding) return;
+      if(!playerId && !manualQ){ findMsg("Load a video first, or type a song name to search for.", true); return; }
+      finding=true;
+      lfList.hidden=true;
+      findMsg("searching LRCLIB…");
+      var id=playerId;
+      var info = manualQ ? Promise.resolve({ title:manualQ, author:"" })
+                         : ytOEmbed(id).catch(function(){ return { title:(lfQ.value||""), author:"" }; });
+      info.then(function(meta){
+        if(!manualQ && playerId!==id) return null;         // another video was loaded meanwhile
+        if(!manualQ && meta.title && !lfQ.value) lfQ.value=meta.title;
+        if(!(meta.title||"").trim()) throw new Error("nothing to search for");
+        return lrcLookup(meta.title, meta.author, manualQ ? 0 : videoDur);
+      }).then(function(ranked){
+        finding=false;
+        if(ranked===null) return;
+        lrcCands=ranked||[];
+        if(!lrcCands.length){
+          findMsg("No timed lyrics on LRCLIB for this one — paste them below and tap to sync.");
+          return;
+        }
+        var top=lrcCands[0];
+        // Never overwrite lyrics the user has already put in the box.
+        if(auto && top.confident && !(lyIn.value||"").trim()){ useCand(0); return; }
+        if(auto && top.confident){
+          findMsg('Found timed lyrics for <b>'+esc(top.c.trackName||"?")+'</b> — '+
+                  esc(top.c.artistName||"?")+'. <a href="#" id="lfUse">use them</a> '+
+                  '(replaces what’s in the box) · <a href="#" id="lfOther">other matches</a>');
+          return;
+        }
+        findMsg(lrcCands.length+" possible match"+(lrcCands.length===1?"":"es")+" — pick one:");
+        renderCands();
+      }).catch(function(err){
+        finding=false;
+        var why=String((err&&err.message)||err).replace(/[.\s]+$/, "");
+        findMsg("Couldn’t search LRCLIB: "+esc(why)+". Paste lyrics below instead.", true);
+      });
+    }
+    lfMsg.addEventListener("click", function(e){
+      var a=e.target && e.target.closest ? e.target.closest("a") : null;
+      if(!a) return;
+      e.preventDefault();
+      if(a.id==="lfUse") useCand(0);
+      else if(a.id==="lfOther"){ renderCands(); findMsg("Pick the right one:"); }
+    });
+    lfList.addEventListener("click", function(e){
+      var b=e.target && e.target.closest ? e.target.closest(".ly-cand") : null;
+      if(b) useCand(+b.getAttribute("data-n"));
+    });
+    document.getElementById("lfGo").onclick=function(){
+      var q=(lfQ.value||"").trim();
+      findLyrics(false, q || null);
+    };
+    lfQ.addEventListener("keydown", function(e){
+      if(e.key==="Enter"){ e.preventDefault(); document.getElementById("lfGo").click(); }
+    });
+
+    /* ---- highlighting ---- */
+    function buildCues(){
+      cues=[];
+      for(var i=0;i<times.length;i++) if(typeof times[i]==="number") cues.push({ i:i, t:times[i] });
+      cues.sort(function(a,b){ return a.t-b.t; });
+    }
+    function setCurrent(i){
+      if(i===curIdx) return;
+      var prev=lyOut.querySelector(".ly-group.now"); if(prev) prev.classList.remove("now");
+      curIdx=i;
+      if(i<0) return;
+      var g=lyOut.querySelector('.ly-group[data-i="'+i+'"]'); if(!g) return;
+      g.classList.add("now");
+      // Only scroll when the line has drifted out of the comfortable middle band,
+      // otherwise every line nudges the page and nothing stays readable.
+      if(!follow || !host.offsetParent) return;
+      var r=g.getBoundingClientRect(), h=window.innerHeight||800;
+      if(r.top<h*0.15 || r.bottom>h*0.85) g.scrollIntoView({ block:"center", behavior:"smooth" });
+    }
+    function tick(){
+      if(!cues.length) return;
+      var t=now()+0.05, hit=-1;
+      for(var k=0;k<cues.length;k++){ if(cues[k].t<=t) hit=cues[k].i; else break; }
+      setCurrent(hit);
+    }
+    function paintTimes(){
+      lyOut.classList.toggle("timed", timedCount()>0);
+      var groups=lyOut.querySelectorAll(".ly-group");
+      for(var k=0;k<groups.length;k++){
+        var g=groups[k], i=+g.getAttribute("data-i"), t=times[i], chip=g.querySelector(".ly-t");
+        if(typeof t==="number"){
+          if(!chip){
+            chip=document.createElement("button");
+            chip.className="ly-t"; chip.type="button"; chip.title="Jump the video here";
+            g.insertBefore(chip, g.firstChild);
+          }
+          chip.textContent=fmt(t);
+        } else if(chip){ chip.parentNode.removeChild(chip); }
+        g.classList.toggle("next", syncing && i===syncAt);
+      }
+    }
+    // Timings are saved per video, so they only fit if the pasted lyrics still
+    // have the same shape. A mismatch is reported rather than silently ignored.
+    function adoptSaved(){
+      if(!playerId || !lines.length) return false;
+      var saved=loadSync(playerId);
+      if(!saved) return false;
+      if(saved.length!==lines.length){
+        msg("There are saved timings for this video, but they were made for "+saved.length+
+            " lines and these lyrics have "+lines.length+" — sync again to replace them.");
+        return false;
+      }
+      times=saved.slice(); syncSource="saved"; buildCues(); paintTimes();
+      return true;
+    }
+
+    /* ---- the sync bar ---- */
+    function syncNote(){
+      var n=timedCount();
+      if(!n){
+        return playerId ? "No timings yet — play the video and tap along, or paste .lrc lyrics."
+                        : "Load a video, then tap along to sync — or paste .lrc lyrics.";
+      }
+      var where = syncSource==="lrc" ? "read from the .lrc timings"
+                : playerId ? "saved for this video"
+                : "not saved — no video loaded";
+      return n+" of "+nonBlankCount()+" lines timed · "+where+".";
+    }
+    function renderSyncBar(){
+      if(!lines.length){ lySync.hidden=true; lySync.className="ly-sync"; lySync.innerHTML=""; return; }
+      lySync.hidden=false;
+      lySync.className="ly-sync"+(syncing?" live":"");
+      if(syncing){
+        lySync.innerHTML=
+          '<div class="ly-sync-live"><b>Tap “Now” as each line starts</b> — or click any line to stamp that one. '+
+            '<span id="syPos"></span></div>'+
+          '<div class="tr-row">'+
+            '<button class="btn btn-seal" id="syNow">Now ▸</button>'+
+            '<button class="btn btn-ghost" id="syBack">Undo</button>'+
+            '<button class="btn btn-ghost" id="syDone">Done</button>'+
+            '<span class="ly-sync-note">space = now · backspace = undo · esc = done</span>'+
+          '</div>';
+        document.getElementById("syNow").onclick=function(){ stamp(syncAt); };
+        document.getElementById("syBack").onclick=undoStamp;
+        document.getElementById("syDone").onclick=endSync;
+        updatePos();
+      } else {
+        var n=timedCount();
+        lySync.innerHTML=
+          '<div class="tr-row">'+
+            '<button class="btn btn-ghost" id="syStart">⏱ '+(n?"Re-sync":"Tap to sync")+'</button>'+
+            (n?'<button class="btn btn-ghost" id="syClear">Clear timings</button>':'')+
+            '<label class="tr-toggle"><input type="checkbox" id="syFollow"'+(follow?" checked":"")+'> follow along</label>'+
+          '</div>'+
+          '<div class="ly-sync-note" style="margin-top:8px">'+esc(syncNote())+'</div>';
+        document.getElementById("syStart").onclick=startSync;
+        var clr=document.getElementById("syClear");
+        if(clr) clr.onclick=clearTimes;
+        document.getElementById("syFollow").onchange=function(){ follow=this.checked; };
+      }
+    }
+    function updatePos(){
+      var el=document.getElementById("syPos"); if(!el) return;
+      if(syncAt<0){ el.textContent="all done"; return; }
+      var ord=0;
+      for(var i=0;i<=syncAt;i++) if((lines[i]||"").trim()) ord++;
+      el.textContent="line "+ord+" of "+nonBlankCount()+" · "+fmt(now());
+    }
+    function startSync(){
+      if(!player){ msg("Load the video first — syncing reads the playback position from the player.", true); return; }
+      msg("");
+      syncing=true; syncHist=[]; syncAt=nextLine(0);
+      document.addEventListener("keydown", syncKey, true);
+      renderSyncBar(); paintTimes(); scrollToLine(syncAt);
+    }
+    function endSync(){
+      if(!syncing) return;
+      syncing=false; syncAt=-1;
+      document.removeEventListener("keydown", syncKey, true);
+      if(syncSource!=="lrc") syncSource="tapped";
+      renderSyncBar(); paintTimes();
+    }
+    function stamp(i){
+      if(!syncing || i<0 || i>=lines.length || !(lines[i]||"").trim()) return;
+      times[i]=Math.max(0, now());
+      syncHist.push(i);
+      buildCues(); saveSync(playerId, times);
+      syncAt=nextLine(i+1);
+      if(syncAt<0){ paintTimes(); endSync(); return; }
+      paintTimes(); updatePos(); scrollToLine(syncAt);
+    }
+    function undoStamp(){
+      var i=syncHist.pop();
+      if(i===undefined) return;
+      times[i]=null; syncAt=i;
+      buildCues(); paintTimes(); saveSync(playerId, times); updatePos(); scrollToLine(i);
+    }
+    function clearTimes(){
+      times=lines.map(function(){ return null; });
+      syncSource=""; curIdx=-1; syncHist=[];
+      var prev=lyOut.querySelector(".ly-group.now"); if(prev) prev.classList.remove("now");
+      buildCues(); paintTimes(); saveSync(playerId, times); renderSyncBar();
+    }
+    function scrollToLine(i){
+      if(i<0 || !host.offsetParent) return;
+      var g=lyOut.querySelector('.ly-group[data-i="'+i+'"]'); if(!g) return;
+      var r=g.getBoundingClientRect(), h=window.innerHeight||800;
+      if(r.top<h*0.2 || r.bottom>h*0.8) g.scrollIntoView({ block:"center", behavior:"smooth" });
+    }
+    function syncKey(e){
+      if(!syncing) return;
+      var tag=((e.target && e.target.tagName)||"").toLowerCase();
+      if(tag==="input"||tag==="textarea"||tag==="select") return;
+      if(e.key===" "||e.code==="Space"){ e.preventDefault(); e.stopPropagation(); stamp(syncAt); }
+      else if(e.key==="Backspace"){ e.preventDefault(); e.stopPropagation(); undoStamp(); }
+      else if(e.key==="Escape"){ e.preventDefault(); endSync(); }
+    }
 
     function updateGenius(){
       var q=((lyIn.value||"").split("\n")[0].trim()) || (ytUrl.value||"").trim();
@@ -5525,39 +6163,112 @@
       }).catch(function(){ var el=document.getElementById("swMean"); if(el) el.innerHTML='<span style="opacity:.7">Meanings load on the deployed site (needs the dictionary service).</span>'; });
     }
 
+    /* ---- per-line English ---- */
+    function fillEnglish(){
+      if(!lines.length) return;
+      enMsg("translating the lines into English…");
+      songTranslate(lines).then(function(en){
+        for(var i=0;i<en.length;i++){
+          var el=lyOut.querySelector('.ly-en[data-en="'+i+'"]');
+          if(el) el.textContent=en[i]||"";
+        }
+        enMsg("");
+      }).catch(function(err){
+        var why=String((err&&err.message)||err).replace(/\.\s*$/, "");
+        enMsg("Couldn’t fetch the English: "+why+
+            ". Per-line translation needs the deployed site’s translator.", true);
+      });
+    }
+    function ensureEnSlots(){
+      var groups=lyOut.querySelectorAll(".ly-group");
+      for(var k=0;k<groups.length;k++){
+        var g=groups[k];
+        if(g.querySelector(".ly-en")) continue;
+        var d=document.createElement("div");
+        d.className="ly-en"; d.setAttribute("data-en", g.getAttribute("data-i"));
+        g.appendChild(d);
+      }
+    }
+
+    /* ---- the breakdown ---- */
+    // Reading the input and drawing it are kept apart: the romaji toggle redraws
+    // lines that are already parsed, so it can't re-split LRC text that still
+    // carries its [00:12.34] tags in the textarea, or lose the timings.
     function breakdown(){
       var text=(lyIn.value||"").trim();
       if(!text){ lyIn.focus(); return; }
+      endSync();
+      msg(""); enMsg("");
+      var lrc=parseLRC(text);
+      if(lrc){
+        lines=lrc.map(function(e){ return e.text; });
+        times=lrc.map(function(e){ return e.t; });
+        syncSource="lrc";
+        if(playerId) saveSync(playerId, times);
+      } else {
+        lines=text.split(/\r?\n/);
+        times=lines.map(function(){ return null; });
+        syncSource="";
+        adoptSaved();
+      }
+      buildCues();
+      renderLines();
+    }
+    function renderLines(){
+      if(!lines.length) return;
       lyWord.hidden=true;
+      curIdx=-1;                      // the .now element is about to be replaced
       lyOut.innerHTML='<div class="tr-loading">reading the lyrics…</div>';
-      var lines=text.split(/\r?\n/);
+
       var jobs=lines.map(function(line){
-        if(!line.trim()) return Promise.resolve({line:line, tokens:[], romaji:""});
+        if(!line.trim()) return Promise.resolve({ line:line, tokens:[], romaji:"" });
         return songTimeout(Promise.all([JPEngine.tokens(line), lyRomaji.checked?JPEngine.romaji(line):Promise.resolve("")]), 15000)
-          .then(function(a){ return {line:line, tokens:a[0], romaji:a[1]}; })
-          .catch(function(){ return {line:line, tokens:null, romaji:""}; });
+          .then(function(a){ return { line:line, tokens:a[0], romaji:a[1] }; })
+          .catch(function(){ return { line:line, tokens:null, romaji:"" }; });
       });
       Promise.all(jobs).then(function(res){
-        lyOut.innerHTML=res.map(function(r){
+        lyOut.innerHTML=res.map(function(r, i){
           if(!r.line.trim()) return '<div class="ly-blank"></div>';
-          if(!r.tokens) return '<div class="ly-line">'+esc(r.line)+'</div>';
-          var words=r.tokens.map(function(t){
-            var surf=t.surface_form||"";
-            if(t.pos==="記号") return esc(surf);
-            var rd=kataToHira(t.reading||"");
-            var inner=(hasKanji(surf)&&rd) ? '<ruby>'+esc(surf)+'<rt>'+esc(rd)+'</rt></ruby>' : esc(surf);
-            var base=(t.basic_form && t.basic_form!=="*") ? t.basic_form : surf;
-            return '<span class="sw" data-w="'+esc(base)+'" data-s="'+esc(surf)+'" data-r="'+esc(rd)+'">'+inner+'</span>';
-          }).join("");
+          var body;
+          if(!r.tokens) body='<div class="ly-line">'+esc(r.line)+'</div>';
+          else {
+            var words=r.tokens.map(function(t){
+              var surf=t.surface_form||"";
+              if(t.pos==="記号") return esc(surf);
+              var rd=kataToHira(t.reading||"");
+              var inner=(hasKanji(surf)&&rd) ? '<ruby>'+esc(surf)+'<rt>'+esc(rd)+'</rt></ruby>' : esc(surf);
+              var base=(t.basic_form && t.basic_form!=="*") ? t.basic_form : surf;
+              return '<span class="sw" data-w="'+esc(base)+'" data-s="'+esc(surf)+'" data-r="'+esc(rd)+'">'+inner+'</span>';
+            }).join("");
+            body='<div class="ly-line">'+words+'</div>';
+          }
           var rom=(lyRomaji.checked && r.romaji) ? '<div class="ly-rom">'+esc(r.romaji)+'</div>' : '';
-          return '<div class="ly-line">'+words+'</div>'+rom;
+          var en=lyEn.checked ? '<div class="ly-en" data-en="'+i+'"></div>' : '';
+          return '<div class="ly-group" data-i="'+i+'">'+body+rom+en+'</div>';
         }).join("");
+        paintTimes(); renderSyncBar();
+        if(lyEn.checked) fillEnglish();
       });
     }
     document.getElementById("lyGo").onclick=breakdown;
-    lyRomaji.onchange=function(){ if(lyOut.querySelector(".ly-line")) breakdown(); };
+    lyRomaji.onchange=function(){ if(lines.length) renderLines(); };
+    lyEn.onchange=function(){
+      if(!lyOut.querySelector(".ly-group")) return;
+      if(!lyEn.checked){
+        var slots=lyOut.querySelectorAll(".ly-en");
+        for(var k=0;k<slots.length;k++) slots[k].parentNode.removeChild(slots[k]);
+        enMsg("");
+        return;
+      }
+      ensureEnSlots(); fillEnglish();
+    };
     lyOut.addEventListener("click", function(e){
-      var w=e.target && e.target.closest ? e.target.closest(".sw") : null;
+      if(!e.target || !e.target.closest) return;
+      var chip=e.target.closest(".ly-t");
+      if(chip){ seekTo(times[+chip.parentNode.getAttribute("data-i")]); return; }
+      var grp=e.target.closest(".ly-group");
+      if(syncing){ if(grp) stamp(+grp.getAttribute("data-i")); return; }
+      var w=e.target.closest(".sw");
       if(!w) return;
       showWord({ w:w.getAttribute("data-w"), s:w.getAttribute("data-s"), r:w.getAttribute("data-r") });
     });
